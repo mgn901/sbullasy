@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "prepare": "husky install",
-    "lint": "eslint --no-error-on-unmatched-pattern --cache --fix src scripts && prettier --no-error-on-unmatched-pattern --write src scripts",
+    "lint": "tsc -p tsconfig.json --noEmit && eslint --no-error-on-unmatched-pattern --cache --fix src scripts",
+    "format": "prettier --no-error-on-unmatched-pattern --write src scripts",
     "test": "jest --passWithNoTests"
   },
   "devDependencies": {
