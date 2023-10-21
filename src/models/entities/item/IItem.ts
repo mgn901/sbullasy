@@ -2,6 +2,7 @@ import { IItemOwnerContext } from '../../contexts/IItemOwnerContext.ts';
 import { IItemBody } from '../../values/IItemBody.ts';
 import { TDisplayName } from '../../values/TDisplayName.ts';
 import { TId } from '../../values/TId.ts';
+import { IGroupProfile } from '../group-profile/IGroupProfile.ts';
 
 /**
  * アイテムを表すエンティティクラス。
@@ -40,13 +41,18 @@ export interface IItem {
   body: IItemBody;
 
   /**
+   * アイテムの所有者。
+   */
+  readonly owner: IGroupProfile;
+
+  /**
    * アイテムの情報を変更する。
    * @param item 変更後の値。
-   * @param itemOwnerCredential 変更しようとしているのがアイテムの所有グループであることを示す情報。
+   * @param itemOwnerContext 変更しようとしているのがアイテムの所有グループであることを示す情報。
    */
   updateItem(
     item: Pick<IItem, 'displayName' | 'publishedAt' | 'body'>,
-    itemOwnerCredential: IItemOwnerContext,
+    itemOwnerContext: IItemOwnerContext,
   ): void;
 
   /**

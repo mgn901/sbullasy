@@ -17,7 +17,7 @@ export interface IInstanceAdminContext {
   adminMemberDirectory: IGroupMemberDirectory;
 
   /**
-   * 操作しようとしている所属ユーザー。
+   * 操作しようとしている所属ユーザーのユーザーID。
    */
   person: IUserProfile['id'];
 }

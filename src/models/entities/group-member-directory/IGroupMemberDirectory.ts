@@ -29,26 +29,26 @@ export interface IGroupMemberDirectory {
 
   /**
    * グループの招待コードをリセットする。
-   * @param groupAdminCredential 変更しようとしているのがグループの管理者であることを示す情報。
+   * @param groupAdminContext 変更しようとしているのがグループの管理者であることを示す情報。
    */
-  resetInvitationCode(groupAdminCredential: IGroupAdminContext): void;
+  resetInvitationCode(groupAdminContext: IGroupAdminContext): void;
 
   /**
    * 所属ユーザーの一覧を変更する。
    * @param members 変更後の値。
-   * @param groupAdminCredential 変更しようとしているのがグループの管理者であることを示す情報。
+   * @param groupAdminContext 変更しようとしているのがグループの管理者であることを示す情報。
    */
-  setMembers(members: IMember[], groupAdminCredential: IGroupAdminContext): void;
+  setMembers(members: IMember[], groupAdminContext: IGroupAdminContext): void;
 
   /**
    * 招待コードを使用してユーザーに参加する。
    * @param userProfile 参加しようとしているユーザーのプロフィール。
    * @param invitationCode グループの招待コード。
-   * @param selfCredential 参加しようとしているのがユーザー本人であることを示す情報。
+   * @param selfContext 参加しようとしているのがユーザー本人であることを示す情報。
    */
   joinByInvitationCode(
     userProfile: IUserProfile,
     invitationCode: IGroupMemberDirectory['invitationCode'],
-    selfCredential: ISelfContext,
+    selfContext: ISelfContext,
   ): void;
 }

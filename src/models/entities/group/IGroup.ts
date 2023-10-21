@@ -29,10 +29,10 @@ export interface IGroup {
   /**
    * グループでのインスタンス内での役割の設定を変更する。
    * @param instanceRole 変更後の値。
-   * @param instanceOperatorCredential 変更しようとしているのがインスタンスのオペレーターであることを示す情報。
+   * @param instanceOperatorContext 変更しようとしているのがインスタンスのオペレーターであることを示す情報。
    */
   setInstanceRole(
     instanceRole: IGroup['instanceRole'],
-    instanceOperatorCredential: IInstanceOperatorContext,
+    instanceOperatorContext: IInstanceOperatorContext,
   ): void;
 }

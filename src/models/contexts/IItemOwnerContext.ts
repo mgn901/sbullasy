@@ -1,5 +1,4 @@
 import { IGroupMemberDirectory } from '../entities/group-member-directory/IGroupMemberDirectory.ts';
-import { IGroup } from '../entities/group/IGroup.ts';
 import { IUserProfile } from '../entities/user-profile/IUserProfile.ts';
 
 /**
@@ -7,17 +6,12 @@ import { IUserProfile } from '../entities/user-profile/IUserProfile.ts';
  */
 export interface IItemOwnerContext {
   /**
-   * アイテムの所有者。
-   */
-  owner: IGroup;
-
-  /**
    * アイテムの所有者の所属ユーザーに関する情報を持つエンティティオブジェクト。
    */
   ownerMemberDirectory: IGroupMemberDirectory;
 
   /**
-   * 操作しようとしている所属ユーザー。
+   * 操作しようとしている所属ユーザーのユーザーID。
    */
   person: IUserProfile['id'];
 }

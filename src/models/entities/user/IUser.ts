@@ -42,9 +42,9 @@ export interface IUser {
   /**
    * ユーザーのEメールアドレスを変更する。
    * @param emailVerificationAnswer この操作のために作成したメールアドレス認証に対する答え。
-   * @param selfCredential 変更しようとしているのがユーザー本人であることを示す情報。
+   * @param selfContext 変更しようとしているのがユーザー本人であることを示す情報。
    */
-  setEmail(emailVerificationAnswer: IEmailVerificationAnswer, selfCredential: ISelfContext): void;
+  setEmail(emailVerificationAnswer: IEmailVerificationAnswer, selfContext: ISelfContext): void;
 
   /**
    * ユーザーの新しいCookieとして使用できるトークンを作成する。
@@ -55,11 +55,11 @@ export interface IUser {
   /**
    * ユーザーの新しいBearer Tokenとして使用できるトークンを作成する。
    * @param emailVerificationAnswer この操作のために作成したメールアドレス認証に対する答え。
-   * @param selfCredential 作成しようとしているのがユーザー本人であることを示す情報。
+   * @param selfContext 作成しようとしているのがユーザー本人であることを示す情報。
    */
   createBearerToken(
     emailVerificationAnswer: IEmailVerificationAnswer,
-    selfCredential: ISelfContext,
+    selfContext: ISelfContext,
   ): IAuthenticationToken;
 
   /**

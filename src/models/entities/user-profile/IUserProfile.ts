@@ -41,11 +41,11 @@ export interface IUserProfile {
   /**
    * ユーザーの情報を変更する。
    * @param userProfile 変更後の情報。
-   * @param selfCredential 変更しようとしているのがユーザー本人であることを示す情報。
+   * @param selfContext 変更しようとしているのがユーザー本人であることを示す情報。
    */
   updateUserProfile(
     userProfile: Pick<IUserProfile, 'name' | 'displayName'>,
-    selfCredential: ISelfContext,
+    selfContext: ISelfContext,
   ): void;
 
   /**
@@ -57,10 +57,7 @@ export interface IUserProfile {
   /**
    * プロフィールの有効期限を変更する。
    * @param emailVerificationAnswer この操作のために作成したメールアドレス認証の答え。
-   * @param selfCredential 変更しようとしているのがユーザー本人であることを示す情報。
+   * @param selfContext 変更しようとしているのがユーザー本人であることを示す情報。
    */
-  setExpiresAt(
-    emailVerificationAnswer: IEmailVerificationAnswer,
-    selfCredential: ISelfContext,
-  ): void;
+  setExpiresAt(emailVerificationAnswer: IEmailVerificationAnswer, selfContext: ISelfContext): void;
 }

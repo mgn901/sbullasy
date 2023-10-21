@@ -17,7 +17,7 @@ export interface IInstanceModeratorContext {
   moderatorMemberDirectory: IGroupMemberDirectory;
 
   /**
-   * 操作しようとしている所属ユーザー。
+   * 操作しようとしている所属ユーザーのユーザーID。
    */
   person: IUserProfile['id'];
 }

@@ -5,4 +5,4 @@ import { IItem } from './IItem.ts';
  */
 export type IItemSummary = {
   readonly __brand: 'IItemSummary';
-} & Pick<IItem, 'id' | 'displayName' | 'updatedAt' | 'publishedAt' | 'body'>;
+} & Pick<IItem, 'id' | 'displayName' | 'updatedAt' | 'publishedAt' | 'owner' | 'body'>;

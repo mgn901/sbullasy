@@ -5,7 +5,7 @@ import { IUserProfile } from '../entities/user-profile/IUserProfile.ts';
  */
 export interface ISelfContext {
   /**
-   * 操作しようとしているユーザー。
+   * 操作しようとしているユーザーのユーザーID。
    */
   self: IUserProfile['id'];
 }
