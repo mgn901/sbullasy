@@ -1,3 +1,4 @@
+import { ArrayWithDiff } from '../../../utils/ArrayWithDiff.ts';
 import { ISelfContext } from '../../contexts/ISelfContext.ts';
 import { IItemSummary } from '../item/IItemSummary.ts';
 import { IUser } from '../user/IUser.ts';
@@ -16,12 +17,18 @@ export interface IUserShelf {
   /**
    * ユーザーが保有しているブックマークの一覧。
    */
-  bookmarks: IItemSummary[];
+  bookmarks: ArrayWithDiff<IItemSummary>;
 
   /**
    *
    * @param bookmarks 変更後の値。
    * @param selfContext 変更しようとしているのがユーザー本人であることを示す情報。
    */
-  setBookmarks(bookmarks: IItemSummary['id'][], selfContext: ISelfContext): void;
+  setBookmarks(bookmarks: IItemSummary[], selfContext: ISelfContext): void;
+
+  /**
+   * 第1引数に渡したcontextがこのユーザーを操作するのに有効であるかを確認する。
+   * @param context 有効であるかを確認するcontext。。
+   */
+  validateSelfContextOrThrow(context: ISelfContext): void;
 }

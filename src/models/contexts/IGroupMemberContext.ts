@@ -1,17 +1,13 @@
-import { IGroupMemberDirectory } from '../entities/group-member-directory/IGroupMemberDirectory.ts';
-import { IUserProfile } from '../entities/user-profile/IUserProfile.ts';
+import { IGroup } from '../entities/group/IGroup.ts';
 
 /**
- * 操作しようとしているのがグループの所属ユーザーであることを示す情報として用いる。
+ * 操作しようとしているユーザーが、操作対象のグループの所属ユーザーであることを示す情報。
  */
 export interface IGroupMemberContext {
-  /**
-   * 操作しようとしている所属ユーザーのユーザーID。
-   */
-  member: IUserProfile['id'];
+  readonly __brand: 'IGroupMemberContext';
 
   /**
-   * 操作対象のグループの所属ユーザーに関する情報を持つエンティティクラス。
+   * 操作対象のグループのグループID。
    */
-  groupMemberDirectory: IGroupMemberDirectory;
+  groupId: IGroup['id'];
 }

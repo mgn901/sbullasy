@@ -1,4 +1,6 @@
+import { ArrayWithDiff } from '../../../utils/ArrayWithDiff.ts';
 import { IGroupAdminContext } from '../../contexts/IGroupAdminContext.ts';
+import { IGroupMemberContext } from '../../contexts/IGroupMemberContext.ts';
 import { IInstanceOperatorContext } from '../../contexts/IInstanceOperatorContext.ts';
 import { TDisplayName } from '../../values/TDisplayName.ts';
 import { TName } from '../../values/TName.ts';
@@ -31,12 +33,12 @@ export interface IGroupProfile {
    * グループが保有しているバッジの一覧。
    * グループが大学の公認団体であることを表す際などに用いる。
    */
-  badges: IItemSummary[];
+  badges: ArrayWithDiff<IItemSummary>;
 
   /**
    * グループが編集できるアイテムの種類の一覧。
    */
-  editableItemTypes: IItemTypeSummary[];
+  editableItemTypes: ArrayWithDiff<IItemTypeSummary>;
 
   /**
    * グループが所有しているアイテムの一覧。
@@ -58,7 +60,7 @@ export interface IGroupProfile {
    * @param badges 変更後の値。
    * @param instanceOperatorContext 変更しようとしているのがインスタンスのオペレーターであることを示す情報。
    */
-  setBadges(badges: IItemSummary['id'][], instanceOperatorContext: IInstanceOperatorContext): void;
+  setBadges(badges: IItemSummary[], instanceOperatorContext: IInstanceOperatorContext): void;
 
   /**
    * グループが編集できるアイテムの種類の一覧を変更する。
@@ -66,7 +68,13 @@ export interface IGroupProfile {
    * @param instanceOperatorContext 変更しようとしているのがインスタンスのオペレーターであることを示す情報。
    */
   setEditableItemTypes(
-    itemTypes: IItemTypeSummary['id'][],
+    itemTypes: IItemTypeSummary[],
     instanceOperatorContext: IInstanceOperatorContext,
   ): void;
+
+  /**
+   * 第1引数に渡したcontextがこのグループを操作するのに有効であるかを確認する。
+   * @param context 有効であるかを確認するcontext。
+   */
+  validateGroupMemberContextOrThrow(context: IGroupAdminContext | IGroupMemberContext): void;
 }

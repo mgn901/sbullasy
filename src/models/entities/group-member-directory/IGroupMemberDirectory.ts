@@ -1,5 +1,8 @@
+import { ArrayWithDiff } from '../../../utils/ArrayWithDiff.ts';
 import { IGroupAdminContext } from '../../contexts/IGroupAdminContext.ts';
+import { IGroupMemberContext } from '../../contexts/IGroupMemberContext.ts';
 import { ISelfContext } from '../../contexts/ISelfContext.ts';
+import { IValidUserProfileContext } from '../../contexts/IValidUserProfileContext.ts';
 import { TShortSecret } from '../../values/TShortSecret.ts';
 import { IGroup } from '../group/IGroup.ts';
 import { IUserProfile } from '../user-profile/IUserProfile.ts';
@@ -25,7 +28,7 @@ export interface IGroupMemberDirectory {
   /**
    * グループの所属ユーザーの一覧。
    */
-  members: IMember[];
+  members: ArrayWithDiff<IMember>;
 
   /**
    * グループの招待コードをリセットする。
@@ -44,11 +47,19 @@ export interface IGroupMemberDirectory {
    * 招待コードを使用してユーザーに参加する。
    * @param userProfile 参加しようとしているユーザーのプロフィール。
    * @param invitationCode グループの招待コード。
+   * @param selfContext 参加しようとしているユーザーのプロフィールが有効であることを示す情報。
    * @param selfContext 参加しようとしているのがユーザー本人であることを示す情報。
    */
   joinByInvitationCode(
     userProfile: IUserProfile,
     invitationCode: IGroupMemberDirectory['invitationCode'],
     selfContext: ISelfContext,
+    validUserProfileContext: IValidUserProfileContext,
   ): void;
+
+  /**
+   * 第1引数に渡したcontextがこのグループを操作するのに有効であるかを確認する。
+   * @param context 有効であるかを確認するcontext。
+   */
+  validateGroupMemberContextOrThrow(context: IGroupAdminContext | IGroupMemberContext): void;
 }

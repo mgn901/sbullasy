@@ -1,14 +1,14 @@
+import { IValidEmailVerificationAnswerContext } from '../../contexts/IValidEmailVerificationAnswerContext.ts';
 import { ISelfContext } from '../../contexts/ISelfContext.ts';
 import { TDisplayName } from '../../values/TDisplayName.ts';
 import { TName } from '../../values/TName.ts';
 import { IGroupProfile } from '../group-profile/IGroupProfile.ts';
-import { IEmailVerificationAnswer } from '../user/IEmailVerificationAnswer.ts';
 import { IUser } from '../user/IUser.ts';
 
 /**
  * ユーザーのプロフィールを表すエンティティクラス。
  * グループの所属ユーザーに公開されるプロフィールの情報を持つ。
- * 作成にはメールアドレス認証（種類が`setProfileExpiresAt`である）が必要である。
+ * 作成にはメール認証（種類が`setProfileExpiresAt`である）が必要である。
  */
 export interface IUserProfile {
   readonly __brand: 'IUserProfile';
@@ -52,12 +52,23 @@ export interface IUserProfile {
    * 指定した日時においてプロフィールが有効であるかどうか。
    * @param date 日時の指定。この日時においてプロフィールが有効であるかどうかを返す。
    */
-  isExpiresAt(date: Date): boolean;
+  isValidAt(date: Date): boolean;
 
   /**
    * プロフィールの有効期限を変更する。
-   * @param emailVerificationAnswer この操作のために作成したメールアドレス認証の答え。
+   * @param emailVerificationContext メール認証を通過していることを示す情報。
    * @param selfContext 変更しようとしているのがユーザー本人であることを示す情報。
+   * @param user このユーザーのエンティティオブジェクト。
    */
-  setExpiresAt(emailVerificationAnswer: IEmailVerificationAnswer, selfContext: ISelfContext): void;
+  setExpiresAt(
+    emailVerificationContext: IValidEmailVerificationAnswerContext<'setProfileExpiresAt'>,
+    selfContext: ISelfContext,
+    user: IUser,
+  ): void;
+
+  /**
+   * 第1引数に渡したcontextがこのユーザーを操作するのに有効であるかを確認する。
+   * @param context 有効であるかを確認するcontext。
+   */
+  validateSelfContextOrThrow(context: ISelfContext): void;
 }

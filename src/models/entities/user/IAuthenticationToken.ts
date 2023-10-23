@@ -14,11 +14,6 @@ export interface IAuthenticationToken {
   readonly id: TId<IAuthenticationToken>;
 
   /**
-   * トークンのシークレット値。
-   */
-  readonly secret: TLongSecret;
-
-  /**
    * トークンの種類。
    */
   readonly type: 'bearer' | 'cookie';
@@ -52,5 +47,11 @@ export interface IAuthenticationToken {
    * 指定した日時においてトークンが有効であるか。
    * @param date 日時の指定。この日時においてトークンが有効であるかを返す。
    */
-  isExpiredAt(date: Date): boolean;
+  isValidAt(date: Date): boolean;
+
+  /**
+   * トークンのシークレット値を取得する。
+   * このメソッドはリポジトリ等の実装のために用いるものであり、ビジネスロジックの中で用いてはならない。
+   */
+  dangerouslyGetSecret(): TLongSecret;
 }

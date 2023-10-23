@@ -1,17 +1,13 @@
-import { IGroupMemberDirectory } from '../entities/group-member-directory/IGroupMemberDirectory.ts';
-import { IUserProfile } from '../entities/user-profile/IUserProfile.ts';
+import { IItem } from '../entities/item/IItem.ts';
 
 /**
- * 操作しようとしているのがアイテムの所有者の所属ユーザーであることを示す情報として用いる。
+ * 操作しようとしているユーザーが、操作対象のアイテムの所有者の所属ユーザーであることを示す情報。
  */
 export interface IItemOwnerContext {
-  /**
-   * アイテムの所有者の所属ユーザーに関する情報を持つエンティティオブジェクト。
-   */
-  ownerMemberDirectory: IGroupMemberDirectory;
+  readonly __brand: 'IItemOwnerContext';
 
   /**
-   * 操作しようとしている所属ユーザーのユーザーID。
+   * 操作対象のアイテムのアイテムID。
    */
-  person: IUserProfile['id'];
+  readonly itemId: IItem['id'];
 }

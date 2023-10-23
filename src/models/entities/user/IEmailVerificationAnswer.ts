@@ -1,19 +1,25 @@
-import { TId } from '../../values/TId.ts';
+import { TEmailVerificationPurpose } from '../../values/TEmailVerificationPurpose.ts';
+import { TShortSecret } from '../../values/TShortSecret.ts';
 import { IEmailVerification } from './IEmailVerification.ts';
 
 /**
- * メールアドレス認証に対する回答を表すエンティティクラス。
+ * メール認証に対する回答を表すエンティティクラス。
  */
-export interface IEmailVerificationAnswer {
+export interface IEmailVerificationAnswer<F extends TEmailVerificationPurpose> {
   readonly __brand: 'IEmailVerificationAnswer';
 
   /**
-   * 回答するメールアドレス認証のID。
+   * 回答するメール認証のID。
    */
-  readonly id: TId<IEmailVerification>;
+  readonly id: IEmailVerification<F>['id'];
 
   /**
-   * メールアドレス認証に対する答え。
+   * 回答するメール認証の種類。
    */
-  readonly answer: IEmailVerification['secret'];
+  readonly for: F;
+
+  /**
+   * 回答する認証コード。
+   */
+  readonly answer: TShortSecret;
 }

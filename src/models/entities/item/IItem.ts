@@ -3,6 +3,7 @@ import { IItemBody } from '../../values/IItemBody.ts';
 import { TDisplayName } from '../../values/TDisplayName.ts';
 import { TId } from '../../values/TId.ts';
 import { IGroupProfile } from '../group-profile/IGroupProfile.ts';
+import { IItemTypeSummary } from '../item-type/IItemTypeSummary.ts';
 
 /**
  * アイテムを表すエンティティクラス。
@@ -36,14 +37,19 @@ export interface IItem {
   publishedAt: Date | undefined;
 
   /**
-   * アイテムの中身。
-   */
-  body: IItemBody;
-
-  /**
    * アイテムの所有者。
    */
   readonly owner: IGroupProfile;
+
+  /**
+   * アイテムの種類
+   */
+  readonly type: IItemTypeSummary;
+
+  /**
+   * アイテムの中身。
+   */
+  body: IItemBody;
 
   /**
    * アイテムの情報を変更する。
@@ -60,4 +66,10 @@ export interface IItem {
    * @param date 日時の指定。この日時においてアイテムが公開されているかどうかを返す。
    */
   isPublishedAt(date: Date): boolean;
+
+  /**
+   * 第1引数に渡したcontextがこのアイテムを操作するのに有効であるかを確認する。
+   * @param context 有効であるかを確認するcontext。
+   */
+  validateItemOwnerContextOrThrow(context: IItemOwnerContext): void;
 }

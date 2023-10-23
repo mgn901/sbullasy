@@ -1,11 +1,13 @@
-import { IUserProfile } from '../entities/user-profile/IUserProfile.ts';
+import { IUser } from '../entities/user/IUser.ts';
 
 /**
- * 操作しようとしているのがユーザー本人であることを示す情報として用いる。
+ * 操作しようとしているのが、操作対象のユーザー本人であることを示す情報。
  */
 export interface ISelfContext {
+  readonly __brand: 'ISelfContext';
+
   /**
-   * 操作しようとしているユーザーのユーザーID。
+   * 操作対象のユーザーのユーザーID。
    */
-  self: IUserProfile['id'];
+  readonly userId: IUser['id'];
 }

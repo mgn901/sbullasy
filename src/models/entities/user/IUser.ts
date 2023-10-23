@@ -1,4 +1,7 @@
+import { ArrayWithDiff } from '../../../utils/ArrayWithDiff.ts';
 import { ISelfContext } from '../../contexts/ISelfContext.ts';
+import { IValidEmailVerificationAnswerContext } from '../../contexts/IValidEmailVerificationAnswerContext.ts';
+import { TEmailVerificationPurpose } from '../../values/TEmailVerificationPurpose.ts';
 import { TId } from '../../values/TId.ts';
 import { IAuthenticationToken } from './IAuthenticationToken.ts';
 import { IEmailVerification } from './IEmailVerification.ts';
@@ -17,7 +20,7 @@ export interface IUser {
 
   /**
    * ユーザーのEメールアドレス。
-   * トークン発行用メールアドレス認証の送信先として用いる。
+   * トークン発行用メール認証の送信先として用いる。
    * インスタンス内でユーザーのEメールアドレスが重複してはならない（大文字・小文字が異なる場合も重複とみなす）。
    */
   email: string;
@@ -32,42 +35,64 @@ export interface IUser {
   /**
    * ユーザーが持っているトークンの一覧。
    */
-  tokens: IAuthenticationToken[];
-
-  /**
-   * ユーザーに関連付けられているメールアドレス認証の一覧。
-   */
-  emailVerifications: IEmailVerification[];
+  tokens: ArrayWithDiff<IAuthenticationToken>;
 
   /**
    * ユーザーのEメールアドレスを変更する。
-   * @param emailVerificationAnswer この操作のために作成したメールアドレス認証に対する答え。
+   * @param emailVerificationContext メール認証を通過していることを示す情報。
    * @param selfContext 変更しようとしているのがユーザー本人であることを示す情報。
    */
-  setEmail(emailVerificationAnswer: IEmailVerificationAnswer, selfContext: ISelfContext): void;
+  setEmail(
+    emailVerificationContext: IValidEmailVerificationAnswerContext<'setEmail'>,
+    selfContext: ISelfContext,
+  ): void;
 
   /**
    * ユーザーの新しいCookieとして使用できるトークンを作成する。
-   * @param emailVerificationAnswer この操作のために作成したメールアドレス認証に対する答え。
+   * @param emailVerificationContext メール認証を通過していることを示す情報。
    */
-  createCookieToken(emailVerificationAnswer: IEmailVerificationAnswer): IAuthenticationToken;
+  createCookieToken(
+    emailVerificationContext: IValidEmailVerificationAnswerContext<'createCookieToken'>,
+  ): IAuthenticationToken;
 
   /**
    * ユーザーの新しいBearer Tokenとして使用できるトークンを作成する。
-   * @param emailVerificationAnswer この操作のために作成したメールアドレス認証に対する答え。
+   * @param emailVerificationContext メール認証を通過していることを示す情報。
    * @param selfContext 作成しようとしているのがユーザー本人であることを示す情報。
    */
   createBearerToken(
-    emailVerificationAnswer: IEmailVerificationAnswer,
+    emailVerificationContext: IValidEmailVerificationAnswerContext<'createBearerToken'>,
     selfContext: ISelfContext,
   ): IAuthenticationToken;
 
   /**
-   * ユーザーに関連する新しいメールアドレス認証を作成する。
-   * 第1引数`emailVerification`の内容が同じメールアドレス認証を、そのメールアドレス認証が期限切れになる前に新たに作成することはできない。
-   * @param emailVerification 作成するメールアドレス認証の内容。
+   * ユーザーに関連する新しいメール認証を作成する。
+   * 第1引数`emailVerification`の内容が同じメール認証を、そのメール認証が期限切れになる前に新たに作成することはできない。
+   * @param emailVerification 作成するメール認証の内容。
    */
-  createEmailVerification(
-    emailVerification: Pick<IEmailVerification, 'email' | 'for'>,
-  ): IEmailVerification;
+  createEmailVerification<F extends TEmailVerificationPurpose>(
+    emailVerification: Pick<IEmailVerification<F>, 'email' | 'for'>,
+  ): IEmailVerification<F>;
+
+  /**
+   * 渡されたメール認証に対する回答が有効であるかを確認する。
+   * @param answer メール認証に対する回答。
+   */
+  validateEmailVerificationAnswerAndExpireOrThrow<F extends TEmailVerificationPurpose>(
+    answer: IEmailVerificationAnswer<F>,
+  ): IValidEmailVerificationAnswerContext<F>;
+
+  /**
+   * 第1引数に渡したcontextがこのユーザーを操作するのに有効であるかを確認する。
+   * @param context 有効であるかを確認するcontext。
+   */
+  validateValidEmailVerificationAnswerContextOrThrow<F extends TEmailVerificationPurpose>(
+    context: IValidEmailVerificationAnswerContext<F>,
+  ): void;
+
+  /**
+   * 第1引数に渡したcontextがこのユーザーを操作するのに有効であるかを確認する。
+   * @param context 有効であるかを確認するcontext。
+   */
+  validateSelfContextOrThrow(context: ISelfContext): void;
 }

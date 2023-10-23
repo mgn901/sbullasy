@@ -2,52 +2,60 @@ import { TEmail } from '../../values/TEmail.ts';
 import { TId } from '../../values/TId.ts';
 import { TShortSecret } from '../../values/TShortSecret.ts';
 import { IUser } from './IUser.ts';
+import { TEmailVerificationPurpose } from '../../values/TEmailVerificationPurpose.ts';
 
 /**
- * メールアドレス認証を表すエンティティクラス。
+ * メール認証を表すエンティティクラス。
  */
-export interface IEmailVerification {
+export interface IEmailVerification<F extends TEmailVerificationPurpose> {
   readonly __brand: 'IEmailVerification';
 
   /**
-   * メールアドレス認証のID。
+   * メール認証のID。
    */
-  readonly id: TId<IEmailVerification>;
+  readonly id: TId<IEmailVerification<F>>;
 
   /**
-   * メールアドレス認証のシークレット値。
-   */
-  readonly secret: TShortSecret;
-
-  /**
-   * メールアドレス認証の作成日時。
+   * メール認証の作成日時。
    */
   readonly createdAt: Date;
 
   /**
-   * メールアドレス認証の有効期限。
+   * メール認証の有効期限。
    */
   readonly expiresAt: Date;
 
   /**
-   * メールアドレス認証の目的。
+   * メール認証の目的。
    * - `'cookieToken'`: クッキーとして用いるトークンを
    */
-  readonly for: 'cookieToken' | 'bearerToken' | 'setProfileExpiresAt' | 'unregister';
+  readonly for: F;
 
   /**
-   * メールアドレス認証のシークレット値の送信先。
+   * メール認証の認証コードの送信先。
    */
   readonly email: TEmail;
 
   /**
-   * メールアドレス認証しようとしているユーザー。
+   * メール認証しようとしているユーザー。
    */
   readonly userId: IUser['id'];
 
   /**
-   * ある日時においてメールアドレス認証が有効であるかどうか。
-   * @param date 日時の指定。この日時においてメールアドレス認証が有効であるかどうかを返す。
+   * 渡された認証コードが正解であるかどうかを確認する。
+   * @param answer 回答する認証コード。
    */
-  isExpiredAt(date: Date): boolean;
+  check(answer: TShortSecret): boolean;
+
+  /**
+   * ある日時においてメール認証が有効であるかどうか。
+   * @param date 日時の指定。この日時においてメール認証が有効であるかどうかを返す。
+   */
+  isValidAt(date: Date): boolean;
+
+  /**
+   * 認証コードを取得する。
+   * このメソッドはリポジトリ等の実装のために用いるものであり、ビジネスロジックの中で用いてはならない。
+   */
+  dangerouslyGetSecret(): TShortSecret;
 }
