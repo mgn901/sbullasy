@@ -1,8 +1,8 @@
 import { ArrayWithDiff } from '../../../utils/ArrayWithDiff.ts';
-import { IGroupAdminContext } from '../../contexts/IGroupAdminContext.ts';
-import { IGroupMemberContext } from '../../contexts/IGroupMemberContext.ts';
-import { ISelfContext } from '../../contexts/ISelfContext.ts';
-import { IValidUserProfileContext } from '../../contexts/IValidUserProfileContext.ts';
+import { IGroupAdminContext } from '../../context/IGroupAdminContext.ts';
+import { IGroupMemberContext } from '../../context/IGroupMemberContext.ts';
+import { ISelfContext } from '../../context/ISelfContext.ts';
+import { IValidUserProfileContext } from '../../context/IValidUserProfileContext.ts';
 import { TShortSecret } from '../../values/TShortSecret.ts';
 import { IGroup } from '../group/IGroup.ts';
 import { IUserProfile } from '../user-profile/IUserProfile.ts';

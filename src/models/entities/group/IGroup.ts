@@ -1,4 +1,4 @@
-import { IInstanceOperatorContext } from '../../contexts/IInstanceOperatorContext.ts';
+import { IInstanceOperatorContext } from '../../context/IInstanceOperatorContext.ts';
 import { TId } from '../../values/TId.ts';
 
 /**

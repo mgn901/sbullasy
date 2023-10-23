@@ -1,4 +1,4 @@
-import { IItemOwnerContext } from '../../contexts/IItemOwnerContext.ts';
+import { IItemOwnerContext } from '../../context/IItemOwnerContext.ts';
 import { IItemBody } from '../../values/IItemBody.ts';
 import { TDisplayName } from '../../values/TDisplayName.ts';
 import { TId } from '../../values/TId.ts';
