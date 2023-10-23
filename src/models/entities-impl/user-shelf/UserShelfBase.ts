@@ -1,4 +1,4 @@
-import { ISelfContext } from '../../context/ISelfContext.ts';
+import { ISelfContext } from '../../contexts/ISelfContext.ts';
 import { IItemSummary } from '../../entities/item/IItemSummary.ts';
 import { IUserShelf } from '../../entities/user-shelf/IUserShelf.ts';
 import { InternalContextValidationError } from '../../errors/InternalContextValidationError.ts';

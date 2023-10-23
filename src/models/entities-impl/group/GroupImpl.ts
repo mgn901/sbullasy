@@ -1,4 +1,4 @@
-import { IValidUserProfileContext } from '../../context/IValidUserProfileContext.ts';
+import { IValidUserProfileContext } from '../../contexts/IValidUserProfileContext.ts';
 import { generateId } from '../../values/TId.ts';
 import { GroupBase } from './GroupBase.ts';
 

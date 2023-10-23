@@ -1,6 +1,6 @@
-import { IGroupAdminContext } from '../../context/IGroupAdminContext.ts';
-import { IGroupMemberContext } from '../../context/IGroupMemberContext.ts';
-import { IInstanceOperatorContext } from '../../context/IInstanceOperatorContext.ts';
+import { IGroupAdminContext } from '../../contexts/IGroupAdminContext.ts';
+import { IGroupMemberContext } from '../../contexts/IGroupMemberContext.ts';
+import { IInstanceOperatorContext } from '../../contexts/IInstanceOperatorContext.ts';
 import { IGroupProfile } from '../../entities/group-profile/IGroupProfile.ts';
 import { IItemTypeSummary } from '../../entities/item-type/IItemTypeSummary.ts';
 import { IItemSummary } from '../../entities/item/IItemSummary.ts';

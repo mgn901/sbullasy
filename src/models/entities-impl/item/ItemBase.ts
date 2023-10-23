@@ -1,4 +1,4 @@
-import { IItemOwnerContext } from '../../context/IItemOwnerContext.ts';
+import { IItemOwnerContext } from '../../contexts/IItemOwnerContext.ts';
 import { IItem } from '../../entities/item/IItem.ts';
 import { InternalContextValidationError } from '../../errors/InternalContextValidationError.ts';
 

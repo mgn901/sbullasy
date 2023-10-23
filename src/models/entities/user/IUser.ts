@@ -1,6 +1,6 @@
 import { ArrayWithDiff } from '../../../utils/ArrayWithDiff.ts';
-import { ISelfContext } from '../../context/ISelfContext.ts';
-import { IValidEmailVerificationAnswerContext } from '../../context/IValidEmailVerificationAnswerContext.ts';
+import { ISelfContext } from '../../contexts/ISelfContext.ts';
+import { IValidEmailVerificationAnswerContext } from '../../contexts/IValidEmailVerificationAnswerContext.ts';
 import { TEmailVerificationPurpose } from '../../values/TEmailVerificationPurpose.ts';
 import { TId } from '../../values/TId.ts';
 import { IAuthenticationToken } from './IAuthenticationToken.ts';

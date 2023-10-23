@@ -1,4 +1,4 @@
-import { IGroupMemberContext } from '../../context/IGroupMemberContext.ts';
+import { IGroupMemberContext } from '../../contexts/IGroupMemberContext.ts';
 import { IItem } from '../../entities/item/IItem.ts';
 import { generateId } from '../../values/TId.ts';
 import { ItemBase } from './ItemBase.ts';

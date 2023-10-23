@@ -1,4 +1,4 @@
-import { IInstanceAdminContext } from '../../context/IInstanceAdminContext.ts';
+import { IInstanceAdminContext } from '../../contexts/IInstanceAdminContext.ts';
 import { IItemType } from '../../entities/item-type/IItemType.ts';
 
 /**

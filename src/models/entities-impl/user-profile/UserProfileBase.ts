@@ -1,5 +1,5 @@
-import { IValidEmailVerificationAnswerContext } from '../../context/IValidEmailVerificationAnswerContext.ts';
-import { ISelfContext } from '../../context/ISelfContext.ts';
+import { IValidEmailVerificationAnswerContext } from '../../contexts/IValidEmailVerificationAnswerContext.ts';
+import { ISelfContext } from '../../contexts/ISelfContext.ts';
 import { IUserProfile } from '../../entities/user-profile/IUserProfile.ts';
 import { IUser } from '../../entities/user/IUser.ts';
 import { InternalContextValidationError } from '../../errors/InternalContextValidationError.ts';

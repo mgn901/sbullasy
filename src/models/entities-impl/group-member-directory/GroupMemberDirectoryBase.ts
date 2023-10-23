@@ -1,7 +1,7 @@
-import { IGroupAdminContext } from '../../context/IGroupAdminContext.ts';
-import { IGroupMemberContext } from '../../context/IGroupMemberContext.ts';
-import { ISelfContext } from '../../context/ISelfContext.ts';
-import { IValidUserProfileContext } from '../../context/IValidUserProfileContext.ts';
+import { IGroupAdminContext } from '../../contexts/IGroupAdminContext.ts';
+import { IGroupMemberContext } from '../../contexts/IGroupMemberContext.ts';
+import { ISelfContext } from '../../contexts/ISelfContext.ts';
+import { IValidUserProfileContext } from '../../contexts/IValidUserProfileContext.ts';
 import { IGroupMemberDirectory } from '../../entities/group-member-directory/IGroupMemberDirectory.ts';
 import { IMember } from '../../entities/group-member-directory/IMember.ts';
 import { IUserProfile } from '../../entities/user-profile/IUserProfile.ts';

@@ -1,4 +1,4 @@
-import { IInstanceOperatorContext } from '../../context/IInstanceOperatorContext.ts';
+import { IInstanceOperatorContext } from '../../contexts/IInstanceOperatorContext.ts';
 import { IGroup } from '../../entities/group/IGroup.ts';
 
 /**

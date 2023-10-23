@@ -1,7 +1,7 @@
 import { ArrayWithDiff } from '../../../utils/ArrayWithDiff.ts';
-import { IGroupAdminContext } from '../../context/IGroupAdminContext.ts';
-import { IGroupMemberContext } from '../../context/IGroupMemberContext.ts';
-import { IInstanceOperatorContext } from '../../context/IInstanceOperatorContext.ts';
+import { IGroupAdminContext } from '../../contexts/IGroupAdminContext.ts';
+import { IGroupMemberContext } from '../../contexts/IGroupMemberContext.ts';
+import { IInstanceOperatorContext } from '../../contexts/IInstanceOperatorContext.ts';
 import { TDisplayName } from '../../values/TDisplayName.ts';
 import { TName } from '../../values/TName.ts';
 import { IGroup } from '../group/IGroup.ts';

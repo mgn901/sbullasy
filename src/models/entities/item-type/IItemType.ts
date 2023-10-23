@@ -1,5 +1,5 @@
 import { JSONSchema7 } from 'json-schema';
-import { IInstanceAdminContext } from '../../context/IInstanceAdminContext.ts';
+import { IInstanceAdminContext } from '../../contexts/IInstanceAdminContext.ts';
 import { IItemTypeOption } from '../../values/IItemTypeOption.ts';
 import { TDisplayName } from '../../values/TDisplayName.ts';
 import { TId } from '../../values/TId.ts';
