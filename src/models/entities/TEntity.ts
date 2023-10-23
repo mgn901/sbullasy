@@ -1,3 +1,4 @@
+import { TEmailVerificationPurpose } from '../values/TEmailVerificationPurpose.ts';
 import { IGroupMemberDirectory } from './group-member-directory/IGroupMemberDirectory.ts';
 import { IMember } from './group-member-directory/IMember.ts';
 import { IGroupProfile } from './group-profile/IGroupProfile.ts';
@@ -26,8 +27,8 @@ export type TEntity =
   | IItemType
   | IItemTypeSummary
   | IAuthenticationToken
-  | IEmailVerification
-  | IEmailVerificationAnswer
+  | IEmailVerification<TEmailVerificationPurpose>
+  | IEmailVerificationAnswer<TEmailVerificationPurpose>
   | IUser
   | IUserProfile
   | IUserShelf;
