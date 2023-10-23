@@ -28,6 +28,9 @@ module.exports = {
     'import/no-cycle': ['off'],
     'import/no-relative-packages': ['off'],
     'import/prefer-default-export': ['off'],
+    'max-classes-per-file': ['off'],
+    'no-underscore-dangle': ['off'],
+    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     'react/function-component-definition': [
       'error',
       {
