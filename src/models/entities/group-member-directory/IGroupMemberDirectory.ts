@@ -38,17 +38,17 @@ export interface IGroupMemberDirectory {
 
   /**
    * 所属ユーザーの一覧を変更する。
-   * @param members 変更後の値。
+   * @param newMembers 変更後の値。
    * @param groupAdminContext 変更しようとしているのがグループの管理者であることを示す情報。
    */
-  setMembers(members: IMember[], groupAdminContext: IGroupAdminContext): void;
+  setMembers(newMembers: IMember[], groupAdminContext: IGroupAdminContext): void;
 
   /**
    * 招待コードを使用してユーザーに参加する。
    * @param userProfile 参加しようとしているユーザーのプロフィール。
    * @param invitationCode グループの招待コード。
-   * @param selfContext 参加しようとしているユーザーのプロフィールが有効であることを示す情報。
    * @param selfContext 参加しようとしているのがユーザー本人であることを示す情報。
+   * @param validUserProfileContext 参加しようとしているユーザーのプロフィールが有効であることを示す情報。
    */
   joinByInvitationCode(
     userProfile: IUserProfile,

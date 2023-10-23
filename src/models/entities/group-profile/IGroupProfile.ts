@@ -47,28 +47,28 @@ export interface IGroupProfile {
 
   /**
    * グループのプロフィールの情報を変更する。
-   * @param groupProfile 変更後の値。
+   * @param newGroupProfile 変更後の値。
    * @param groupAdminContext 変更しようとしているのがインスタンスのオペレーターであることを示す情報。
    */
   updateGroupProfile(
-    groupProfile: Pick<IGroupProfile, 'name' | 'displayName'>,
+    newGroupProfile: Pick<IGroupProfile, 'name' | 'displayName'>,
     groupAdminContext: IGroupAdminContext,
   ): void;
 
   /**
    * グループが保有しているバッジの一覧を変更する。
-   * @param badges 変更後の値。
+   * @param newBadges 変更後の値。
    * @param instanceOperatorContext 変更しようとしているのがインスタンスのオペレーターであることを示す情報。
    */
-  setBadges(badges: IItemSummary[], instanceOperatorContext: IInstanceOperatorContext): void;
+  setBadges(newBadges: IItemSummary[], instanceOperatorContext: IInstanceOperatorContext): void;
 
   /**
    * グループが編集できるアイテムの種類の一覧を変更する。
-   * @param itemTypes 変更後の値。
+   * @param newItemTypes 変更後の値。
    * @param instanceOperatorContext 変更しようとしているのがインスタンスのオペレーターであることを示す情報。
    */
   setEditableItemTypes(
-    itemTypes: IItemTypeSummary[],
+    newItemTypes: IItemTypeSummary[],
     instanceOperatorContext: IInstanceOperatorContext,
   ): void;
 

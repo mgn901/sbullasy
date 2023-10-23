@@ -43,11 +43,11 @@ export interface IItemType {
 
   /**
    * アイテムの種類の情報を変更する。
-   * @param itemType 変更後の値。
+   * @param newItemType 変更後の値。
    * @param instanceAdminContext 操作しているのがインスタンスの管理者であることを示す情報。
    */
   updateItemType(
-    itemType: Pick<
+    newItemType: Pick<
       IItemType,
       'id' | 'nameSingular' | 'namePlural' | 'displayName' | 'schema' | 'option'
     >,

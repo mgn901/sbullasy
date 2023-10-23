@@ -40,11 +40,11 @@ export interface IUserProfile {
 
   /**
    * ユーザーの情報を変更する。
-   * @param userProfile 変更後の情報。
+   * @param newUserProfile 変更後の情報。
    * @param selfContext 変更しようとしているのがユーザー本人であることを示す情報。
    */
   updateUserProfile(
-    userProfile: Pick<IUserProfile, 'name' | 'displayName'>,
+    newUserProfile: Pick<IUserProfile, 'name' | 'displayName'>,
     selfContext: ISelfContext,
   ): void;
 

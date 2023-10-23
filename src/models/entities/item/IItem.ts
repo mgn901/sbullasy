@@ -53,11 +53,11 @@ export interface IItem {
 
   /**
    * アイテムの情報を変更する。
-   * @param item 変更後の値。
+   * @param newItem 変更後の値。
    * @param itemOwnerContext 変更しようとしているのがアイテムの所有グループであることを示す情報。
    */
   updateItem(
-    item: Pick<IItem, 'displayName' | 'publishedAt' | 'body'>,
+    newItem: Pick<IItem, 'displayName' | 'publishedAt' | 'body'>,
     itemOwnerContext: IItemOwnerContext,
   ): void;
 

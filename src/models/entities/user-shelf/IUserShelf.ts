@@ -21,10 +21,10 @@ export interface IUserShelf {
 
   /**
    *
-   * @param bookmarks 変更後の値。
+   * @param newBookmarks 変更後の値。
    * @param selfContext 変更しようとしているのがユーザー本人であることを示す情報。
    */
-  setBookmarks(bookmarks: IItemSummary[], selfContext: ISelfContext): void;
+  setBookmarks(newBookmarks: IItemSummary[], selfContext: ISelfContext): void;
 
   /**
    * 第1引数に渡したcontextがこのユーザーを操作するのに有効であるかを確認する。
