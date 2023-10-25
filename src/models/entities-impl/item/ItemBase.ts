@@ -78,6 +78,7 @@ export abstract class ItemBase implements IItem {
       }
       return newItem.publishedAt;
     })();
+    // TODO: スキーマを用いたバリデーションの実装
     this._body = newItem.body;
 
     this._updatedAt = now;

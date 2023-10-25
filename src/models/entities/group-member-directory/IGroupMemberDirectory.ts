@@ -64,7 +64,7 @@ export interface IGroupMemberDirectory {
   deleteMember(user: IUser, selfContext: ISelfContext): void;
 
   /**
-   * 招待コードを使用してユーザーに参加する。
+   * 招待コードを使用してグループに参加する。
    * @param userProfile 参加しようとしているユーザーのプロフィール。
    * @param invitationCode グループの招待コード。
    * @param selfContext 参加しようとしているのがユーザー本人であることを示す情報。

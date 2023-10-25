@@ -20,7 +20,6 @@ export class GroupMemberDirectoryImpl extends GroupMemberDirectoryBase {
       invitationCode: generateShortSecret(),
       members: new ArrayWithDiff(
         new Member({
-          groupId: group.id,
           user: initialMember,
           type: 'admin',
         }),
