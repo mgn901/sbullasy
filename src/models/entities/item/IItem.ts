@@ -1,7 +1,8 @@
 import { IItemOwnerContext } from '../../contexts/IItemOwnerContext.ts';
 import { IItemBody } from '../../values/IItemBody.ts';
-import { TDisplayName } from '../../values/TDisplayName.ts';
 import { TId } from '../../values/TId.ts';
+import { TTitle } from '../../values/TTitle.ts';
+import { TTitleForUrl } from '../../values/TTitleForUrl.ts';
 import { IGroupProfile } from '../group-profile/IGroupProfile.ts';
 import { IItemTypeSummary } from '../item-type/IItemTypeSummary.ts';
 
@@ -17,9 +18,14 @@ export interface IItem {
   readonly id: TId<IItem>;
 
   /**
-   * アイテムの表示名。
+   * アイテムのタイトル。
    */
-  displayName: TDisplayName;
+  title: TTitle;
+
+  /**
+   * アイテムのタイトルのURL用表現。
+   */
+  titleForUrl: TTitleForUrl;
 
   /**
    * アイテムの作成日時。
@@ -57,7 +63,7 @@ export interface IItem {
    * @param itemOwnerContext 変更しようとしているのがアイテムの所有グループであることを示す情報。
    */
   updateItem(
-    newItem: Pick<IItem, 'displayName' | 'publishedAt' | 'body'>,
+    newItem: Pick<IItem, 'title' | 'titleForUrl' | 'publishedAt' | 'body'>,
     itemOwnerContext: IItemOwnerContext,
   ): void;
 

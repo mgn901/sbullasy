@@ -1,29 +1,29 @@
 import { IItem } from '../../../models/entities/item/IItem.ts';
 import { InvalidRequestException } from '../../../models/errors/InvalidRequestException.ts';
-import { isDisplayName } from '../../../models/values/TDisplayName.ts';
 import { isId } from '../../../models/values/TId.ts';
+import { isTitleForUrl } from '../../../models/values/TTitleForUrl.ts';
 import { IImplementations } from '../IImplementations.ts';
 
 /**
  * アイテムのエンティティオブジェクトを取得する。
- * @param itemIdOrDisplayName 取得するアイテムのIDまたは名前。
+ * @param itemIdOrTitleForUrl 取得するアイテムのIDまたはタイトルのURL用表現。
  * @param implementations この操作に使用するインフラストラクチャの実装。
  * @returns 取得したアイテムのエンティティオブジェクト。
  */
 export const getItem = async (
-  itemIdOrDisplayName: IItem['id'] | `@${IItem['displayName']}`,
+  itemIdOrTitleForUrl: IItem['id'] | `@${IItem['title']}`,
   implementations: IImplementations,
 ): Promise<IItem> => {
-  if (itemIdOrDisplayName.startsWith('@')) {
-    const itemDisplayName = itemIdOrDisplayName.slice(1);
-    if (!isDisplayName(itemDisplayName)) {
+  if (itemIdOrTitleForUrl.startsWith('@')) {
+    const itemTitleForUrl = itemIdOrTitleForUrl.slice(1);
+    if (!isTitleForUrl(itemTitleForUrl)) {
       throw new InvalidRequestException();
     }
-    return implementations.itemRepository.getOneByDisplayNameOrThrow(itemDisplayName);
+    return implementations.itemRepository.getOneByTitleForUrlOrThrow(itemTitleForUrl);
   }
 
-  if (!isId(itemIdOrDisplayName)) {
+  if (!isId(itemIdOrTitleForUrl)) {
     throw new InvalidRequestException();
   }
-  return implementations.itemRepository.getOneByIdOrThrow(itemIdOrDisplayName);
+  return implementations.itemRepository.getOneByIdOrThrow(itemIdOrTitleForUrl);
 };

@@ -15,7 +15,7 @@ import { IImplementations } from '../IImplementations.ts';
  */
 export const createItem = async (
   groupId: IGroupProfile['id'],
-  param: Pick<IItem, 'displayName' | 'publishedAt' | 'type' | 'body'>,
+  param: Pick<IItem, 'title' | 'titleForUrl' | 'publishedAt' | 'type' | 'body'>,
   tokenSecret: TLongSecret,
   implementations: IImplementations,
 ): Promise<IItem> => {

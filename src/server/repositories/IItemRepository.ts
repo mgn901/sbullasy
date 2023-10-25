@@ -13,10 +13,10 @@ export interface IItemRepository {
   getOneByIdOrThrow(itemId: IItem['id']): Promise<IItem>;
 
   /**
-   * 指定した表示名を持つオブジェクトを1件取得する。
-   * @param itemDisplayName 取得するオブジェクトの表示名。
+   * 指定したタイトルのURL用表現を持つオブジェクトを1件取得する。
+   * @param itemTitleForUrl 取得するオブジェクトの表示名。
    */
-  getOneByDisplayNameOrThrow(itemDisplayName: IItem['displayName']): Promise<IItem>;
+  getOneByTitleForUrlOrThrow(itemTitleForUrl: IItem['titleForUrl']): Promise<IItem>;
 
   /**
    * 指定したIDを持つアイテムの要約を1件取得する。

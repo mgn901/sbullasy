@@ -11,7 +11,9 @@ export abstract class ItemBase implements IItem {
 
   public readonly id: IItem['id'];
 
-  private _displayName: IItem['displayName'];
+  private _title: IItem['title'];
+
+  private _titleForUrl: IItem['titleForUrl'];
 
   public readonly createdAt: IItem['createdAt'];
 
@@ -28,11 +30,20 @@ export abstract class ItemBase implements IItem {
   public constructor(
     item: Pick<
       IItem,
-      'id' | 'displayName' | 'createdAt' | 'updatedAt' | 'publishedAt' | 'owner' | 'type' | 'body'
+      | 'id'
+      | 'title'
+      | 'titleForUrl'
+      | 'createdAt'
+      | 'updatedAt'
+      | 'publishedAt'
+      | 'owner'
+      | 'type'
+      | 'body'
     >,
   ) {
     this.id = item.id;
-    this._displayName = item.displayName;
+    this._title = item.title;
+    this._titleForUrl = item.titleForUrl;
     this.createdAt = item.createdAt;
     this._updatedAt = item.updatedAt;
     this._publishedAt = item.publishedAt;
@@ -41,8 +52,12 @@ export abstract class ItemBase implements IItem {
     this._body = item.body;
   }
 
-  public get displayName() {
-    return this._displayName;
+  public get title() {
+    return this._title;
+  }
+
+  public get titleForUrl() {
+    return this._titleForUrl;
   }
 
   public get updatedAt() {
@@ -58,14 +73,15 @@ export abstract class ItemBase implements IItem {
   }
 
   public updateItem(
-    newItem: Pick<IItem, 'displayName' | 'publishedAt' | 'body'>,
+    newItem: Pick<IItem, 'title' | 'titleForUrl' | 'publishedAt' | 'body'>,
     itemOwnerContext: IItemOwnerContext,
   ): void {
     this.validateItemOwnerContextOrThrow(itemOwnerContext);
 
     const now = new Date();
 
-    this._displayName = newItem.displayName;
+    this._title = newItem.title;
+    this._titleForUrl = newItem.titleForUrl;
     this._publishedAt = (() => {
       // 公開日時が既に設定されているのに、その日時よりも前の日時を設定しようとしている場合は、既に設定されている日時を優先する。
       if (

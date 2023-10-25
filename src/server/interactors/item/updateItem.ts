@@ -12,7 +12,7 @@ import { IImplementations } from '../IImplementations.ts';
  */
 export const updateItem = async (
   itemId: IItem['id'],
-  param: Pick<IItem, 'displayName' | 'publishedAt' | 'body'>,
+  param: Pick<IItem, 'title' | 'titleForUrl' | 'publishedAt' | 'body'>,
   tokenSecret: TLongSecret,
   implementations: IImplementations,
 ): Promise<void> => {

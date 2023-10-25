@@ -9,7 +9,7 @@ import { ItemBase } from './ItemBase.ts';
  */
 export class ItemImpl extends ItemBase {
   public constructor(
-    item: Pick<IItem, 'displayName' | 'publishedAt' | 'owner' | 'type' | 'body'>,
+    item: Pick<IItem, 'title' | 'titleForUrl' | 'publishedAt' | 'owner' | 'type' | 'body'>,
     groupMemberContext: IGroupMemberContext,
   ) {
     item.owner.validateGroupMemberContextOrThrow(groupMemberContext);
@@ -24,7 +24,8 @@ export class ItemImpl extends ItemBase {
 
     super({
       id: generateId(),
-      displayName: item.displayName,
+      title: item.title,
+      titleForUrl: item.titleForUrl,
       createdAt: now,
       updatedAt: now,
       publishedAt: item.publishedAt,
