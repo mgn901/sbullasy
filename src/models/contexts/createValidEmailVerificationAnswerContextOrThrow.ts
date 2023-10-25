@@ -9,8 +9,10 @@ import { IValidEmailVerificationAnswerContext } from './IValidEmailVerificationA
  * @param user メール認証が必要な操作の対象のユーザーのエンティティオブジェクト。
  * @returns 操作しようとしているユーザーがメール認証を通過していることを示す情報。
  */
-export const createEmailVerificationContextOrThrow = <F extends TEmailVerificationPurpose>(
+export const createValidEmailVerificationAnswerContextOrThrow = <
+  F extends TEmailVerificationPurpose,
+>(
   emailVerificationAnswer: IEmailVerificationAnswer<F>,
   user: IUser,
 ): IValidEmailVerificationAnswerContext<F> =>
-  user.validateEmailVerificationAnswerAndExpireOrThrow(emailVerificationAnswer);
+  user.validateEmailVerificationAnswerOrThrow(emailVerificationAnswer);

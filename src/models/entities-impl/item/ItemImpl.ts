@@ -1,5 +1,6 @@
 import { IGroupMemberContext } from '../../contexts/IGroupMemberContext.ts';
 import { IItem } from '../../entities/item/IItem.ts';
+import { NoPermissionException } from '../../errors/NoPermissionException.ts';
 import { generateId } from '../../values/TId.ts';
 import { ItemBase } from './ItemBase.ts';
 
@@ -12,6 +13,12 @@ export class ItemImpl extends ItemBase {
     groupMemberContext: IGroupMemberContext,
   ) {
     item.owner.validateGroupMemberContextOrThrow(groupMemberContext);
+    const isEditable = item.owner.editableItemTypes.some(
+      (itemType) => itemType.id === item.type.id,
+    );
+    if (!isEditable) {
+      throw new NoPermissionException();
+    }
 
     const now = new Date();
 

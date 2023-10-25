@@ -7,14 +7,11 @@ import { IMember } from '../../entities/group-member-directory/IMember.ts';
 export abstract class MemberBase implements IMember {
   public readonly __brand = 'IMember';
 
-  public readonly groupId: IMember['groupId'];
-
   public readonly user: IMember['user'];
 
-  public type: IMember['type'];
+  public readonly type: IMember['type'];
 
-  public constructor(member: Pick<IMember, 'groupId' | 'user' | 'type'>) {
-    this.groupId = member.groupId;
+  public constructor(member: Pick<IMember, 'user' | 'type'>) {
     this.user = member.user;
     this.type = member.type;
   }

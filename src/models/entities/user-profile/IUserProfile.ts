@@ -1,5 +1,6 @@
-import { IValidEmailVerificationAnswerContext } from '../../contexts/IValidEmailVerificationAnswerContext.ts';
 import { ISelfContext } from '../../contexts/ISelfContext.ts';
+import { IValidEmailVerificationAnswerContext } from '../../contexts/IValidEmailVerificationAnswerContext.ts';
+import { IValidUserProfileContext } from '../../contexts/IValidUserProfileContext.ts';
 import { TDisplayName } from '../../values/TDisplayName.ts';
 import { TName } from '../../values/TName.ts';
 import { IGroupProfile } from '../group-profile/IGroupProfile.ts';
@@ -39,7 +40,7 @@ export interface IUserProfile {
   readonly belongsTo: IGroupProfile[];
 
   /**
-   * ユーザーの情報を変更する。
+   * ユーザーのプロフィールの情報を変更する。
    * @param newUserProfile 変更後の情報。
    * @param selfContext 変更しようとしているのがユーザー本人であることを示す情報。
    */
@@ -56,12 +57,12 @@ export interface IUserProfile {
 
   /**
    * プロフィールの有効期限を変更する。
-   * @param emailVerificationContext メール認証を通過していることを示す情報。
+   * @param validEmailVerificationAnswerContext メール認証を通過していることを示す情報。
    * @param selfContext 変更しようとしているのがユーザー本人であることを示す情報。
    * @param user このユーザーのエンティティオブジェクト。
    */
   setExpiresAt(
-    emailVerificationContext: IValidEmailVerificationAnswerContext<'setProfileExpiresAt'>,
+    validEmailVerificationAnswerContext: IValidEmailVerificationAnswerContext<'setProfileExpiresAt'>,
     selfContext: ISelfContext,
     user: IUser,
   ): void;
@@ -71,4 +72,10 @@ export interface IUserProfile {
    * @param context 有効であるかを確認するcontext。
    */
   validateSelfContextOrThrow(context: ISelfContext): void;
+
+  /**
+   * 第1引数に渡したcontextがこのユーザーを操作するのに有効であるかを確認する。
+   * @param context 有効であるかを確認するcontext。
+   */
+  validateValidUserProfileContextOrThrow(context: IValidUserProfileContext): void;
 }

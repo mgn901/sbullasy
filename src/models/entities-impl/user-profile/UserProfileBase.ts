@@ -3,6 +3,7 @@ import { ISelfContext } from '../../contexts/ISelfContext.ts';
 import { IUserProfile } from '../../entities/user-profile/IUserProfile.ts';
 import { IUser } from '../../entities/user/IUser.ts';
 import { InternalContextValidationError } from '../../errors/InternalContextValidationError.ts';
+import { IValidUserProfileContext } from '../../contexts/IValidUserProfileContext.ts';
 
 /**
  * {@linkcode IUserProfile}の抽象クラスとしての実装。
@@ -61,20 +62,29 @@ export abstract class UserProfileBase implements IUserProfile {
   }
 
   public setExpiresAt(
-    emailVerificationContext: IValidEmailVerificationAnswerContext<'setProfileExpiresAt'>,
+    validEmailVerificationAnswerContext: IValidEmailVerificationAnswerContext<'setProfileExpiresAt'>,
     selfContext: ISelfContext,
     user: IUser,
   ): void {
     if (user.id !== this.id) {
       throw new InternalContextValidationError();
     }
-    user.validateValidEmailVerificationAnswerContextOrThrow(emailVerificationContext);
+    user.validateValidEmailVerificationAnswerContextOrThrow(
+      validEmailVerificationAnswerContext,
+      'setProfileExpiresAt',
+    );
     this.validateSelfContextOrThrow(selfContext);
     const now = new Date();
     this._expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
   }
 
   public validateSelfContextOrThrow(context: ISelfContext): void {
+    if (context.userId !== this.id) {
+      throw new InternalContextValidationError();
+    }
+  }
+
+  public validateValidUserProfileContextOrThrow(context: IValidUserProfileContext): void {
     if (context.userId !== this.id) {
       throw new InternalContextValidationError();
     }

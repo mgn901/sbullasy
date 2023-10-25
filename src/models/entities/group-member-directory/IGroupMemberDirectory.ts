@@ -6,6 +6,7 @@ import { IValidUserProfileContext } from '../../contexts/IValidUserProfileContex
 import { TShortSecret } from '../../values/TShortSecret.ts';
 import { IGroup } from '../group/IGroup.ts';
 import { IUserProfile } from '../user-profile/IUserProfile.ts';
+import { IUser } from '../user/IUser.ts';
 import { IMember } from './IMember.ts';
 
 /**
@@ -37,11 +38,30 @@ export interface IGroupMemberDirectory {
   resetInvitationCode(groupAdminContext: IGroupAdminContext): void;
 
   /**
-   * 所属ユーザーの一覧を変更する。
-   * @param newMembers 変更後の値。
+   * 所属ユーザーのグループとの関係を変更する。
+   * @param userProfile 変更対象の所属ユーザーのプロフィール。
+   * @param type 変更後の値
    * @param groupAdminContext 変更しようとしているのがグループの管理者であることを示す情報。
    */
-  setMembers(newMembers: IMember[], groupAdminContext: IGroupAdminContext): void;
+  updateMember(
+    userProfile: IUserProfile,
+    type: IMember['type'],
+    groupAdminContext: IGroupAdminContext,
+  ): void;
+
+  /**
+   * 所属ユーザーをグループから削除する。
+   * @param userId 削除する所属ユーザーのユーザーID。
+   * @param groupAdminContext 削除しようとしているのがグループの管理者であることを示す情報。
+   */
+  deleteMember(userId: IMember['user']['id'], groupAdminContext: IGroupAdminContext): void;
+
+  /**
+   * 所属ユーザーをグループから削除する。
+   * @param user 削除する所属ユーザーのエンティティオブジェクト。
+   * @param selfContext 削除しようとしているのが自分自身であることを示す情報。
+   */
+  deleteMember(user: IUser, selfContext: ISelfContext): void;
 
   /**
    * 招待コードを使用してユーザーに参加する。

@@ -103,17 +103,25 @@ export abstract class UserBase implements IUser {
   }
 
   public setEmail(
-    emailVerificationContext: IValidEmailVerificationAnswerContext<'setEmail'>,
+    validEmailVerificationAnswerContext: IValidEmailVerificationAnswerContext<'setEmail'>,
     selfContext: ISelfContext,
   ): void {
-    this.validateValidEmailVerificationAnswerContextOrThrow(emailVerificationContext);
+    this.validateValidEmailVerificationAnswerContextOrThrow(
+      validEmailVerificationAnswerContext,
+      'setEmail',
+    );
     this.validateSelfContextOrThrow(selfContext);
+
+    this._email = validEmailVerificationAnswerContext.emailVerification.email;
   }
 
   public createCookieToken(
-    emailVerificationContext: IValidEmailVerificationAnswerContext<'createCookieToken'>,
+    validEmailVerificationAnswerContext: IValidEmailVerificationAnswerContext<'createCookieToken'>,
   ): IAuthenticationToken {
-    this.validateValidEmailVerificationAnswerContextOrThrow(emailVerificationContext);
+    this.validateValidEmailVerificationAnswerContextOrThrow(
+      validEmailVerificationAnswerContext,
+      'createCookieToken',
+    );
 
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 1 * 365 * 24 * 60 * 60 * 1000);
@@ -130,10 +138,13 @@ export abstract class UserBase implements IUser {
   }
 
   public createBearerToken(
-    emailVerificationContext: IValidEmailVerificationAnswerContext<'createBearerToken'>,
+    validEmailVerificationAnswerContext: IValidEmailVerificationAnswerContext<'createBearerToken'>,
     selfContext: ISelfContext,
   ): IAuthenticationToken {
-    this.validateValidEmailVerificationAnswerContextOrThrow(emailVerificationContext);
+    this.validateValidEmailVerificationAnswerContextOrThrow(
+      validEmailVerificationAnswerContext,
+      'createBearerToken',
+    );
     this.validateSelfContextOrThrow(selfContext);
 
     const now = new Date();
@@ -150,9 +161,17 @@ export abstract class UserBase implements IUser {
     return token;
   }
 
-  public createEmailVerification<F extends TEmailVerificationPurpose>(
+  public deleteToken(tokenId: IAuthenticationToken['id'], selfContext: ISelfContext): void {
+    this.validateSelfContextOrThrow(selfContext);
+    this._tokens.replace(...this._tokens.filter((token) => token.id !== tokenId));
+  }
+
+  public createEmailVerification<F extends Exclude<TEmailVerificationPurpose, 'createCookieToken'>>(
     emailVerification: Pick<IEmailVerification<F>, 'email' | 'for'>,
+    selfContext: ISelfContext,
   ): IEmailVerification<F> {
+    this.validateSelfContextOrThrow(selfContext);
+
     const now = new Date();
 
     const duplicatedCount = this._emailVerifications.filter(
@@ -160,10 +179,7 @@ export abstract class UserBase implements IUser {
         v.isValidAt(now) && emailVerification.email === v.email && emailVerification.for === v.for,
     ).length;
 
-    if (
-      (emailVerification.for === 'createCookieToken' && duplicatedCount > 3) ||
-      duplicatedCount > 0
-    ) {
+    if (duplicatedCount > 3) {
       throw new TooManyRequestsException(
         '短時間のうちに同じ内容のメール認証を行うことはできません。',
       );
@@ -178,7 +194,29 @@ export abstract class UserBase implements IUser {
     return newEmailVerification;
   }
 
-  public validateEmailVerificationAnswerAndExpireOrThrow<F extends TEmailVerificationPurpose>(
+  public createEmailVerificationForCookieToken(): IEmailVerification<'createCookieToken'> {
+    const now = new Date();
+
+    const duplicatedCount = this._emailVerifications.filter(
+      (v) => v.isValidAt(now) && v.email === this.email && v.for === 'createCookieToken',
+    ).length;
+
+    if (duplicatedCount > 3) {
+      throw new TooManyRequestsException(
+        '短時間のうちに同じ内容のメール認証を行うことはできません。',
+      );
+    }
+
+    const newEmailVerification = new EmailVerification({
+      email: this.email,
+      for: 'createCookieToken',
+      userId: this.id,
+    });
+    this._emailVerifications.push(newEmailVerification);
+    return newEmailVerification;
+  }
+
+  public validateEmailVerificationAnswerOrThrow<F extends TEmailVerificationPurpose>(
     answer: IEmailVerificationAnswer<F>,
   ): IValidEmailVerificationAnswerContext<F> {
     const now = new Date();
@@ -195,14 +233,6 @@ export abstract class UserBase implements IUser {
       throw new InvalidEmailVerificationAnswerException('認証コードが正しくありません。');
     }
 
-    // 無効または回答済みの認証を削除する。
-    this._emailVerifications.replace(
-      ...this._emailVerifications.filter(
-        (verification) =>
-          matchedVerification.id !== verification.id || !verification.isValidAt(now),
-      ),
-    );
-
     return {
       __brand: 'IValidEmailVerificationAnswerContext',
       emailVerification: matchedVerification,
@@ -212,10 +242,21 @@ export abstract class UserBase implements IUser {
 
   public validateValidEmailVerificationAnswerContextOrThrow<F extends TEmailVerificationPurpose>(
     context: IValidEmailVerificationAnswerContext<F>,
+    purpose: F,
   ): void {
-    if (context.userId !== this.id) {
+    if (context.userId !== this.id || context.emailVerification.for !== purpose) {
       throw new InternalContextValidationError();
     }
+
+    const now = new Date();
+
+    // 無効または回答済みの認証を削除する。
+    this._emailVerifications.replace(
+      ...this._emailVerifications.filter(
+        (verification) =>
+          context.emailVerification.id !== verification.id || !verification.isValidAt(now),
+      ),
+    );
   }
 
   public validateSelfContextOrThrow(context: ISelfContext): void {
