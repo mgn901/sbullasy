@@ -34,5 +34,5 @@ export const updateItemType = async (
 
   itemType.updateItemType(param, context);
 
-  await implementations.itemTypeRepository.saveOne(itemType);
+  await implementations.itemTypeRepository.saveOne(itemType, true);
 };
