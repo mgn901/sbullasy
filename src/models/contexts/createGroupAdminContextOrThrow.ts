@@ -4,13 +4,13 @@ import { NotGroupAdminException } from '../errors/NotGroupAdminException.ts';
 import { IGroupAdminContext } from './IGroupAdminContext.ts';
 
 /**
- * 操作しようとしているユーザーが、操作対象のグループの管理者であることを確認し、それを示す情報を作成する。
+ * 操作を行おうとしているユーザーが、操作対象のグループの管理者であることを確認し、それを示す情報を作成する。
  * 確認できなかった場合は例外を発生させる。
- * @param userProfile 操作しようとしているユーザーのプロフィールの情報を持つエンティティオブジェクト。
+ * @param userProfile 操作を行おうとしているユーザーのプロフィールの情報を持つエンティティオブジェクト。
  * @param groupMemberDirectory 操作対象のグループの所属ユーザーの情報を持つエンティティオブジェクト。
  * @param messageOnError エラー発生時のメッセージ。
- * @returns 操作しようとしているユーザーが、操作対象のグループの管理者であることを示す情報。
- * @throws 操作しようとしているユーザーが、操作対象のグループの管理者ではなかった場合、{@linkcode NotGroupAdminException}を発生させる。
+ * @returns 操作を行おうとしているユーザーが、操作対象のグループの管理者であることを示す情報。
+ * @throws 操作を行おうとしているユーザーが、操作対象のグループの管理者ではなかった場合、{@linkcode NotGroupAdminException}を発生させる。
  */
 export const createGroupAdminContextOrThrow = (
   userProfile: IUserProfile,

@@ -7,7 +7,7 @@ import { IImplementations } from '../IImplementations.ts';
 /**
  * メール認証を作成する。
  * @param param 作成するメール認証の内容。
- * @param tokenSecret 操作しようとしているユーザーの認証用トークンのシークレット値。
+ * @param tokenSecret 操作を行おうとしているユーザーの認証用トークンのシークレット値。
  * @param implementations この操作に使用するインフラストラクチャの実装。
  * @returns 作成したメール認証のエンティティオブジェクト。
  */

@@ -6,7 +6,7 @@ import { IImplementations } from '../IImplementations.ts';
 /**
  * 認証用トークンを削除する。
  * @param tokenId 削除するトークンのID。
- * @param tokenSecret 操作しようとしているユーザーの認証用トークンのシークレット値。
+ * @param tokenSecret 操作を行おうとしているユーザーの認証用トークンのシークレット値。
  * @param implementations この操作に使用するインフラストラクチャの実装。
  */
 export const deleteAuthenticationToken = async (

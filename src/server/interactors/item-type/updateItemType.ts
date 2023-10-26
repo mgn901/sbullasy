@@ -8,8 +8,8 @@ import { IImplementations } from '../IImplementations.ts';
  * アイテムの種類の情報を変更する。
  * @param itemTypeId 変更するアイテムの種類のID。
  * @param param 変更後の値。
- * @param groupId 操作しようとしているインスタンスの管理者のグループのID。
- * @param tokenSecret 操作しようとしているインスタンスの管理者のグループのID。
+ * @param groupId 操作を行おうとしているインスタンスの管理者のグループのID。
+ * @param tokenSecret 操作を行おうとしているインスタンスの管理者のグループのID。
  * @param implementations この操作に使用するインフラストラクチャの実装。
  */
 export const updateItemType = async (

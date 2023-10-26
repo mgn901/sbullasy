@@ -6,6 +6,13 @@ import { TEmailVerificationPurpose } from '../../values/TEmailVerificationPurpos
 
 /**
  * メール認証を表すエンティティクラス。
+ *
+ * メール認証は、クライアントが指定したEメールアドレスに対して、アプリケーションが認証コードを含んだメールを送信し、
+ * その認証コードをクライアントに入力させることで、
+ * クライアントの持ち主とメールアドレスの持ち主が一致することを確認するものである。
+ *
+ * スバラシにはメール認証を要する操作が存在する。
+ * 該当する操作を行う場合、その操作を行う前に、まずメール認証を作成する必要がある。
  */
 export interface IEmailVerification<F extends TEmailVerificationPurpose> {
   readonly __brand: 'IEmailVerification';
@@ -27,7 +34,11 @@ export interface IEmailVerification<F extends TEmailVerificationPurpose> {
 
   /**
    * メール認証の目的。
-   * - `'cookieToken'`: クッキーとして用いるトークンを
+   * - `'createCookieToken'`: Cookieとして用いるトークンを作成する。
+   * - `'createBearerToken'`: Bearer Tokenとして用いるトークンを作成する。
+   * - `'setEmail'`: ユーザーのEメールアドレスを変更する。
+   * - `'setProfileExpiresAt'`: ユーザーのプロフィールの有効期限を変更する。
+   * - `'unregister'`: ユーザーを削除する。
    */
   readonly for: F;
 

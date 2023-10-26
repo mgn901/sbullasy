@@ -13,8 +13,8 @@ export interface IUserRepository {
   getOneByIdOrThrow(userId: IUser['id']): Promise<IUser>;
 
   /**
-   * 指定したメールアドレスを持つユーザーを1件取得する。
-   * @param userEmail 取得するユーザーのメールアドレス。
+   * 指定したEメールアドレスを持つユーザーを1件取得する。
+   * @param userEmail 取得するユーザーのEメールアドレス。
    */
   getOneByEmailOrThrow(userEmail: IUser['email']): Promise<IUser>;
 

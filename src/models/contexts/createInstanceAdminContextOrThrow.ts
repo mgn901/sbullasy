@@ -5,14 +5,14 @@ import { NotInstanceAdminException } from '../errors/NotInstanceAdminException.t
 import { IInstanceAdminContext } from './IInstanceAdminContext.ts';
 
 /**
- * 操作しようとしているユーザーが、インスタンスの管理者の所属ユーザーであることを確認し、それを示す情報を返す。
+ * 操作を行おうとしているユーザーが、インスタンスの管理者の所属ユーザーであることを確認し、それを示す情報を返す。
  * 確認できなかった場合は例外を発生させる。
- * @param userProfile 操作しようとしているユーザーのプロフィールの情報を持つエンティティオブジェクト。
+ * @param userProfile 操作を行おうとしているユーザーのプロフィールの情報を持つエンティティオブジェクト。
  * @param group インスタンスの管理者のエンティティオブジェクト。
  * @param groupMemberDirectory インスタンスの管理者の所属ユーザーの情報を持つエンティティオブジェクト。
  * @param messageOnError エラー発生時のメッセージ。
- * @returns 操作しようとしているユーザーが、インスタンスの管理者の所属ユーザーであることを示す情報。
- * @throws 操作しようとしているユーザーが、インスタンスの管理者の所属ユーザーではなかった場合、{@linkcode NotInstanceAdminException}を発生させる。
+ * @returns 操作を行おうとしているユーザーが、インスタンスの管理者の所属ユーザーであることを示す情報。
+ * @throws 操作を行おうとしているユーザーが、インスタンスの管理者の所属ユーザーではなかった場合、{@linkcode NotInstanceAdminException}を発生させる。
  */
 export const createInstanceAdminContextOrThrow = (
   userProfile: IUserProfile,

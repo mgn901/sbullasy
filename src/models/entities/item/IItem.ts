@@ -8,6 +8,8 @@ import { IItemTypeSummary } from '../item-type/IItemTypeSummary.ts';
 
 /**
  * アイテムを表すエンティティクラス。
+ *
+ * グループはアイテムを作成することができる。
  */
 export interface IItem {
   readonly __brand: 'IItem';
@@ -60,7 +62,7 @@ export interface IItem {
   /**
    * アイテムの情報を変更する。
    * @param newItem 変更後の値。
-   * @param itemOwnerContext 変更しようとしているのがアイテムの所有グループであることを示す情報。
+   * @param itemOwnerContext この操作を行おうとしているユーザーがアイテムの所有グループの所属ユーザーであることを示す情報。
    */
   updateItem(
     newItem: Pick<IItem, 'title' | 'titleForUrl' | 'publishedAt' | 'body'>,

@@ -7,7 +7,7 @@ import { IImplementations } from '../IImplementations.ts';
  * アイテムの情報を変更する。
  * @param itemId アイテムのID。
  * @param param 変更後の値。
- * @param tokenSecret 操作しようとしているユーザーの認証用トークンのシークレット値。
+ * @param tokenSecret 操作を行おうとしているユーザーの認証用トークンのシークレット値。
  * @param implementations この操作に使用するインフラストラクチャの実装。
  */
 export const updateItem = async (

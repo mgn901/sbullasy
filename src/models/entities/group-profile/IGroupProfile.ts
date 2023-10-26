@@ -10,6 +10,8 @@ import { IItemSummary } from '../item/IItemSummary.ts';
 
 /**
  * グループ内外に公開するグループのプロフィールを表すエンティティクラス。
+ *
+ * グループが作成されるのと同時に作成される。
  */
 export interface IGroupProfile {
   readonly __brand: 'IGroupProfile';
@@ -47,8 +49,9 @@ export interface IGroupProfile {
 
   /**
    * グループのプロフィールの情報を変更する。
+   * この操作はミュータブルである。
    * @param newGroupProfile 変更後の値。
-   * @param groupAdminContext 変更しようとしているのがインスタンスのオペレーターであることを示す情報。
+   * @param groupAdminContext この操作を行おうとしているユーザーがインスタンスのオペレーターであることを示す情報。
    */
   updateGroupProfile(
     newGroupProfile: Pick<IGroupProfile, 'name' | 'displayName'>,
@@ -57,15 +60,17 @@ export interface IGroupProfile {
 
   /**
    * グループが保有しているバッジの一覧を変更する。
+   * この操作はミュータブルである。
    * @param newBadges 変更後の値。
-   * @param instanceOperatorContext 変更しようとしているのがインスタンスのオペレーターであることを示す情報。
+   * @param instanceOperatorContext この操作を行おうとしているユーザーがインスタンスのオペレーターであることを示す情報。
    */
   setBadges(newBadges: IItemSummary[], instanceOperatorContext: IInstanceOperatorContext): void;
 
   /**
    * グループが編集できるアイテムの種類の一覧を変更する。
+   * この操作はミュータブルである。
    * @param newItemTypes 変更後の値。
-   * @param instanceOperatorContext 変更しようとしているのがインスタンスのオペレーターであることを示す情報。
+   * @param instanceOperatorContext この操作を行おうとしているユーザーがインスタンスのオペレーターであることを示す情報。
    */
   setEditableItemTypes(
     newItemTypes: IItemTypeSummary[],
@@ -73,7 +78,7 @@ export interface IGroupProfile {
   ): void;
 
   /**
-   * 第1引数に渡したcontextがこのグループを操作するのに有効であるかを確認する。
+   * 第1引数に渡したcontextがこのグループのプロフィールを操作するのに有効であるかを確認する。
    * @param context 有効であるかを確認するcontext。
    */
   validateGroupMemberContextOrThrow(context: IGroupAdminContext | IGroupMemberContext): void;

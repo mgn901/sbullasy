@@ -20,9 +20,10 @@ export interface IUserShelf {
   bookmarks: ArrayWithDiff<IItemSummary>;
 
   /**
-   *
+   * ブックマークの一覧を変更する。
+   * **この操作はミュータブルである。**
    * @param newBookmarks 変更後の値。
-   * @param selfContext 変更しようとしているのがユーザー本人であることを示す情報。
+   * @param selfContext この操作を行おうとしているユーザーが操作対象のユーザー本人であることを示す情報。
    */
   setBookmarks(newBookmarks: IItemSummary[], selfContext: ISelfContext): void;
 

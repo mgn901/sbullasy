@@ -40,8 +40,9 @@ export interface IUser {
 
   /**
    * ユーザーのEメールアドレスを変更する。
+   * **この操作はミュータブルである。**
    * @param validEmailVerificationAnswerContext メール認証を通過していることを示す情報。
-   * @param selfContext 変更しようとしているのがユーザー本人であることを示す情報。
+   * @param selfContext この操作を行おうとしているユーザーが操作対象のユーザー本人であることを示す情報。
    */
   setEmail(
     validEmailVerificationAnswerContext: IValidEmailVerificationAnswerContext<'setEmail'>,
@@ -50,6 +51,7 @@ export interface IUser {
 
   /**
    * ユーザーの新しいCookieとして使用できるトークンを作成する。
+   * **この操作はミュータブルである。**
    * @param validEmailVerificationAnswerContext メール認証を通過していることを示す情報。
    */
   createCookieToken(
@@ -58,6 +60,7 @@ export interface IUser {
 
   /**
    * ユーザーの新しいBearer Tokenとして使用できるトークンを作成する。
+   * **この操作はミュータブルである。**
    * @param validEmailVerificationAnswerContext メール認証を通過していることを示す情報。
    * @param selfContext 作成しようとしているのがユーザー本人であることを示す情報。
    */
@@ -68,14 +71,16 @@ export interface IUser {
 
   /**
    * ユーザーのトークンを削除する。
+   * **この操作はミュータブルである。**
    * @param tokenId 削除するトークンのID。
-   * @param selfContext 削除しようとしているのがユーザー本人であることを示す情報。
+   * @param selfContext この操作を行おうとしているユーザーが操作対象のユーザー本人であることを示す情報。
    */
   deleteToken(tokenId: IAuthenticationToken['id'], selfContext: ISelfContext): void;
 
   /**
    * ユーザーに関連する新しいメール認証を作成する。
    * 第1引数`emailVerification`の内容が同じメール認証を、そのメール認証が期限切れになる前に新たに作成することはできない。
+   * **この操作はミュータブルである。**
    * @param emailVerification 作成するメール認証の内容。
    */
   createEmailVerification<F extends Exclude<TEmailVerificationPurpose, 'createCookieToken'>>(
@@ -85,6 +90,7 @@ export interface IUser {
 
   /**
    * Cookie Tokenの作成に用いるメール認証を作成する。
+   * **この操作はミュータブルである。**
    */
   createEmailVerificationForCookieToken(): IEmailVerification<'createCookieToken'>;
 
@@ -98,6 +104,7 @@ export interface IUser {
 
   /**
    * 第1引数に渡したcontextがこのユーザーを操作するのに有効であるかを確認する。
+   * **この操作はミュータブルである。**
    * @param context 有効であるかを確認するcontext。
    * @param purpose 有効とみなすメール認証の目的。
    */

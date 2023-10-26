@@ -7,7 +7,7 @@ import { IImplementations } from '../IImplementations.ts';
 /**
  * ユーザーのプロフィールの有効期限を変更する。
  * @param emailVerificationAnswer この操作のために作成したメール認証に対する回答。
- * @param tokenSecret 操作しようとしているユーザーの認証用トークンのシークレット値。
+ * @param tokenSecret 操作を行おうとしているユーザーの認証用トークンのシークレット値。
  * @param implementations この操作に使用するインフラストラクチャの実装。
  */
 export const updateUserProfileExpiresAt = async (

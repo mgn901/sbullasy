@@ -14,7 +14,7 @@ export interface IEmailVerificationAnswer<F extends TEmailVerificationPurpose> {
   readonly id: IEmailVerification<F>['id'];
 
   /**
-   * 回答するメール認証の種類。
+   * 回答するメール認証の目的。
    */
   readonly for: F;
 

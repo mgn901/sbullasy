@@ -3,7 +3,7 @@ import { TEmailVerificationPurpose } from '../values/TEmailVerificationPurpose.t
 import { IUser } from '../entities/user/IUser.ts';
 
 /**
- * 操作しようとしているユーザーが、メール認証を通過していることを示す情報。
+ * 操作を行おうとしているユーザーが、メール認証を通過していることを示す情報。
  */
 export interface IValidEmailVerificationAnswerContext<F extends TEmailVerificationPurpose> {
   readonly __brand: 'IValidEmailVerificationAnswerContext';

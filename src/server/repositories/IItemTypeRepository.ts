@@ -25,6 +25,12 @@ export interface IItemTypeRepository {
   getOneByNamePluralOrThrow(itemTypeNamePlural: IItemType['namePlural']): Promise<IItemType>;
 
   /**
+   * 指定したIDを持つアイテムの要約を1件取得する。
+   * @param itemId 取得するオブジェクトのID。
+   */
+  getOneSummaryByIdOrThrow(itemId: IItemType['id']): Promise<IItemTypeSummary>;
+
+  /**
    * 指定した条件でオブジェクトを複数件取得する。
    * @param options 取得時の挙動の設定。
    */

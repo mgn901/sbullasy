@@ -7,7 +7,7 @@ import { IImplementations } from '../IImplementations.ts';
 /**
  * グループの所属ユーザーに関する情報を持つエンティティオブジェクトを取得する。
  * @param groupId グループのID。
- * @param tokenSecret 操作しようとしているユーザーの認証用トークンのシークレット値。
+ * @param tokenSecret 操作を行おうとしているユーザーの認証用トークンのシークレット値。
  * @param implementations この操作に使用するインフラストラクチャの実装。
  * @returns 取得したグループの所属ユーザーに関する情報を持つエンティティオブジェクト。
  */

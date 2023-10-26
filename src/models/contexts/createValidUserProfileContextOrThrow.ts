@@ -3,11 +3,11 @@ import { UserProfileExpiredException } from '../errors/UserProfileExpiredExcepti
 import { IValidUserProfileContext } from './IValidUserProfileContext.ts';
 
 /**
- * 操作しようとしているユーザーが、有効なプロフィールを保有していることを確認し、それを示す情報を返す。
+ * 操作を行おうとしているユーザーが、有効なプロフィールを保有していることを確認し、それを示す情報を返す。
  * 確認できなかった場合は例外を発生させる。
- * @param userProfile 操作しようとしているユーザーのプロフィールの情報を持つエンティティオブジェクト。
+ * @param userProfile 操作を行おうとしているユーザーのプロフィールの情報を持つエンティティオブジェクト。
  * @param messageOnError エラー発生時のメッセージ。
- * @returns 操作しようとしているユーザーが、有効なプロフィールを保有していることを示す情報。
+ * @returns 操作を行おうとしているユーザーが、有効なプロフィールを保有していることを示す情報。
  */
 export const createValidUserProfileContextOrThrow = (
   userProfile: IUserProfile,

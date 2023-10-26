@@ -6,7 +6,7 @@ import { IImplementations } from '../IImplementations.ts';
 /**
  * ユーザーのプロフィールの情報を変更する。
  * @param param 変更後のプロフィール。
- * @param tokenSecret 操作しようとしているユーザーの認証用トークンのシークレット値。
+ * @param tokenSecret 操作を行おうとしているユーザーの認証用トークンのシークレット値。
  * @param implementations この操作に使用するインフラストラクチャの実装。
  */
 export const updateUserProfile = async (

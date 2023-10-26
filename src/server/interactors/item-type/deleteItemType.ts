@@ -7,8 +7,8 @@ import { IImplementations } from '../IImplementations.ts';
 /**
  * アイテムの種類を削除する。
  * @param itemTypeId 削除するアイテムの種類のID。
- * @param groupId 操作しようとしているインスタンスの管理者のグループのID。
- * @param tokenSecret 操作しようとしているユーザーの認証用トークンのシークレット値。
+ * @param groupId 操作を行おうとしているインスタンスの管理者のグループのID。
+ * @param tokenSecret 操作を行おうとしているユーザーの認証用トークンのシークレット値。
  * @param implementations この操作に使用するインフラストラクチャの実装。
  */
 export const deleteItemType = async (

@@ -7,7 +7,7 @@ import { IImplementations } from '../IImplementations.ts';
 /**
  * 招待コードを使用してグループに参加する。
  * @param invitationCode 使用する招待コード。
- * @param tokenSecret 操作しようとしているユーザーの認証用トークンのシークレット値。
+ * @param tokenSecret 操作を行おうとしているユーザーの認証用トークンのシークレット値。
  * @param implementations この操作に使用するインフラストラクチャの実装。
  */
 export const addMemberByInvitationCode = async (

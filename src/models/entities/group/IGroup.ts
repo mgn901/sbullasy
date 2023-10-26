@@ -28,8 +28,9 @@ export interface IGroup {
 
   /**
    * グループでのインスタンス内での役割の設定を変更する。
+   * この操作はミュータブルである。
    * @param instanceRole 変更後の値。
-   * @param instanceOperatorContext 変更しようとしているのがインスタンスのオペレーターであることを示す情報。
+   * @param instanceOperatorContext この操作を行おうとしているユーザーがインスタンスのオペレーターであることを示す情報。
    */
   setInstanceRole(
     instanceRole: IGroup['instanceRole'],

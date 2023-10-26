@@ -8,8 +8,8 @@ import { IImplementations } from '../IImplementations.ts';
 /**
  * アイテムの種類を作成する。
  * @param param 作成するアイテムの種類の情報。
- * @param groupId 操作しようとしているインスタンスの管理者のグループのID。
- * @param tokenSecret 操作しようとしているユーザーの認証用トークンのシークレット値。
+ * @param groupId 操作を行おうとしているインスタンスの管理者のグループのID。
+ * @param tokenSecret 操作を行おうとしているユーザーの認証用トークンのシークレット値。
  * @param implementations この操作に使用するインフラストラクチャの実装。
  * @returns 作成したアイテムの種類のエンティティオブジェクト。
  */

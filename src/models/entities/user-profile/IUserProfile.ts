@@ -41,8 +41,9 @@ export interface IUserProfile {
 
   /**
    * ユーザーのプロフィールの情報を変更する。
+   * **この操作はミュータブルである。**
    * @param newUserProfile 変更後の情報。
-   * @param selfContext 変更しようとしているのがユーザー本人であることを示す情報。
+   * @param selfContext この操作を行おうとしているユーザーが操作対象のユーザー本人であることを示す情報。
    */
   updateUserProfile(
     newUserProfile: Pick<IUserProfile, 'name' | 'displayName'>,
@@ -57,8 +58,9 @@ export interface IUserProfile {
 
   /**
    * プロフィールの有効期限を変更する。
-   * @param validEmailVerificationAnswerContext メール認証を通過していることを示す情報。
-   * @param selfContext 変更しようとしているのがユーザー本人であることを示す情報。
+   * **この操作はミュータブルである。**
+   * @param validEmailVerificationAnswerContext この操作のために作成したメール認証に対する回答が有効であることを示す情報。
+   * @param selfContext この操作を行おうとしているユーザーが操作対象のユーザー本人であることを示す情報。
    * @param user このユーザーのエンティティオブジェクト。
    */
   setExpiresAt(

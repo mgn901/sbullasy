@@ -7,7 +7,7 @@ export interface IMember {
   readonly __brand: 'IMember';
 
   /**
-   * 所属しているグループのユーザー。
+   * グループの所属ユーザー。
    */
   readonly user: IUserProfile;
 

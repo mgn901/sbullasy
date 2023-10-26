@@ -4,6 +4,11 @@ import { IUser } from './IUser.ts';
 
 /**
  * 認証用トークンを表すモデルクラス。
+ *
+ * スバラシには、特定のユーザーでないと行えない操作が存在する。
+ * 認証用トークンは、メール認証などの本人確認を伴う方法によって作成されるものであり、
+ * 認証を要する操作を行う際に、トークンを識別するためのシークレット値をクライアントに添付させることで、
+ * 操作を行おうとしているユーザーを識別する。
  */
 export interface IAuthenticationToken {
   readonly __brand: 'IAuthenticationToken';
@@ -15,6 +20,8 @@ export interface IAuthenticationToken {
 
   /**
    * トークンの種類。
+   * - `'cookie'`: Cookieに用いることができるトークン。
+   * - `'Bearer Token'`: Bearer Tokenとして用いることができるトークン。
    */
   readonly type: 'bearer' | 'cookie';
 

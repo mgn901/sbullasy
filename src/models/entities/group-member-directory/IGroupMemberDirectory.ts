@@ -11,6 +11,8 @@ import { IMember } from './IMember.ts';
 
 /**
  * グループの所属ユーザーに関する情報を持つエンティティクラス。
+ *
+ * グループが作成されるのと同時に作成される。
  */
 export interface IGroupMemberDirectory {
   readonly __brand: 'IGroupMemberDirectory';
@@ -33,15 +35,17 @@ export interface IGroupMemberDirectory {
 
   /**
    * グループの招待コードをリセットする。
-   * @param groupAdminContext 変更しようとしているのがグループの管理者であることを示す情報。
+   * **この操作はミュータブルである。**
+   * @param groupAdminContext この操作を行おうとしているユーザーがグループの管理者であることを示す情報。
    */
   resetInvitationCode(groupAdminContext: IGroupAdminContext): void;
 
   /**
    * 所属ユーザーのグループとの関係を変更する。
+   * **この操作はミュータブルである。**
    * @param userProfile 変更対象の所属ユーザーのプロフィール。
    * @param type 変更後の値
-   * @param groupAdminContext 変更しようとしているのがグループの管理者であることを示す情報。
+   * @param groupAdminContext この操作を行おうとしているユーザーがグループの管理者であることを示す情報。
    */
   updateMember(
     userProfile: IUserProfile,
@@ -51,23 +55,26 @@ export interface IGroupMemberDirectory {
 
   /**
    * 所属ユーザーをグループから削除する。
+   * **この操作はミュータブルである。**
    * @param userId 削除する所属ユーザーのユーザーID。
-   * @param groupAdminContext 削除しようとしているのがグループの管理者であることを示す情報。
+   * @param groupAdminContext この操作を行おうとしているユーザーがグループの管理者であることを示す情報。
    */
   deleteMember(userId: IMember['user']['id'], groupAdminContext: IGroupAdminContext): void;
 
   /**
    * 所属ユーザーをグループから削除する。
+   * **この操作はミュータブルである。**
    * @param user 削除する所属ユーザーのエンティティオブジェクト。
-   * @param selfContext 削除しようとしているのが自分自身であることを示す情報。
+   * @param selfContext この操作を行おうとしているユーザーが操作対象のユーザー本人であることを示す情報。
    */
   deleteMember(user: IUser, selfContext: ISelfContext): void;
 
   /**
    * 招待コードを使用してグループに参加する。
+   * **この操作はミュータブルである。**
    * @param userProfile 参加しようとしているユーザーのプロフィール。
    * @param invitationCode グループの招待コード。
-   * @param selfContext 参加しようとしているのがユーザー本人であることを示す情報。
+   * @param selfContext この操作を行おうとしているユーザーが操作対象のユーザー本人であることを示す情報。
    * @param validUserProfileContext 参加しようとしているユーザーのプロフィールが有効であることを示す情報。
    */
   joinByInvitationCode(

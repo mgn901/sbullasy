@@ -10,7 +10,7 @@ import { IImplementations } from '../IImplementations.ts';
  * ユーザーのプロフィールを作成する。
  * @param param 作成するプロフィールの情報。
  * @param emailVerificationAnswer この操作のために作成したメール認証に対する回答。
- * @param tokenSecret 操作しようとしているユーザーの認証用トークンのシークレット値。
+ * @param tokenSecret 操作を行おうとしているユーザーの認証用トークンのシークレット値。
  * @param implementations この操作に使用するインフラストラクチャの実装。
  * @returns 作成したプロフィールのエンティティオブジェクト。
  */
