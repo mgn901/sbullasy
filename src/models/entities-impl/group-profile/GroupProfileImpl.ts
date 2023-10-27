@@ -1,4 +1,4 @@
-import { ArrayWithDiff } from '../../../utils/ArrayWithDiff.ts';
+import { ArrayWithDiff } from '../../../utils/array-with-diff/ArrayWithDiff.ts';
 import { IGroupProfile } from '../../entities/group-profile/IGroupProfile.ts';
 import { IGroup } from '../../entities/group/IGroup.ts';
 import { GroupProfileBase } from './GroupProfileBase.ts';

@@ -1,4 +1,4 @@
-import { ArrayWithDiff } from '../../../utils/ArrayWithDiff.ts';
+import { ArrayWithDiff } from '../../../utils/array-with-diff/ArrayWithDiff.ts';
 import { IUser } from '../../entities/user/IUser.ts';
 import { generateId } from '../../values/TId.ts';
 import { UserBase } from './UserBase.ts';

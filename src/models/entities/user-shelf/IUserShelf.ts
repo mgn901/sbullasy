@@ -1,4 +1,4 @@
-import { ArrayWithDiff } from '../../../utils/ArrayWithDiff.ts';
+import { ArrayWithDiff } from '../../../utils/array-with-diff/ArrayWithDiff.ts';
 import { ISelfContext } from '../../contexts/ISelfContext.ts';
 import { IItemSummary } from '../item/IItemSummary.ts';
 import { IUser } from '../user/IUser.ts';

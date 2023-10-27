@@ -1,4 +1,4 @@
-import { except } from './set-operations/except.ts';
+import { except } from '../set-operations/except.ts';
 
 /**
  * 初期化当時の配列と現在の配列との比較結果。
@@ -33,7 +33,7 @@ export class ArrayWithDiff<T> extends Array<T> {
    */
   public diff(compareFn: (a: T, b: T) => number): ArrayDiff<T> {
     const added = except(this, this.initial, compareFn);
-    const deleted = except(this, this.initial, compareFn);
+    const deleted = except(this.initial, this, compareFn);
     return { added, deleted };
   }
 
@@ -42,6 +42,6 @@ export class ArrayWithDiff<T> extends Array<T> {
    * @param items 置き換え後の要素。
    */
   public replace(...items: T[]): void {
-    this.splice(0, this.length - 1, ...items);
+    this.splice(0, this.length, ...items);
   }
 }

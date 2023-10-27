@@ -1,4 +1,4 @@
-import { ArrayWithDiff } from '../../../utils/ArrayWithDiff.ts';
+import { ArrayWithDiff } from '../../../utils/array-with-diff/ArrayWithDiff.ts';
 import { IGroupAdminContext } from '../../contexts/IGroupAdminContext.ts';
 import { IGroupMemberContext } from '../../contexts/IGroupMemberContext.ts';
 import { IInstanceOperatorContext } from '../../contexts/IInstanceOperatorContext.ts';

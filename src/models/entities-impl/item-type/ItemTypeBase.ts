@@ -18,12 +18,12 @@ export abstract class ItemTypeBase implements IItemType {
 
   private _schema: IItemType['schema'];
 
-  private _option: IItemType['option'];
+  private _options: IItemType['options'];
 
   public constructor(
     itemType: Pick<
       IItemType,
-      'id' | 'nameSingular' | 'namePlural' | 'displayName' | 'schema' | 'option'
+      'id' | 'nameSingular' | 'namePlural' | 'displayName' | 'schema' | 'options'
     >,
   ) {
     this.id = itemType.id;
@@ -31,7 +31,7 @@ export abstract class ItemTypeBase implements IItemType {
     this._namePlural = itemType.namePlural;
     this._displayName = itemType.displayName;
     this._schema = itemType.schema;
-    this._option = itemType.option;
+    this._options = itemType.options;
   }
 
   public get nameSingular() {
@@ -50,14 +50,14 @@ export abstract class ItemTypeBase implements IItemType {
     return this._schema;
   }
 
-  public get option() {
-    return this._option;
+  public get options() {
+    return this._options;
   }
 
   public updateItemType(
     newItemType: Pick<
       IItemType,
-      'nameSingular' | 'namePlural' | 'displayName' | 'schema' | 'option'
+      'nameSingular' | 'namePlural' | 'displayName' | 'schema' | 'options'
     >,
     _instanceAdminContext: IInstanceAdminContext,
   ): void {
@@ -65,6 +65,6 @@ export abstract class ItemTypeBase implements IItemType {
     this._namePlural = newItemType.namePlural;
     this._displayName = newItemType.displayName;
     this._schema = newItemType.schema;
-    this._option = newItemType.option;
+    this._options = newItemType.options;
   }
 }

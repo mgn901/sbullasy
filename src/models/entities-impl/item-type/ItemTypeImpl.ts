@@ -17,7 +17,7 @@ export class ItemTypeImpl extends ItemTypeBase {
       namePlural: itemType.namePlural,
       displayName: itemType.displayName,
       schema: itemType.schema,
-      option: itemType.option,
+      options: itemType.options,
     });
   }
 }

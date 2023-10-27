@@ -1,4 +1,4 @@
-import { ArrayWithDiff } from '../../../utils/ArrayWithDiff.ts';
+import { ArrayWithDiff } from '../../../utils/array-with-diff/ArrayWithDiff.ts';
 import { IGroup } from '../../entities/group/IGroup.ts';
 import { IUserProfile } from '../../entities/user-profile/IUserProfile.ts';
 import { generateShortSecret } from '../../values/TShortSecret.ts';

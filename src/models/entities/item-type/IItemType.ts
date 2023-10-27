@@ -1,6 +1,6 @@
 import { JSONSchema7 } from 'json-schema';
 import { IInstanceAdminContext } from '../../contexts/IInstanceAdminContext.ts';
-import { IItemTypeOption } from '../../values/IItemTypeOption.ts';
+import { IItemTypeOptions } from '../../values/IItemTypeOption.ts';
 import { TDisplayName } from '../../values/TDisplayName.ts';
 import { TId } from '../../values/TId.ts';
 import { TName } from '../../values/TName.ts';
@@ -39,7 +39,7 @@ export interface IItemType {
   /**
    * アイテムのオプション。
    */
-  option: IItemTypeOption;
+  options: IItemTypeOptions;
 
   /**
    * アイテムの種類の情報を変更する。
@@ -49,7 +49,7 @@ export interface IItemType {
   updateItemType(
     newItemType: Pick<
       IItemType,
-      'id' | 'nameSingular' | 'namePlural' | 'displayName' | 'schema' | 'option'
+      'id' | 'nameSingular' | 'namePlural' | 'displayName' | 'schema' | 'options'
     >,
     instanceAdminContext: IInstanceAdminContext,
   ): void;
