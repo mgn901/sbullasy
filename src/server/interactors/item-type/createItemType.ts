@@ -14,7 +14,7 @@ import { IImplementations } from '../IImplementations.ts';
  * @returns 作成したアイテムの種類のエンティティオブジェクト。
  */
 export const createItemType = async (
-  param: Pick<IItemType, 'nameSingular' | 'namePlural' | 'displayName' | 'schema' | 'option'>,
+  param: Pick<IItemType, 'nameSingular' | 'namePlural' | 'displayName' | 'schema' | 'options'>,
   groupId: IGroup['id'],
   tokenSecret: TLongSecret,
   implementations: IImplementations,

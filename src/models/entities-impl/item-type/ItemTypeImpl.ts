@@ -8,7 +8,7 @@ import { ItemTypeBase } from './ItemTypeBase.ts';
  */
 export class ItemTypeImpl extends ItemTypeBase {
   public constructor(
-    itemType: Pick<IItemType, 'nameSingular' | 'namePlural' | 'displayName' | 'schema' | 'option'>,
+    itemType: Pick<IItemType, 'nameSingular' | 'namePlural' | 'displayName' | 'schema' | 'options'>,
     _instanceAdminContext: IInstanceAdminContext,
   ) {
     super({

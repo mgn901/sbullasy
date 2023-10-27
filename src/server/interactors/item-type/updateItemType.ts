@@ -16,7 +16,7 @@ export const updateItemType = async (
   itemTypeId: IItemType['id'],
   param: Pick<
     IItemType,
-    'nameSingular' | 'namePlural' | 'displayName' | 'schema' | 'option' | 'id'
+    'nameSingular' | 'namePlural' | 'displayName' | 'schema' | 'options' | 'id'
   >,
   groupId: IGroup['id'],
   tokenSecret: TLongSecret,
