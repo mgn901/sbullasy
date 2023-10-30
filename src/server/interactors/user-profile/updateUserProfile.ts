@@ -16,11 +16,11 @@ export const updateUserProfile = async (
 ): Promise<void> => {
   const user =
     await implementations.userRepository.getOneByAuthenticationTokenSecretOrThrow(tokenSecret);
-  const userProfile = await implementations.userProfileRepository.getOneByIdOrThrow(user.id);
-
   const context = createSelfContextOrThrow(user);
 
-  userProfile.updateUserProfile(param, context);
+  const userProfile = (
+    await implementations.userProfileRepository.getOneByIdOrThrow(user.id)
+  ).updateUserProfile(param, context);
 
   await implementations.userProfileRepository.saveOne(userProfile, true);
 };

@@ -34,7 +34,7 @@ export const addBadge = async (
     operatorGroupMemberDirectory,
   );
 
-  groupProfile.setBadges([...groupProfile.badges, badge], context);
+  const newGroupProfile = groupProfile.setBadges([...groupProfile.badges, badge], context);
 
-  await implementations.groupProfileRepository.saveOne(groupProfile, true);
+  await implementations.groupProfileRepository.saveOne(newGroupProfile, true);
 };

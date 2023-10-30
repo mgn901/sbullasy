@@ -33,10 +33,10 @@ export const addBadge = async (
     operatorGroupMemberDirectory,
   );
 
-  groupProfile.setBadges(
+  const newGroupProfile = groupProfile.setBadges(
     groupProfile.badges.filter((item) => item.id !== badgeItemId),
     context,
   );
 
-  await implementations.groupProfileRepository.saveOne(groupProfile, true);
+  await implementations.groupProfileRepository.saveOne(newGroupProfile, true);
 };

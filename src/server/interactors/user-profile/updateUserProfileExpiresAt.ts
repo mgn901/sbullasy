@@ -17,7 +17,6 @@ export const updateUserProfileExpiresAt = async (
 ): Promise<void> => {
   const user =
     await implementations.userRepository.getOneByAuthenticationTokenSecretOrThrow(tokenSecret);
-  const userProfile = await implementations.userProfileRepository.getOneByIdOrThrow(user.id);
 
   const validEmailVerificationAnswerContext = createValidEmailVerificationAnswerContextOrThrow(
     emailVerificationAnswer,
@@ -25,8 +24,10 @@ export const updateUserProfileExpiresAt = async (
   );
   const selfContext = createSelfContextOrThrow(user);
 
-  userProfile.setExpiresAt(validEmailVerificationAnswerContext, selfContext, user);
+  const { newUser, newUserProfile } = (
+    await implementations.userProfileRepository.getOneByIdOrThrow(user.id)
+  ).setExpiresAt(validEmailVerificationAnswerContext, selfContext, user);
 
-  await implementations.userProfileRepository.saveOne(userProfile, true);
-  await implementations.userRepository.saveOne(user, true);
+  await implementations.userProfileRepository.saveOne(newUserProfile, true);
+  await implementations.userRepository.saveOne(newUser, true);
 };

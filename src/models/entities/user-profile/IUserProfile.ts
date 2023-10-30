@@ -3,7 +3,7 @@ import { IValidEmailVerificationAnswerContext } from '../../contexts/IValidEmail
 import { IValidUserProfileContext } from '../../contexts/IValidUserProfileContext.ts';
 import { TDisplayName } from '../../values/TDisplayName.ts';
 import { TName } from '../../values/TName.ts';
-import { IGroupProfile } from '../group-profile/IGroupProfile.ts';
+import { IGroupProfileSummary } from '../group-profile/IGroupProfileSummary.ts';
 import { IUser } from '../user/IUser.ts';
 
 /**
@@ -22,33 +22,32 @@ export interface IUserProfile {
   /**
    * ユーザーの名前。
    */
-  name: TName;
+  readonly name: TName;
 
   /**
    * ユーザーの表示名。
    */
-  displayName: TDisplayName;
+  readonly displayName: TDisplayName;
 
   /**
    * ユーザーのプロフィールの有効期限。
    */
-  expiresAt: Date | undefined;
+  readonly expiresAt: Date | undefined;
 
   /**
    * ユーザーが所属しているグループの一覧。
    */
-  readonly belongsTo: IGroupProfile[];
+  readonly belongsTo: IGroupProfileSummary[];
 
   /**
    * ユーザーのプロフィールの情報を変更する。
-   * **この操作はミュータブルである。**
    * @param newUserProfile 変更後の情報。
    * @param selfContext この操作を行おうとしているユーザーが操作対象のユーザー本人であることを示す情報。
    */
   updateUserProfile(
     newUserProfile: Pick<IUserProfile, 'name' | 'displayName'>,
     selfContext: ISelfContext,
-  ): void;
+  ): IUserProfile;
 
   /**
    * 指定した日時においてプロフィールが有効であるかどうか。
@@ -58,7 +57,6 @@ export interface IUserProfile {
 
   /**
    * プロフィールの有効期限を変更する。
-   * **この操作はミュータブルである。**
    * @param validEmailVerificationAnswerContext この操作のために作成したメール認証に対する回答が有効であることを示す情報。
    * @param selfContext この操作を行おうとしているユーザーが操作対象のユーザー本人であることを示す情報。
    * @param user このユーザーのエンティティオブジェクト。
@@ -67,7 +65,7 @@ export interface IUserProfile {
     validEmailVerificationAnswerContext: IValidEmailVerificationAnswerContext<'setProfileExpiresAt'>,
     selfContext: ISelfContext,
     user: IUser,
-  ): void;
+  ): { newUserProfile: IUserProfile; newUser: IUser };
 
   /**
    * 第1引数に渡したcontextがこのユーザーを操作するのに有効であるかを確認する。

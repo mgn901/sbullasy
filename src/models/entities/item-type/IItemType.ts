@@ -19,27 +19,27 @@ export interface IItemType {
   /**
    * アイテムの種類の名前（単数形）。
    */
-  nameSingular: TName;
+  readonly nameSingular: TName;
 
   /**
    * アイテムの種類の名前（複数形）。
    */
-  namePlural: TName;
+  readonly namePlural: TName;
 
   /**
    * アイテムの種類の表示名。
    */
-  displayName: TDisplayName;
+  readonly displayName: TDisplayName;
 
   /**
    * アイテムの種類のスキーマ。
    */
-  schema: JSONSchema7;
+  readonly schema: JSONSchema7;
 
   /**
    * アイテムのオプション。
    */
-  options: IItemTypeOptions;
+  readonly options: IItemTypeOptions;
 
   /**
    * アイテムの種類の情報を変更する。
@@ -52,5 +52,5 @@ export interface IItemType {
       'id' | 'nameSingular' | 'namePlural' | 'displayName' | 'schema' | 'options'
     >,
     instanceAdminContext: IInstanceAdminContext,
-  ): void;
+  ): IItemType;
 }

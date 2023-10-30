@@ -2,30 +2,26 @@ import { IItemOwnerContext } from '../../contexts/IItemOwnerContext.ts';
 import { IItem } from '../../entities/item/IItem.ts';
 import { InternalContextValidationError } from '../../errors/InternalContextValidationError.ts';
 
-/**
- * {@linkcode IItem}の抽象クラスとしての実装。
- * 不正なインスタンス化を防ぐため、具象クラスを勝手に実装してはならない。
- */
-export abstract class ItemBase implements IItem {
+class ItemInternal implements IItem {
   public readonly __brand = 'IItem';
 
   public readonly id: IItem['id'];
 
-  private _title: IItem['title'];
+  public readonly title: IItem['title'];
 
-  private _titleForUrl: IItem['titleForUrl'];
+  public readonly titleForUrl: IItem['titleForUrl'];
 
   public readonly createdAt: IItem['createdAt'];
 
-  private _updatedAt: IItem['updatedAt'];
+  public readonly updatedAt: IItem['updatedAt'];
 
-  private _publishedAt: IItem['publishedAt'];
+  public readonly publishedAt: IItem['publishedAt'];
 
   public readonly owner: IItem['owner'];
 
   public readonly type: IItem['type'];
 
-  private _body: IItem['body'];
+  public readonly body: IItem['body'];
 
   public constructor(
     item: Pick<
@@ -42,62 +38,39 @@ export abstract class ItemBase implements IItem {
     >,
   ) {
     this.id = item.id;
-    this._title = item.title;
-    this._titleForUrl = item.titleForUrl;
+    this.title = item.title;
+    this.titleForUrl = item.titleForUrl;
     this.createdAt = item.createdAt;
-    this._updatedAt = item.updatedAt;
-    this._publishedAt = item.publishedAt;
+    this.updatedAt = item.updatedAt;
+    this.publishedAt = item.publishedAt;
     this.owner = item.owner;
     this.type = item.type;
-    this._body = item.body;
-  }
-
-  public get title() {
-    return this._title;
-  }
-
-  public get titleForUrl() {
-    return this._titleForUrl;
-  }
-
-  public get updatedAt() {
-    return this._updatedAt;
-  }
-
-  public get publishedAt() {
-    return this._publishedAt;
-  }
-
-  public get body() {
-    return this._body;
+    this.body = item.body;
   }
 
   public updateItem(
     newItem: Pick<IItem, 'title' | 'titleForUrl' | 'publishedAt' | 'body'>,
     itemOwnerContext: IItemOwnerContext,
-  ): void {
+  ): IItem {
     this.validateItemOwnerContextOrThrow(itemOwnerContext);
 
     const now = new Date();
 
-    this._title = newItem.title;
-    this._titleForUrl = newItem.titleForUrl;
-    this._publishedAt = (() => {
-      // 公開日時が既に設定されているのに、その日時よりも前の日時を設定しようとしている場合は、既に設定されている日時を優先する。
-      if (
-        this.publishedAt &&
-        newItem.publishedAt &&
-        newItem.publishedAt < this.publishedAt &&
-        this.publishedAt < now
-      ) {
-        return this.publishedAt;
-      }
-      return newItem.publishedAt;
-    })();
-    // TODO: スキーマを用いたバリデーションの実装
-    this._body = newItem.body;
+    const { title, titleForUrl, body } = newItem;
+    // 公開日時が既に設定されているのに、その日時よりも前の日時を設定しようとしている場合は、
+    // 既に設定されている日時を優先する。
+    const publishedAt =
+      this.publishedAt &&
+      newItem.publishedAt &&
+      newItem.publishedAt < this.publishedAt &&
+      this.publishedAt < now
+        ? this.publishedAt
+        : newItem.publishedAt;
 
-    this._updatedAt = now;
+    const updatedAt = now;
+
+    // TODO: スキーマを用いたバリデーションの実装
+    return new ItemInternal({ ...this, title, titleForUrl, body, publishedAt, updatedAt });
   }
 
   public isPublishedAt(date: Date): boolean {
@@ -110,3 +83,9 @@ export abstract class ItemBase implements IItem {
     }
   }
 }
+
+/**
+ * {@linkcode IItem}の抽象クラスとしての実装。
+ * 不正なインスタンス化を防ぐため、具象クラスを勝手に実装してはならない。
+ */
+export class ItemBase extends ItemInternal {}

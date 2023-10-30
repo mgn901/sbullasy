@@ -20,10 +20,10 @@ export const deleteBookmark = async (
 
   const selfContext = createSelfContextOrThrow(user);
 
-  userShelf.setBookmarks(
+  const newUserShelf = userShelf.setBookmarks(
     userShelf.bookmarks.filter((bookmark) => bookmark.id !== itemId),
     selfContext,
   );
 
-  await implementations.userShelfRepository.saveOne(userShelf, true);
+  await implementations.userShelfRepository.saveOne(newUserShelf, true);
 };

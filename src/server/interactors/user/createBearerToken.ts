@@ -26,9 +26,9 @@ export const createBearerToken = async (
     user,
   );
 
-  const token = user.createBearerToken(verificationContext, selfContext);
+  const { newUser, newToken } = user.createBearerToken(verificationContext, selfContext);
 
-  await implementations.userRepository.saveOne(user, true);
+  await implementations.userRepository.saveOne(newUser, true);
 
-  return token;
+  return newToken;
 };

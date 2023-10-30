@@ -36,7 +36,11 @@ export const updateMember = async (
 
   const groupAdminContext = createGroupAdminContextOrThrow(adminUserProfile, groupMemberDirectory);
 
-  groupMemberDirectory.updateMember(targetUserProfile, type, groupAdminContext);
+  const newGroupMemberDirectory = groupMemberDirectory.updateMember(
+    targetUserProfile,
+    type,
+    groupAdminContext,
+  );
 
-  await implementations.groupMemberDirectoryRepository.saveOne(groupMemberDirectory, true);
+  await implementations.groupMemberDirectoryRepository.saveOne(newGroupMemberDirectory, true);
 };

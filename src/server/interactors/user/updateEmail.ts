@@ -24,7 +24,7 @@ export const updateEmail = async (
   );
   const selfContext = createSelfContextOrThrow(user);
 
-  user.setEmail(validEmailVerificationAnswerContext, selfContext);
+  const newUser = user.setEmail(validEmailVerificationAnswerContext, selfContext);
 
-  await implementations.userRepository.saveOne(user, true);
+  await implementations.userRepository.saveOne(newUser, true);
 };

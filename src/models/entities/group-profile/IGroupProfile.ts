@@ -24,23 +24,23 @@ export interface IGroupProfile {
   /**
    * グループの名前。
    */
-  name: TName;
+  readonly name: TName;
 
   /**
    * グループの表示名。
    */
-  displayName: TDisplayName;
+  readonly displayName: TDisplayName;
 
   /**
    * グループが保有しているバッジの一覧。
    * グループが大学の公認団体であることを表す際などに用いる。
    */
-  badges: ArrayWithDiff<IItemSummary>;
+  readonly badges: Readonly<ArrayWithDiff<IItemSummary>>;
 
   /**
    * グループが編集できるアイテムの種類の一覧。
    */
-  editableItemTypes: ArrayWithDiff<IItemTypeSummary>;
+  readonly editableItemTypes: Readonly<ArrayWithDiff<IItemTypeSummary>>;
 
   /**
    * グループが所有しているアイテムの一覧。
@@ -49,33 +49,33 @@ export interface IGroupProfile {
 
   /**
    * グループのプロフィールの情報を変更する。
-   * この操作はミュータブルである。
    * @param newGroupProfile 変更後の値。
    * @param groupAdminContext この操作を行おうとしているユーザーがインスタンスのオペレーターであることを示す情報。
    */
   updateGroupProfile(
     newGroupProfile: Pick<IGroupProfile, 'name' | 'displayName'>,
     groupAdminContext: IGroupAdminContext,
-  ): void;
+  ): IGroupProfile;
 
   /**
    * グループが保有しているバッジの一覧を変更する。
-   * この操作はミュータブルである。
    * @param newBadges 変更後の値。
    * @param instanceOperatorContext この操作を行おうとしているユーザーがインスタンスのオペレーターであることを示す情報。
    */
-  setBadges(newBadges: IItemSummary[], instanceOperatorContext: IInstanceOperatorContext): void;
+  setBadges(
+    newBadges: IItemSummary[],
+    instanceOperatorContext: IInstanceOperatorContext,
+  ): IGroupProfile;
 
   /**
    * グループが編集できるアイテムの種類の一覧を変更する。
-   * この操作はミュータブルである。
    * @param newItemTypes 変更後の値。
    * @param instanceOperatorContext この操作を行おうとしているユーザーがインスタンスのオペレーターであることを示す情報。
    */
   setEditableItemTypes(
     newItemTypes: IItemTypeSummary[],
     instanceOperatorContext: IInstanceOperatorContext,
-  ): void;
+  ): IGroupProfile;
 
   /**
    * 第1引数に渡したcontextがこのグループのプロフィールを操作するのに有効であるかを確認する。

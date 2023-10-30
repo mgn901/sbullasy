@@ -25,7 +25,7 @@ export const updateItem = async (
 
   const context = createItemOwnerContextOrThrow(userProfile, item, groupMemberDirectory);
 
-  item.updateItem(param, context);
+  const newItem = item.updateItem(param, context);
 
-  await implementations.itemRepository.saveOne(item, true);
+  await implementations.itemRepository.saveOne(newItem, true);
 };

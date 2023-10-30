@@ -30,9 +30,9 @@ export const createUserOrCreateCookieEmailVerification = async (
     }
   })();
 
-  const verification = user.createEmailVerificationForCookieToken();
+  const { newUser, newEmailVerification } = user.createEmailVerificationForCookieToken();
 
-  await implementations.userRepository.saveOne(user, true);
+  await implementations.userRepository.saveOne(newUser, true);
   try {
     await implementations.userShelfRepository.getOneByIdOrThrow(user.id);
   } catch (e) {
@@ -43,5 +43,5 @@ export const createUserOrCreateCookieEmailVerification = async (
     await implementations.userShelfRepository.saveOne(newUserShelf, false);
   }
 
-  return verification;
+  return newEmailVerification;
 };

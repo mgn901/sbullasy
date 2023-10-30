@@ -26,23 +26,21 @@ export interface IGroupMemberDirectory {
    * グループの招待コード。
    * ユーザーにこのコードを入力させることで、そのユーザーはグループに参加できる。
    */
-  invitationCode: TShortSecret;
+  readonly invitationCode: TShortSecret;
 
   /**
    * グループの所属ユーザーの一覧。
    */
-  members: ArrayWithDiff<IMember>;
+  readonly members: Readonly<ArrayWithDiff<IMember>>;
 
   /**
    * グループの招待コードをリセットする。
-   * **この操作はミュータブルである。**
    * @param groupAdminContext この操作を行おうとしているユーザーがグループの管理者であることを示す情報。
    */
-  resetInvitationCode(groupAdminContext: IGroupAdminContext): void;
+  resetInvitationCode(groupAdminContext: IGroupAdminContext): IGroupMemberDirectory;
 
   /**
    * 所属ユーザーのグループとの関係を変更する。
-   * **この操作はミュータブルである。**
    * @param userProfile 変更対象の所属ユーザーのプロフィール。
    * @param type 変更後の値
    * @param groupAdminContext この操作を行おうとしているユーザーがグループの管理者であることを示す情報。
@@ -51,27 +49,27 @@ export interface IGroupMemberDirectory {
     userProfile: IUserProfile,
     type: IMember['type'],
     groupAdminContext: IGroupAdminContext,
-  ): void;
+  ): IGroupMemberDirectory;
 
   /**
    * 所属ユーザーをグループから削除する。
-   * **この操作はミュータブルである。**
    * @param userId 削除する所属ユーザーのユーザーID。
    * @param groupAdminContext この操作を行おうとしているユーザーがグループの管理者であることを示す情報。
    */
-  deleteMember(userId: IMember['user']['id'], groupAdminContext: IGroupAdminContext): void;
+  deleteMember(
+    userId: IMember['user']['id'],
+    groupAdminContext: IGroupAdminContext,
+  ): IGroupMemberDirectory;
 
   /**
    * 所属ユーザーをグループから削除する。
-   * **この操作はミュータブルである。**
    * @param user 削除する所属ユーザーのエンティティオブジェクト。
    * @param selfContext この操作を行おうとしているユーザーが操作対象のユーザー本人であることを示す情報。
    */
-  deleteMember(user: IUser, selfContext: ISelfContext): void;
+  deleteMember(user: IUser, selfContext: ISelfContext): IGroupMemberDirectory;
 
   /**
    * 招待コードを使用してグループに参加する。
-   * **この操作はミュータブルである。**
    * @param userProfile 参加しようとしているユーザーのプロフィール。
    * @param invitationCode グループの招待コード。
    * @param selfContext この操作を行おうとしているユーザーが操作対象のユーザー本人であることを示す情報。
@@ -82,7 +80,7 @@ export interface IGroupMemberDirectory {
     invitationCode: IGroupMemberDirectory['invitationCode'],
     selfContext: ISelfContext,
     validUserProfileContext: IValidUserProfileContext,
-  ): void;
+  ): IGroupMemberDirectory;
 
   /**
    * 第1引数に渡したcontextがこのグループを操作するのに有効であるかを確認する。

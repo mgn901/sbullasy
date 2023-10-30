@@ -22,7 +22,7 @@ export const resetInvitationCode = async (
 
   const groupAdminContext = createGroupAdminContextOrThrow(userProfile, groupMemberDirectory);
 
-  groupMemberDirectory.resetInvitationCode(groupAdminContext);
+  const newGroupMemberDirectory = groupMemberDirectory.resetInvitationCode(groupAdminContext);
 
-  await implementations.groupMemberDirectoryRepository.saveOne(groupMemberDirectory, true);
+  await implementations.groupMemberDirectoryRepository.saveOne(newGroupMemberDirectory, true);
 };

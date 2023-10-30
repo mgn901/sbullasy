@@ -20,9 +20,9 @@ export const createCookieToken = async (
 
   const context = createValidEmailVerificationAnswerContextOrThrow(emailVerificationAnswer, user);
 
-  const token = user.createCookieToken(context);
+  const { newUser, newToken } = user.createCookieToken(context);
 
-  await implementations.userRepository.saveOne(user, true);
+  await implementations.userRepository.saveOne(newUser, true);
 
-  return token;
+  return newToken;
 };

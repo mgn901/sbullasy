@@ -1,24 +1,20 @@
 import { IInstanceAdminContext } from '../../contexts/IInstanceAdminContext.ts';
 import { IItemType } from '../../entities/item-type/IItemType.ts';
 
-/**
- * {@linkcode IItemType}の抽象クラスとしての実装。
- * 不正なインスタンス化を防ぐため、具象クラスを勝手に実装してはならない。
- */
-export abstract class ItemTypeBase implements IItemType {
+class ItemType implements IItemType {
   public readonly __brand = 'IItemType';
 
   public readonly id: IItemType['id'];
 
-  private _nameSingular: IItemType['nameSingular'];
+  public readonly nameSingular: IItemType['nameSingular'];
 
-  private _namePlural: IItemType['namePlural'];
+  public readonly namePlural: IItemType['namePlural'];
 
-  private _displayName: IItemType['displayName'];
+  public readonly displayName: IItemType['displayName'];
 
-  private _schema: IItemType['schema'];
+  public readonly schema: IItemType['schema'];
 
-  private _options: IItemType['options'];
+  public readonly options: IItemType['options'];
 
   public constructor(
     itemType: Pick<
@@ -27,31 +23,11 @@ export abstract class ItemTypeBase implements IItemType {
     >,
   ) {
     this.id = itemType.id;
-    this._nameSingular = itemType.nameSingular;
-    this._namePlural = itemType.namePlural;
-    this._displayName = itemType.displayName;
-    this._schema = itemType.schema;
-    this._options = itemType.options;
-  }
-
-  public get nameSingular() {
-    return this._nameSingular;
-  }
-
-  public get namePlural() {
-    return this._namePlural;
-  }
-
-  public get displayName() {
-    return this._displayName;
-  }
-
-  public get schema() {
-    return this._schema;
-  }
-
-  public get options() {
-    return this._options;
+    this.nameSingular = itemType.nameSingular;
+    this.namePlural = itemType.namePlural;
+    this.displayName = itemType.displayName;
+    this.schema = itemType.schema;
+    this.options = itemType.options;
   }
 
   public updateItemType(
@@ -60,11 +36,14 @@ export abstract class ItemTypeBase implements IItemType {
       'nameSingular' | 'namePlural' | 'displayName' | 'schema' | 'options'
     >,
     _instanceAdminContext: IInstanceAdminContext,
-  ): void {
-    this._nameSingular = newItemType.nameSingular;
-    this._namePlural = newItemType.namePlural;
-    this._displayName = newItemType.displayName;
-    this._schema = newItemType.schema;
-    this._options = newItemType.options;
+  ): IItemType {
+    const { nameSingular, namePlural, displayName, schema, options } = newItemType;
+    return new ItemType({ ...this, nameSingular, namePlural, displayName, schema, options });
   }
 }
+
+/**
+ * {@linkcode IItemType}の抽象クラスとしての実装。
+ * 不正なインスタンス化を防ぐため、具象クラスを勝手に実装してはならない。
+ */
+export abstract class ItemTypeBase extends ItemType {}

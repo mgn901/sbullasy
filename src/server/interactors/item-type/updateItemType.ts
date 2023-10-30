@@ -28,11 +28,12 @@ export const updateItemType = async (
   const group = await implementations.groupRepository.getOneByIdOrThrow(groupId);
   const groupMemberDirectory =
     await implementations.groupMemberDirectoryRepository.getOneByIdOrThrow(groupId);
-  const itemType = await implementations.itemTypeRepository.getOneByIdOrThrow(itemTypeId);
 
   const context = createInstanceAdminContextOrThrow(userProfile, group, groupMemberDirectory);
 
-  itemType.updateItemType(param, context);
+  const itemType = (
+    await implementations.itemTypeRepository.getOneByIdOrThrow(itemTypeId)
+  ).updateItemType(param, context);
 
   await implementations.itemTypeRepository.saveOne(itemType, true);
 };

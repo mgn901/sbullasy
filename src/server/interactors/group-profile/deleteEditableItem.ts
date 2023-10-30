@@ -33,10 +33,10 @@ export const deleteEditableItem = async (
     operatorGroupMemberDirectory,
   );
 
-  groupProfile.setEditableItemTypes(
+  const newGroupProfile = groupProfile.setEditableItemTypes(
     groupProfile.editableItemTypes.filter((itemType) => itemType.id !== itemTypeId),
     context,
   );
 
-  await implementations.groupProfileRepository.saveOne(groupProfile, true);
+  await implementations.groupProfileRepository.saveOne(newGroupProfile, true);
 };

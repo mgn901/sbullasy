@@ -6,22 +6,18 @@ import { IItemTypeSummary } from '../../entities/item-type/IItemTypeSummary.ts';
 import { IItemSummary } from '../../entities/item/IItemSummary.ts';
 import { InternalContextValidationError } from '../../errors/InternalContextValidationError.ts';
 
-/**
- * {@linkcode IGroupProfile}の抽象クラスとしての実装。
- * 不正なインスタンス化を防ぐため、具象クラスを勝手に実装してはならない。
- */
-export abstract class GroupProfileBase implements IGroupProfile {
+class GroupProfileInternal implements IGroupProfile {
   public readonly __brand = 'IGroupProfile';
 
   public readonly id: IGroupProfile['id'];
 
-  private _name: IGroupProfile['name'];
+  public readonly name: IGroupProfile['name'];
 
-  private _displayName: IGroupProfile['displayName'];
+  public readonly displayName: IGroupProfile['displayName'];
 
-  private readonly _badges: IGroupProfile['badges'];
+  public readonly badges: IGroupProfile['badges'];
 
-  private readonly _editableItemTypes: IGroupProfile['editableItemTypes'];
+  public readonly editableItemTypes: IGroupProfile['editableItemTypes'];
 
   public readonly items: IGroupProfile['items'];
 
@@ -32,50 +28,37 @@ export abstract class GroupProfileBase implements IGroupProfile {
     >,
   ) {
     this.id = groupProfile.id;
-    this._name = groupProfile.name;
-    this._displayName = groupProfile.displayName;
-    this._badges = groupProfile.badges;
-    this._editableItemTypes = groupProfile.editableItemTypes;
+    this.name = groupProfile.name;
+    this.displayName = groupProfile.displayName;
+    this.badges = groupProfile.badges;
+    this.editableItemTypes = groupProfile.editableItemTypes;
     this.items = groupProfile.items;
-  }
-
-  public get name() {
-    return this._name;
-  }
-
-  public get displayName() {
-    return this._displayName;
-  }
-
-  public get badges() {
-    return this._badges;
-  }
-
-  public get editableItemTypes() {
-    return this._editableItemTypes;
   }
 
   public updateGroupProfile(
     newGroupProfile: Pick<IGroupProfile, 'name' | 'displayName'>,
     groupAdminContext: IGroupAdminContext,
-  ): void {
+  ): IGroupProfile {
     this.validateGroupMemberContextOrThrow(groupAdminContext);
-    this._name = newGroupProfile.name;
-    this._displayName = newGroupProfile.displayName;
+    const { name, displayName } = newGroupProfile;
+    return new GroupProfileInternal({ ...this, name, displayName });
   }
 
   public setBadges(
     newBadges: IItemSummary[],
     _instanceOperatorContext: IInstanceOperatorContext,
-  ): void {
-    this._badges.replace(...newBadges);
+  ): IGroupProfile {
+    return new GroupProfileInternal({ ...this, badges: this.badges.toReplaced(...newBadges) });
   }
 
   public setEditableItemTypes(
     newItemTypes: IItemTypeSummary[],
     _instanceOperatorContext: IInstanceOperatorContext,
-  ): void {
-    this._editableItemTypes.replace(...newItemTypes);
+  ): IGroupProfile {
+    return new GroupProfileInternal({
+      ...this,
+      editableItemTypes: this.editableItemTypes.toReplaced(...newItemTypes),
+    });
   }
 
   public validateGroupMemberContextOrThrow(
@@ -86,3 +69,9 @@ export abstract class GroupProfileBase implements IGroupProfile {
     }
   }
 }
+
+/**
+ * {@linkcode IGroupProfile}の抽象クラスとしての実装。
+ * 不正なインスタンス化を防ぐため、具象クラスを勝手に実装してはならない。
+ */
+export abstract class GroupProfileBase extends GroupProfileInternal {}

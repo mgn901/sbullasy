@@ -18,20 +18,15 @@ export const addMemberByInvitationCode = async (
   const user =
     await implementations.userRepository.getOneByAuthenticationTokenSecretOrThrow(tokenSecret);
   const userProfile = await implementations.userProfileRepository.getOneByIdOrThrow(user.id);
-  const groupMemberDirectory =
-    await implementations.groupMemberDirectoryRepository.getOneByInvitationCodeOrThrow(
-      invitationCode,
-    );
 
   const selfContext = createSelfContextOrThrow(user);
   const validUserProfileContext = createValidUserProfileContextOrThrow(userProfile);
 
-  groupMemberDirectory.joinByInvitationCode(
-    userProfile,
-    invitationCode,
-    selfContext,
-    validUserProfileContext,
-  );
+  const groupMemberDirectory = (
+    await implementations.groupMemberDirectoryRepository.getOneByInvitationCodeOrThrow(
+      invitationCode,
+    )
+  ).joinByInvitationCode(userProfile, invitationCode, selfContext, validUserProfileContext);
 
   await implementations.groupMemberDirectoryRepository.saveOne(groupMemberDirectory, true);
 };

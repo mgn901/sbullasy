@@ -17,15 +17,14 @@ export interface IUserShelf {
   /**
    * ユーザーが保有しているブックマークの一覧。
    */
-  bookmarks: ArrayWithDiff<IItemSummary>;
+  readonly bookmarks: Readonly<ArrayWithDiff<IItemSummary>>;
 
   /**
    * ブックマークの一覧を変更する。
-   * **この操作はミュータブルである。**
    * @param newBookmarks 変更後の値。
    * @param selfContext この操作を行おうとしているユーザーが操作対象のユーザー本人であることを示す情報。
    */
-  setBookmarks(newBookmarks: IItemSummary[], selfContext: ISelfContext): void;
+  setBookmarks(newBookmarks: IItemSummary[], selfContext: ISelfContext): IUserShelf;
 
   /**
    * 第1引数に渡したcontextがこのユーザーを操作するのに有効であるかを確認する。

@@ -21,7 +21,7 @@ export const addBookmark = async (
 
   const context = createSelfContextOrThrow(user);
 
-  userShelf.setBookmarks([...userShelf.bookmarks, itemSummary], context);
+  const newUserShelf = userShelf.setBookmarks([...userShelf.bookmarks, itemSummary], context);
 
-  await implementations.userShelfRepository.saveOne(userShelf, true);
+  await implementations.userShelfRepository.saveOne(newUserShelf, true);
 };

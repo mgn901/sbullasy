@@ -1,4 +1,5 @@
 import { IGroupMemberContext } from '../../contexts/IGroupMemberContext.ts';
+import { IGroupProfile } from '../../entities/group-profile/IGroupProfile.ts';
 import { IItem } from '../../entities/item/IItem.ts';
 import { NoPermissionException } from '../../errors/NoPermissionException.ts';
 import { generateId } from '../../values/TId.ts';
@@ -9,7 +10,11 @@ import { ItemBase } from './ItemBase.ts';
  */
 export class ItemImpl extends ItemBase {
   public constructor(
-    item: Pick<IItem, 'title' | 'titleForUrl' | 'publishedAt' | 'owner' | 'type' | 'body'>,
+    item: Readonly<
+      Pick<IItem, 'title' | 'titleForUrl' | 'publishedAt' | 'type' | 'body'> & {
+        owner: IGroupProfile;
+      }
+    >,
     groupMemberContext: IGroupMemberContext,
   ) {
     item.owner.validateGroupMemberContextOrThrow(groupMemberContext);

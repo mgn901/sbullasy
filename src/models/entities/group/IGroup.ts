@@ -24,16 +24,15 @@ export interface IGroup {
    * - `'moderator'`: インスタンスのモデレーター。通報に対応してアイテムを非公開にすることができる。
    * - `'default'`: 上記以外のグループ。
    */
-  instanceRole: 'admin' | 'operator' | 'moderator' | 'default';
+  readonly instanceRole: 'admin' | 'operator' | 'moderator' | 'default';
 
   /**
    * グループでのインスタンス内での役割の設定を変更する。
-   * この操作はミュータブルである。
    * @param instanceRole 変更後の値。
    * @param instanceOperatorContext この操作を行おうとしているユーザーがインスタンスのオペレーターであることを示す情報。
    */
   setInstanceRole(
     instanceRole: IGroup['instanceRole'],
     instanceOperatorContext: IInstanceOperatorContext,
-  ): void;
+  ): IGroup;
 }

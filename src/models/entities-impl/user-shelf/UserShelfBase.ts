@@ -7,25 +7,24 @@ import { InternalContextValidationError } from '../../errors/InternalContextVali
  * {@linkcode IUserShelf}の抽象クラスとしての実装。
  * 不正なインスタンス化を防ぐため、具象クラスを勝手に実装してはならない。
  */
-export abstract class UserShelfBase implements IUserShelf {
+class UserShelfInternal implements IUserShelf {
   public readonly __brand = 'IUserShelf';
 
   public readonly id: IUserShelf['id'];
 
-  private readonly _bookmarks: IUserShelf['bookmarks'];
+  public readonly bookmarks: IUserShelf['bookmarks'];
 
   public constructor(userShelf: Pick<IUserShelf, 'id' | 'bookmarks'>) {
     this.id = userShelf.id;
-    this._bookmarks = userShelf.bookmarks;
+    this.bookmarks = userShelf.bookmarks;
   }
 
-  public get bookmarks() {
-    return this._bookmarks;
-  }
-
-  public setBookmarks(newBookmarks: IItemSummary[], selfContext: ISelfContext): void {
+  public setBookmarks(newBookmarks: IItemSummary[], selfContext: ISelfContext): IUserShelf {
     this.validateSelfContextOrThrow(selfContext);
-    this._bookmarks.replace(...newBookmarks);
+    return new UserShelfInternal({
+      ...this,
+      bookmarks: this.bookmarks.toReplaced(...newBookmarks),
+    });
   }
 
   public validateSelfContextOrThrow(context: ISelfContext): void {
@@ -34,3 +33,5 @@ export abstract class UserShelfBase implements IUserShelf {
     }
   }
 }
+
+export abstract class UserShelfBase extends UserShelfInternal {}

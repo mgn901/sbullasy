@@ -41,7 +41,9 @@ export class ArrayWithDiff<T> extends Array<T> {
    * 配列のすべての要素を別の要素で置き換える。
    * @param items 置き換え後の要素。
    */
-  public replace(...items: T[]): void {
-    this.splice(0, this.length, ...items);
+  public toReplaced(...items: T[]): ArrayWithDiff<T> {
+    const newArrayWithDiff = new ArrayWithDiff(...this.initial);
+    newArrayWithDiff.splice(0, this.length, ...items);
+    return newArrayWithDiff;
   }
 }

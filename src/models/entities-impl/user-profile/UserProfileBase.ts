@@ -9,52 +9,36 @@ import { IValidUserProfileContext } from '../../contexts/IValidUserProfileContex
  * {@linkcode IUserProfile}の抽象クラスとしての実装。
  * 不正なインスタンス化を防ぐため、具象クラスを勝手に実装してはならない。
  */
-export abstract class UserProfileBase implements IUserProfile {
+class UserProfileInternal implements IUserProfile {
   public readonly __brand = 'IUserProfile';
 
   public readonly id: IUserProfile['id'];
 
-  private _name: IUserProfile['name'];
+  public readonly name: IUserProfile['name'];
 
-  private _displayName: IUserProfile['displayName'];
+  public readonly displayName: IUserProfile['displayName'];
 
-  private _expiresAt: IUserProfile['expiresAt'];
+  public readonly expiresAt: IUserProfile['expiresAt'];
 
-  private _belongsTo: IUserProfile['belongsTo'];
+  public readonly belongsTo: IUserProfile['belongsTo'];
 
   public constructor(
     userProfile: Pick<IUserProfile, 'id' | 'name' | 'displayName' | 'expiresAt' | 'belongsTo'>,
   ) {
     this.id = userProfile.id;
-    this._name = userProfile.name;
-    this._displayName = userProfile.displayName;
-    this._expiresAt = userProfile.expiresAt;
-    this._belongsTo = userProfile.belongsTo;
-  }
-
-  public get name() {
-    return this._name;
-  }
-
-  public get displayName() {
-    return this._displayName;
-  }
-
-  public get expiresAt() {
-    return this._expiresAt;
-  }
-
-  public get belongsTo() {
-    return this._belongsTo;
+    this.name = userProfile.name;
+    this.displayName = userProfile.displayName;
+    this.expiresAt = userProfile.expiresAt;
+    this.belongsTo = userProfile.belongsTo;
   }
 
   public updateUserProfile(
     newUserProfile: Pick<IUserProfile, 'name' | 'displayName'>,
     selfContext: ISelfContext,
-  ): void {
+  ): IUserProfile {
     this.validateSelfContextOrThrow(selfContext);
-    this._name = newUserProfile.name;
-    this._displayName = newUserProfile.displayName;
+    const { name, displayName } = newUserProfile;
+    return new UserProfileInternal({ ...this, name, displayName });
   }
 
   public isValidAt(date: Date): boolean {
@@ -65,17 +49,18 @@ export abstract class UserProfileBase implements IUserProfile {
     validEmailVerificationAnswerContext: IValidEmailVerificationAnswerContext<'setProfileExpiresAt'>,
     selfContext: ISelfContext,
     user: IUser,
-  ): void {
+  ): { newUserProfile: IUserProfile; newUser: IUser } {
     if (user.id !== this.id) {
       throw new InternalContextValidationError();
     }
-    user.validateValidEmailVerificationAnswerContextOrThrow(
+    const newUser = user.validateValidEmailVerificationAnswerContextOrThrow(
       validEmailVerificationAnswerContext,
       'setProfileExpiresAt',
     );
     this.validateSelfContextOrThrow(selfContext);
     const now = new Date();
-    this._expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+    return { newUserProfile: new UserProfileInternal({ ...this, expiresAt }), newUser };
   }
 
   public validateSelfContextOrThrow(context: ISelfContext): void {
@@ -90,3 +75,5 @@ export abstract class UserProfileBase implements IUserProfile {
     }
   }
 }
+
+export abstract class UserProfileBase extends UserProfileInternal {}

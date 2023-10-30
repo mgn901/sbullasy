@@ -27,7 +27,7 @@ export const deleteMember = async (
 
   const groupAdminContext = createGroupAdminContextOrThrow(adminUserProfile, groupMemberDirectory);
 
-  groupMemberDirectory.deleteMember(userId, groupAdminContext);
+  const newGroupMemberDirectory = groupMemberDirectory.deleteMember(userId, groupAdminContext);
 
-  await implementations.groupMemberDirectoryRepository.saveOne(groupMemberDirectory, true);
+  await implementations.groupMemberDirectoryRepository.saveOne(newGroupMemberDirectory, true);
 };

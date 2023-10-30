@@ -1,3 +1,4 @@
+import { IGroupProfileSummary } from '../group-profile/IGroupProfileSummary.ts';
 import { IItem } from './IItem.ts';
 
 /**
@@ -5,4 +6,5 @@ import { IItem } from './IItem.ts';
  */
 export type IItemSummary = {
   readonly __brand: 'IItemSummary';
+  readonly owner: Readonly<IGroupProfileSummary>;
 } & Pick<IItem, 'id' | 'title' | 'titleForUrl' | 'updatedAt' | 'publishedAt' | 'owner' | 'body'>;

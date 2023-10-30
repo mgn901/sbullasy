@@ -23,9 +23,9 @@ export const createEmailVerification = async <
 
   const context = createSelfContextOrThrow(user);
 
-  const verification = user.createEmailVerification<F>(param, context);
+  const { newUser, newEmailVerification } = user.createEmailVerification<F>(param, context);
 
-  await implementations.userRepository.saveOne(user, true);
+  await implementations.userRepository.saveOne(newUser, true);
 
-  return verification;
+  return newEmailVerification;
 };

@@ -3,7 +3,7 @@ import { IItemBody } from '../../values/IItemBody.ts';
 import { TId } from '../../values/TId.ts';
 import { TTitle } from '../../values/TTitle.ts';
 import { TTitleForUrl } from '../../values/TTitleForUrl.ts';
-import { IGroupProfile } from '../group-profile/IGroupProfile.ts';
+import { IGroupProfileSummary } from '../group-profile/IGroupProfileSummary.ts';
 import { IItemTypeSummary } from '../item-type/IItemTypeSummary.ts';
 
 /**
@@ -22,12 +22,12 @@ export interface IItem {
   /**
    * アイテムのタイトル。
    */
-  title: TTitle;
+  readonly title: TTitle;
 
   /**
    * アイテムのタイトルのURL用表現。
    */
-  titleForUrl: TTitleForUrl;
+  readonly titleForUrl: TTitleForUrl;
 
   /**
    * アイテムの作成日時。
@@ -37,17 +37,17 @@ export interface IItem {
   /**
    * アイテムの更新日時。
    */
-  updatedAt: Date;
+  readonly updatedAt: Date;
 
   /**
    * アイテムの公開日時。
    */
-  publishedAt: Date | undefined;
+  readonly publishedAt: Date | undefined;
 
   /**
    * アイテムの所有者。
    */
-  readonly owner: IGroupProfile;
+  readonly owner: IGroupProfileSummary;
 
   /**
    * アイテムの種類
@@ -57,7 +57,7 @@ export interface IItem {
   /**
    * アイテムの中身。
    */
-  body: IItemBody;
+  readonly body: IItemBody;
 
   /**
    * アイテムの情報を変更する。
@@ -67,7 +67,7 @@ export interface IItem {
   updateItem(
     newItem: Pick<IItem, 'title' | 'titleForUrl' | 'publishedAt' | 'body'>,
     itemOwnerContext: IItemOwnerContext,
-  ): void;
+  ): IItem;
 
   /**
    * 指定した日時においてアイテムが公開されているかどうか。

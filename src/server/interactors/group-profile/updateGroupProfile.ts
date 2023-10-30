@@ -19,13 +19,14 @@ export const updateGroupProfile = async (
   const user =
     await implementations.userRepository.getOneByAuthenticationTokenSecretOrThrow(tokenSecret);
   const userProfile = await implementations.userProfileRepository.getOneByIdOrThrow(user.id);
-  const groupProfile = await implementations.groupProfileRepository.getOneByIdOrThrow(groupId);
   const groupMemberDirectory =
     await implementations.groupMemberDirectoryRepository.getOneByIdOrThrow(groupId);
 
   const context = createGroupAdminContextOrThrow(userProfile, groupMemberDirectory);
 
-  groupProfile.updateGroupProfile(param, context);
+  const groupProfile = (
+    await implementations.groupProfileRepository.getOneByIdOrThrow(groupId)
+  ).updateGroupProfile(param, context);
 
   await implementations.groupProfileRepository.saveOne(groupProfile, true);
 };

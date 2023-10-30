@@ -19,7 +19,7 @@ import { EmailVerificationBase } from './EmailVerificationBase.ts';
 /**
  * このファイルで用いるための{@linkcode AuthenticationTokenBase}の具象クラス。
  */
-class AuthenticationToken extends AuthenticationTokenBase {
+class AuthenticationTokenInternal extends AuthenticationTokenBase {
   public constructor(
     authenticationToken: Pick<
       IAuthenticationToken,
@@ -43,7 +43,9 @@ class AuthenticationToken extends AuthenticationTokenBase {
 /**
  * このファイルで用いるための{@linkcode EmailVerificationBase}の具象クラス。
  */
-class EmailVerification<F extends TEmailVerificationPurpose> extends EmailVerificationBase<F> {
+class EmailVerificationInternal<
+  F extends TEmailVerificationPurpose,
+> extends EmailVerificationBase<F> {
   public constructor(emailVerification: Pick<IEmailVerification<F>, 'email' | 'for' | 'userId'>) {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 5 * 60 * 1000);
@@ -59,89 +61,86 @@ class EmailVerification<F extends TEmailVerificationPurpose> extends EmailVerifi
   }
 }
 
-/**
- * {@linkcode IUser}の抽象クラスとしての実装。
- * 不正なインスタンス化を防ぐため、具象クラスを勝手に実装してはならない。
- */
-export abstract class UserBase implements IUser {
+class UserInternal implements IUser {
   public readonly __brand = 'IUser';
 
   public readonly id: IUser['id'];
 
-  private _email: IUser['email'];
+  public readonly email: IUser['email'];
 
-  private _registeredAt: IUser['registeredAt'];
+  public readonly registeredAt: IUser['registeredAt'];
 
-  private readonly _tokens: IUser['tokens'];
+  public readonly tokens: IUser['tokens'];
 
-  private readonly _emailVerifications: ArrayWithDiff<
-    IEmailVerification<TEmailVerificationPurpose>
+  private readonly _emailVerifications: Readonly<
+    ArrayWithDiff<IEmailVerification<TEmailVerificationPurpose>>
   >;
 
   public constructor(
     user: Pick<IUser, 'id' | 'email' | 'registeredAt' | 'tokens'> & {
-      _emailVerifications: ArrayWithDiff<IEmailVerification<TEmailVerificationPurpose>>;
+      _emailVerifications: Readonly<ArrayWithDiff<IEmailVerification<TEmailVerificationPurpose>>>;
     },
   ) {
     this.id = user.id;
-    this._email = user.email;
-    this._registeredAt = user.registeredAt;
-    this._tokens = user.tokens;
+    this.email = user.email;
+    this.registeredAt = user.registeredAt;
+    this.tokens = user.tokens;
     this._emailVerifications = user._emailVerifications;
-  }
-
-  public get email() {
-    return this._email;
-  }
-
-  public get registeredAt() {
-    return this._registeredAt;
-  }
-
-  public get tokens() {
-    return this._tokens;
   }
 
   public setEmail(
     validEmailVerificationAnswerContext: IValidEmailVerificationAnswerContext<'setEmail'>,
     selfContext: ISelfContext,
-  ): void {
-    this.validateValidEmailVerificationAnswerContextOrThrow(
+  ): IUser {
+    const validatedUser = this.validateValidEmailVerificationAnswerContextOrThrow(
       validEmailVerificationAnswerContext,
       'setEmail',
     );
+
     this.validateSelfContextOrThrow(selfContext);
 
-    this._email = validEmailVerificationAnswerContext.emailVerification.email;
+    const { email } = validEmailVerificationAnswerContext.emailVerification;
+
+    return new UserInternal({
+      ...validatedUser,
+      email,
+      _emailVerifications: this._emailVerifications,
+    });
   }
 
   public createCookieToken(
     validEmailVerificationAnswerContext: IValidEmailVerificationAnswerContext<'createCookieToken'>,
-  ): IAuthenticationToken {
-    this.validateValidEmailVerificationAnswerContextOrThrow(
+  ): { newUser: IUser; newToken: IAuthenticationToken } {
+    const validatedUser = this.validateValidEmailVerificationAnswerContextOrThrow(
       validEmailVerificationAnswerContext,
       'createCookieToken',
     );
 
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 1 * 365 * 24 * 60 * 60 * 1000);
-
-    const token = new AuthenticationToken({
+    const newToken = new AuthenticationTokenInternal({
       type: 'cookie',
       expiresAt,
       ipAddress: '',
       userAgent: '',
       ownerId: this.id,
     });
-    this._tokens.push(token);
-    return token;
+
+    return {
+      newUser: new UserInternal({
+        ...validatedUser,
+        tokens: this.tokens.toReplaced(...this.tokens, newToken),
+        _emailVerifications: this._emailVerifications,
+      }),
+      newToken,
+    };
   }
 
   public createBearerToken(
     validEmailVerificationAnswerContext: IValidEmailVerificationAnswerContext<'createBearerToken'>,
     selfContext: ISelfContext,
-  ): IAuthenticationToken {
-    this.validateValidEmailVerificationAnswerContextOrThrow(
+  ): { newUser: IUser; newToken: IAuthenticationToken } {
+    const validatedUser = this.validateValidEmailVerificationAnswerContextOrThrow(
       validEmailVerificationAnswerContext,
       'createBearerToken',
     );
@@ -150,26 +149,40 @@ export abstract class UserBase implements IUser {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 1 * 30 * 24 * 60 * 60 * 1000);
 
-    const token = new AuthenticationToken({
+    const newToken = new AuthenticationTokenInternal({
       type: 'bearer',
       expiresAt,
       ipAddress: '',
       userAgent: '',
       ownerId: this.id,
     });
-    this._tokens.push(token);
-    return token;
+
+    return {
+      newUser: new UserInternal({
+        ...validatedUser,
+        tokens: this.tokens.toReplaced(...this.tokens, newToken),
+        _emailVerifications: this._emailVerifications,
+      }),
+      newToken,
+    };
   }
 
-  public deleteToken(tokenId: IAuthenticationToken['id'], selfContext: ISelfContext): void {
+  public deleteToken(tokenId: IAuthenticationToken['id'], selfContext: ISelfContext): IUser {
     this.validateSelfContextOrThrow(selfContext);
-    this._tokens.replace(...this._tokens.filter((token) => token.id !== tokenId));
+    return new UserInternal({
+      ...this,
+      tokens: this.tokens.toReplaced(...this.tokens.filter((token) => token.id !== tokenId)),
+      _emailVerifications: this._emailVerifications,
+    });
   }
 
   public createEmailVerification<F extends Exclude<TEmailVerificationPurpose, 'createCookieToken'>>(
     emailVerification: Pick<IEmailVerification<F>, 'email' | 'for'>,
     selfContext: ISelfContext,
-  ): IEmailVerification<F> {
+  ): {
+    newUser: IUser;
+    newEmailVerification: IEmailVerification<F>;
+  } {
     this.validateSelfContextOrThrow(selfContext);
 
     const now = new Date();
@@ -185,16 +198,28 @@ export abstract class UserBase implements IUser {
       );
     }
 
-    const newEmailVerification = new EmailVerification({
+    const newEmailVerification = new EmailVerificationInternal({
       email: emailVerification.email,
       for: emailVerification.for,
       userId: this.id,
     });
-    this._emailVerifications.push(newEmailVerification);
-    return newEmailVerification;
+
+    return {
+      newUser: new UserInternal({
+        ...this,
+        _emailVerifications: this._emailVerifications.toReplaced(
+          ...this._emailVerifications,
+          newEmailVerification,
+        ),
+      }),
+      newEmailVerification,
+    };
   }
 
-  public createEmailVerificationForCookieToken(): IEmailVerification<'createCookieToken'> {
+  public createEmailVerificationForCookieToken(): {
+    newUser: IUser;
+    newEmailVerification: IEmailVerification<'createCookieToken'>;
+  } {
     const now = new Date();
 
     const duplicatedCount = this._emailVerifications.filter(
@@ -207,13 +232,22 @@ export abstract class UserBase implements IUser {
       );
     }
 
-    const newEmailVerification = new EmailVerification({
+    const newEmailVerification = new EmailVerificationInternal({
       email: this.email,
       for: 'createCookieToken',
       userId: this.id,
     });
-    this._emailVerifications.push(newEmailVerification);
-    return newEmailVerification;
+
+    return {
+      newUser: new UserInternal({
+        ...this,
+        _emailVerifications: this._emailVerifications.toReplaced(
+          ...this._emailVerifications,
+          newEmailVerification,
+        ),
+      }),
+      newEmailVerification,
+    };
   }
 
   public validateEmailVerificationAnswerOrThrow<F extends TEmailVerificationPurpose>(
@@ -243,7 +277,7 @@ export abstract class UserBase implements IUser {
   public validateValidEmailVerificationAnswerContextOrThrow<F extends TEmailVerificationPurpose>(
     context: IValidEmailVerificationAnswerContext<F>,
     purpose: F,
-  ): void {
+  ): IUser {
     if (context.userId !== this.id || context.emailVerification.for !== purpose) {
       throw new InternalContextValidationError();
     }
@@ -251,12 +285,15 @@ export abstract class UserBase implements IUser {
     const now = new Date();
 
     // 無効または回答済みの認証を削除する。
-    this._emailVerifications.replace(
-      ...this._emailVerifications.filter(
-        (verification) =>
-          context.emailVerification.id !== verification.id || !verification.isValidAt(now),
+    return new UserInternal({
+      ...this,
+      _emailVerifications: this._emailVerifications.toReplaced(
+        ...this._emailVerifications.filter(
+          (verification) =>
+            context.emailVerification.id !== verification.id || !verification.isValidAt(now),
+        ),
       ),
-    );
+    });
   }
 
   public validateSelfContextOrThrow(context: ISelfContext): void {
@@ -264,4 +301,14 @@ export abstract class UserBase implements IUser {
       throw new InternalContextValidationError();
     }
   }
+
+  public dangerouslyGetEmailVerifications(): IEmailVerification<TEmailVerificationPurpose>[] {
+    return this._emailVerifications;
+  }
 }
+
+/**
+ * {@linkcode IUser}の抽象クラスとしての実装。
+ * 不正なインスタンス化を防ぐため、具象クラスを勝手に実装してはならない。
+ */
+export abstract class UserBase extends UserInternal {}

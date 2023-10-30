@@ -34,7 +34,10 @@ export const addEditableItem = async (
     operatorGroupMemberDirectory,
   );
 
-  groupProfile.setEditableItemTypes([...groupProfile.editableItemTypes, itemType], context);
+  const newGroupProfile = groupProfile.setEditableItemTypes(
+    [...groupProfile.editableItemTypes, itemType],
+    context,
+  );
 
-  await implementations.groupProfileRepository.saveOne(groupProfile, true);
+  await implementations.groupProfileRepository.saveOne(newGroupProfile, true);
 };
