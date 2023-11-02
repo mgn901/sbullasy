@@ -1,6 +1,9 @@
+import { validateByJsonSchema } from '../../../utils/validateByJsonSchema.ts';
 import { IGroupMemberContext } from '../../contexts/IGroupMemberContext.ts';
 import { IGroupProfile } from '../../entities/group-profile/IGroupProfile.ts';
+import { IItemType } from '../../entities/item-type/IItemType.ts';
 import { IItem } from '../../entities/item/IItem.ts';
+import { InvalidItemBodyException } from '../../errors/InvalidItemBodyException.ts';
 import { NoPermissionException } from '../../errors/NoPermissionException.ts';
 import { generateId } from '../../values/TId.ts';
 import { ItemBase } from './ItemBase.ts';
@@ -13,6 +16,7 @@ export class ItemImpl extends ItemBase {
     item: Readonly<
       Pick<IItem, 'title' | 'titleForUrl' | 'publishedAt' | 'owner' | 'type' | 'body'>
     >,
+    type: IItemType,
     groupProfile: IGroupProfile,
     groupMemberContext: IGroupMemberContext,
   ) {
@@ -22,6 +26,10 @@ export class ItemImpl extends ItemBase {
     );
     if (!isEditable) {
       throw new NoPermissionException();
+    }
+
+    if (item.type.id !== type.id || !validateByJsonSchema(item.body, type.schema)) {
+      throw new InvalidItemBodyException();
     }
 
     const now = new Date();

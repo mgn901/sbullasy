@@ -1,4 +1,5 @@
 import { IItemBody } from '../../../models/values/IItemBody.ts';
+import { IItemTypeOptions } from '../../../models/values/IItemTypeOption.ts';
 import { TItemSchema } from '../../../models/values/TItemSchema.ts';
 import { isJsonSchema } from '../../../utils/isJsonSchema.ts';
 import { ItemSummaryFromFindResult } from '../entities-from-find-result/ItemSummaryFromFindResult.ts';
@@ -23,6 +24,7 @@ export const itemBodyFromFindResult = (
       >['body'][number]
   )[],
   schema: TItemSchema,
+  options?: IItemTypeOptions,
 ): IItemBody =>
   results.reduce<IItemBody>((prev, current) => {
     const { key } = current;
@@ -33,7 +35,10 @@ export const itemBodyFromFindResult = (
         ? new ItemSummaryFromFindResult(current.valueInItem)
         : undefined;
 
-    if (!(key in schema.properties)) {
+    if (
+      !(key in schema.properties) ||
+      !(options && key in options && options[key].showOnSummary === false)
+    ) {
       return prev;
     }
 

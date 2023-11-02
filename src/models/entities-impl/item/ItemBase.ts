@@ -1,6 +1,9 @@
+import { validateByJsonSchema } from '../../../utils/validateByJsonSchema.ts';
 import { IItemOwnerContext } from '../../contexts/IItemOwnerContext.ts';
+import { IItemType } from '../../entities/item-type/IItemType.ts';
 import { IItem } from '../../entities/item/IItem.ts';
 import { InternalContextValidationError } from '../../errors/InternalContextValidationError.ts';
+import { InvalidItemBodyException } from '../../errors/InvalidItemBodyException.ts';
 
 class ItemInternal implements IItem {
   public readonly __brand = 'IItem';
@@ -50,6 +53,7 @@ class ItemInternal implements IItem {
 
   public updateItem(
     newItem: Pick<IItem, 'title' | 'titleForUrl' | 'publishedAt' | 'body'>,
+    type: IItemType,
     itemOwnerContext: IItemOwnerContext,
   ): IItem {
     this.validateItemOwnerContextOrThrow(itemOwnerContext);
@@ -69,7 +73,10 @@ class ItemInternal implements IItem {
 
     const updatedAt = now;
 
-    // TODO: スキーマを用いたバリデーションの実装
+    if (this.type.id !== type.id || !validateByJsonSchema(body, type.schema)) {
+      throw new InvalidItemBodyException();
+    }
+
     return new ItemInternal({ ...this, title, titleForUrl, body, publishedAt, updatedAt });
   }
 

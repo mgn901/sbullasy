@@ -20,12 +20,13 @@ export const updateItem = async (
     await implementations.userRepository.getOneByAuthenticationTokenSecretOrThrow(tokenSecret);
   const userProfile = await implementations.userProfileRepository.getOneByIdOrThrow(user.id);
   const item = await implementations.itemRepository.getOneByIdOrThrow(itemId);
+  const type = await implementations.itemTypeRepository.getOneByIdOrThrow(item.type.id);
   const groupMemberDirectory =
     await implementations.groupMemberDirectoryRepository.getOneByIdOrThrow(item.owner.id);
 
   const context = createItemOwnerContextOrThrow(userProfile, item, groupMemberDirectory);
 
-  const newItem = item.updateItem(param, context);
+  const newItem = item.updateItem(param, type, context);
 
   await implementations.itemRepository.saveOne(newItem, true);
 };

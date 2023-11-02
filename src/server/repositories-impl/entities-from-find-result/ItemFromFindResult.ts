@@ -10,6 +10,7 @@ import { itemBodyFromFindResult } from '../values-from-find-result/itemBodyFromF
 import { TFindResult } from '../prisma-utils/types.ts';
 import { GroupProfileSummaryFromFindResult } from './GroupProfileSummaryFromFindResult.ts';
 import { ItemTypeSummaryFromFindResult } from './ItemTypeSummaryFromFindResult.ts';
+import { isItemTypeOptions } from '../../../models/values/IItemTypeOption.ts';
 
 export class ItemFromFindResult extends ItemBase {
   public constructor(
@@ -20,13 +21,14 @@ export class ItemFromFindResult extends ItemBase {
     >,
   ) {
     const { id, title, titleForUrl, createdAt, updatedAt, publishedAt, owner, type, body } = params;
-    const { schema } = type;
+    const { schema, options } = type;
 
     if (
       !isId<IItem>(id) ||
       !isTitle(title) ||
       !isTitleForUrl(titleForUrl) ||
-      !isItemSchema(schema)
+      !isItemSchema(schema) ||
+      !isItemTypeOptions(options)
     ) {
       throw new InvalidDataInDatabaseException();
     }
@@ -40,7 +42,7 @@ export class ItemFromFindResult extends ItemBase {
       owner: new GroupProfileSummaryFromFindResult(owner),
       publishedAt: publishedAt ?? undefined,
       type: new ItemTypeSummaryFromFindResult(type),
-      body: itemBodyFromFindResult(body, schema),
+      body: itemBodyFromFindResult(body, schema, options),
     });
   }
 }

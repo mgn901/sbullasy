@@ -33,7 +33,7 @@ export const createItem = async (
 
   const context = createGroupMemberContextOrThrow(userProfile, groupMemberDirectory);
 
-  const item = new ItemImpl({ ...param, type: typeSummary, owner }, groupProfile, context);
+  const item = new ItemImpl({ ...param, type: typeSummary, owner }, type, groupProfile, context);
 
   await implementations.itemRepository.saveOne(item, true);
 

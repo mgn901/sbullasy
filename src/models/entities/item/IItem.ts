@@ -4,6 +4,7 @@ import { TId } from '../../values/TId.ts';
 import { TTitle } from '../../values/TTitle.ts';
 import { TTitleForUrl } from '../../values/TTitleForUrl.ts';
 import { IGroupProfileSummary } from '../group-profile/IGroupProfileSummary.ts';
+import { IItemType } from '../item-type/IItemType.ts';
 import { IItemTypeSummary } from '../item-type/IItemTypeSummary.ts';
 
 /**
@@ -62,10 +63,12 @@ export interface IItem {
   /**
    * アイテムの情報を変更する。
    * @param newItem 変更後の値。
+   * @param type
    * @param itemOwnerContext この操作を行おうとしているユーザーがアイテムの所有グループの所属ユーザーであることを示す情報。
    */
   updateItem(
     newItem: Pick<IItem, 'title' | 'titleForUrl' | 'publishedAt' | 'body'>,
+    type: IItemType,
     itemOwnerContext: IItemOwnerContext,
   ): IItem;
 
