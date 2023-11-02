@@ -119,5 +119,7 @@ export interface IUser {
    * メール認証の一覧を取得する。
    * このメソッドはリポジトリ等の実装のために用いるものであり、ビジネスロジックの中で用いてはならない。
    */
-  dangerouslyGetEmailVerifications(): IEmailVerification<TEmailVerificationPurpose>[];
+  dangerouslyGetEmailVerifications(): Readonly<
+    ArrayWithDiff<IEmailVerification<TEmailVerificationPurpose>>
+  >;
 }

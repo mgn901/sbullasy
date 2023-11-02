@@ -40,4 +40,5 @@ module.exports = {
     ],
     'react/react-in-jsx-scope': ['off'],
   },
+  ignorePatterns: ['src/server/prisma-client'],
 };

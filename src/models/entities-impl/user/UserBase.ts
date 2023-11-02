@@ -302,7 +302,9 @@ class UserInternal implements IUser {
     }
   }
 
-  public dangerouslyGetEmailVerifications(): IEmailVerification<TEmailVerificationPurpose>[] {
+  public dangerouslyGetEmailVerifications(): Readonly<
+    ArrayWithDiff<IEmailVerification<TEmailVerificationPurpose>>
+  > {
     return this._emailVerifications;
   }
 }

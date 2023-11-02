@@ -1,3 +1,4 @@
+import { IBadge } from '../../models/entities/item/IBadge.ts';
 import { IItem } from '../../models/entities/item/IItem.ts';
 import { IItemSummary } from '../../models/entities/item/IItemSummary.ts';
 import { IRepositoryGetManyOptions } from './IRepositoryGetManyOptions.ts';
@@ -22,7 +23,13 @@ export interface IItemRepository {
    * 指定したIDを持つアイテムの要約を1件取得する。
    * @param itemId 取得するオブジェクトのID。
    */
-  getOneSummaryByIdOrThrow(itemId: IItem['id']): Promise<IItemSummary>;
+  getOneSummaryByIdOrThrow(itemId: IItemSummary['id']): Promise<IItemSummary>;
+
+  /**
+   * 指定したIDを持つアイテムをバッジとして1件取得する。
+   * @param itemId 取得するオブジェクトのID。
+   */
+  getOneBadgeByIdOrThrow(itemId: IBadge['id']): Promise<IBadge>;
 
   /**
    * 指定した条件でオブジェクトを複数件取得する。

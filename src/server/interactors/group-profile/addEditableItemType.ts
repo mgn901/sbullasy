@@ -12,7 +12,7 @@ import { IImplementations } from '../IImplementations.ts';
  * @param operatorGroupId 操作を行おうとしているインスタンスのオペレーターのグループID。
  * @param implementations この操作に使用するインフラストラクチャの実装。
  */
-export const addEditableItem = async (
+export const addEditableItemType = async (
   groupId: IGroup['id'],
   itemTypeId: IItemType['id'],
   tokenSecret: TLongSecret,

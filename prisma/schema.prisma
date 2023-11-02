@@ -1,0 +1,237 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/server/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("SBULLASY_APP_DB_URL")
+}
+
+model Group {
+  id           String       @id
+  createdAt    DateTime
+  instanceRole InstanceRole
+
+  groupMemberDirectory GroupMemberDirectory? @relation(name: "GroupMemberDirectoryId")
+  groupProfile         GroupProfile?         @relation(name: "GroupProfileId")
+
+  @@index(fields: [id])
+}
+
+model GroupMemberDirectory {
+  id             String   @id
+  invitationCode String   @unique
+  members        Member[] @relation(name: "MemberGroup")
+
+  group Group @relation(name: "GroupMemberDirectoryId", fields: [id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+
+  @@index(fields: [id])
+  @@index(fields: [invitationCode])
+}
+
+model Member {
+  user         UserProfile          @relation(name: "MemberUser", fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  userId       String
+  type         MemberType
+  group        GroupMemberDirectory @relation(name: "MemberGroup", map: "MemberGroup", fields: [groupId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  groupProfile GroupProfile         @relation(name: "MemberGroupProfile", map: "MemberGroupProfile", fields: [groupId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  groupId      String
+
+  @@id(fields: [userId, groupId])
+  @@index(fields: [userId])
+  @@index(fields: [groupId])
+}
+
+model GroupProfile {
+  id                String       @id
+  name              String       @unique
+  displayName       String
+  badges            Badge[]      @relation(name: "BadgeGrantsTo")
+  editableItemTypes Permission[] @relation(name: "PermissionGrantsTo")
+  items             Item[]       @relation(name: "ItemOwner")
+
+  group   Group    @relation(name: "GroupProfileId", fields: [id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  members Member[] @relation(name: "MemberGroupProfile")
+
+  @@index(fields: [id])
+  @@index(fields: [name])
+}
+
+model Badge {
+  grantsTo   GroupProfile @relation(name: "BadgeGrantsTo", fields: [grantsToId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  grantsToId String
+  item       Item         @relation(name: "BadgeItem", fields: [itemId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  itemId     String
+
+  @@id(fields: [grantsToId, itemId])
+  @@index(fields: [grantsToId])
+}
+
+model Permission {
+  grantsTo   GroupProfile @relation(name: "PermissionGrantsTo", fields: [grantsToId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  grantsToId String
+  itemType   ItemType     @relation(name: "PermissionItemType", fields: [itemTypeId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  itemTypeId String
+
+  @@id(fields: [grantsToId, itemTypeId])
+  @@index(fields: [grantsToId])
+}
+
+model Item {
+  id          String       @id
+  title       String
+  titleForUrl String       @unique
+  createdAt   DateTime
+  updatedAt   DateTime
+  publishedAt DateTime?
+  owner       GroupProfile @relation(name: "ItemOwner", fields: [ownerId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  ownerId     String
+  type        ItemType     @relation(name: "ItemItemType", fields: [typeId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  typeId      String
+  body        ItemBody[]   @relation(name: "ItemBodyParentItem")
+
+  badges       Badge[]    @relation(name: "BadgeItem")
+  bookmarks    Bookmark[] @relation(name: "BookmarkItemId")
+  referencedBy ItemBody[] @relation(name: "ItemBodyValue")
+
+  @@index(fields: [id])
+  @@index(fields: [titleForUrl])
+  @@index(fields: [ownerId])
+  @@index(fields: [typeId])
+}
+
+model ItemBody {
+  id             String   @id
+  parentItem     Item     @relation(name: "ItemBodyParentItem", fields: [parentItemId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  parentItemId   String
+  key            String
+  valueInString  String?
+  valueInNumber  Float?
+  valueInBoolean Boolean?
+  valueInItem    Item?    @relation(name: "ItemBodyValue", fields: [valueInItemId], references: [id], onUpdate: SetNull, onDelete: SetNull)
+  valueInItemId  String?
+
+  @@index(fields: [parentItemId])
+  @@index(fields: [key])
+}
+
+model ItemType {
+  id           String @id
+  nameSingular String @unique
+  namePlural   String @unique
+  displayName  String
+  schema       Json
+  options      Json
+
+  items         Item[]       @relation(name: "ItemItemType")
+  groupsCanEdit Permission[] @relation(name: "PermissionItemType")
+
+  @@index(fields: [id])
+  @@index(fields: [nameSingular])
+  @@index(fields: [namePlural])
+}
+
+model AuthenticationToken {
+  id        String                  @id
+  type      AuthenticationTokenType
+  createdAt DateTime
+  expiresAt DateTime
+  ipAddress String
+  userAgent String
+  ownerId   String
+  secret    String                  @unique
+
+  owner User @relation(name: "AuthenticationTokenOwnerId", fields: [ownerId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+
+  @@index(fields: [id])
+  @@index(fields: [ownerId])
+}
+
+model EmailVerification {
+  id        String                   @id
+  createdAt DateTime
+  expiresAt DateTime
+  for       EmailVerificationPurpose
+  email     String
+  userId    String
+  user      User                     @relation(name: "EmailVerificationUserId", fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  secret    String
+
+  @@index(fields: [id])
+  @@index(fields: [userId])
+}
+
+model User {
+  id                 String                @id
+  email              String                @unique
+  registeredAt       DateTime?
+  tokens             AuthenticationToken[] @relation(name: "AuthenticationTokenOwnerId")
+  emailVerifications EmailVerification[]   @relation(name: "EmailVerificationUserId")
+
+  userProfile UserProfile? @relation(name: "UserProfileId")
+  userShelf   UserShelf?   @relation(name: "UserShelfId")
+
+  @@index(fields: [id])
+  @@index(fields: [email])
+}
+
+model UserProfile {
+  id          String    @id
+  name        String    @unique
+  displayName String
+  expiresAt   DateTime?
+  belongsTo   Member[]  @relation(name: "MemberUser")
+
+  user User @relation(name: "UserProfileId", fields: [id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+
+  @@index(fields: [id])
+  @@index(fields: [name])
+}
+
+model UserShelf {
+  id        String     @id
+  bookmarks Bookmark[] @relation(name: "BookmarkOwner")
+
+  user User @relation(name: "UserShelfId", fields: [id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+
+  @@index(fields: [id])
+}
+
+model Bookmark {
+  owner   UserShelf @relation(name: "BookmarkOwner", fields: [ownerId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  ownerId String
+  item    Item      @relation(name: "BookmarkItemId", fields: [itemId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  itemId  String
+
+  @@id(fields: [ownerId, itemId])
+  @@index(fields: [ownerId])
+}
+
+enum InstanceRole {
+  admin
+  operator
+  moderator
+  default
+}
+
+enum MemberType {
+  admin
+  default
+}
+
+enum AuthenticationTokenType {
+  bearer
+  cookie
+}
+
+enum EmailVerificationPurpose {
+  createCookieToken
+  createBearerToken
+  setEmail
+  setProfileExpiresAt
+  unregister
+}

@@ -11,14 +11,13 @@ import { ItemBase } from './ItemBase.ts';
 export class ItemImpl extends ItemBase {
   public constructor(
     item: Readonly<
-      Pick<IItem, 'title' | 'titleForUrl' | 'publishedAt' | 'type' | 'body'> & {
-        owner: IGroupProfile;
-      }
+      Pick<IItem, 'title' | 'titleForUrl' | 'publishedAt' | 'owner' | 'type' | 'body'>
     >,
+    groupProfile: IGroupProfile,
     groupMemberContext: IGroupMemberContext,
   ) {
-    item.owner.validateGroupMemberContextOrThrow(groupMemberContext);
-    const isEditable = item.owner.editableItemTypes.some(
+    groupProfile.validateGroupMemberContextOrThrow(groupMemberContext);
+    const isEditable = groupProfile.editableItemTypes.some(
       (itemType) => itemType.id === item.type.id,
     );
     if (!isEditable) {

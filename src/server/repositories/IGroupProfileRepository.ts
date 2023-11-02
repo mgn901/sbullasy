@@ -1,4 +1,5 @@
 import { IGroupProfile } from '../../models/entities/group-profile/IGroupProfile.ts';
+import { IGroupProfileSummary } from '../../models/entities/group-profile/IGroupProfileSummary.ts';
 import { IRepositoryGetManyOptions } from './IRepositoryGetManyOptions.ts';
 
 /**
@@ -18,12 +19,18 @@ export interface IGroupProfileRepository {
   getOneByNameOrThrow(groupName: IGroupProfile['name']): Promise<IGroupProfile>;
 
   /**
+   * 指定したIDを持つグループのプロフィールの要約を1件取得する。
+   * @param groupId 取得するオブジェクトのID。
+   */
+  getOneSummaryByIdOrThrow(groupId: IGroupProfileSummary['id']): Promise<IGroupProfileSummary>;
+
+  /**
    * 指定した条件でオブジェクトを複数件取得する。
    * @param options 取得時の挙動の設定。
    */
-  getMany(
+  getSummaries(
     options: IRepositoryGetManyOptions<'id_asc' | 'name_asc', IGroupProfile['id']>,
-  ): Promise<IGroupProfile[]>;
+  ): Promise<IGroupProfileSummary[]>;
 
   /**
    * オブジェクトを永続化する。

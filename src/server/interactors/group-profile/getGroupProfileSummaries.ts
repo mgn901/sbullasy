@@ -1,4 +1,5 @@
 import { IGroupProfile } from '../../../models/entities/group-profile/IGroupProfile.ts';
+import { IGroupProfileSummary } from '../../../models/entities/group-profile/IGroupProfileSummary.ts';
 import { IRepositoryGetManyOptions } from '../../repositories/IRepositoryGetManyOptions.ts';
 import { IImplementations } from '../IImplementations.ts';
 
@@ -8,7 +9,7 @@ import { IImplementations } from '../IImplementations.ts';
  * @param implementations この操作に使用するインフラストラクチャの実装。
  * @returns 取得したグループのプロフィールのエンティティオブジェクトの配列。
  */
-export const getGroupProfiles = async (
+export const getGroupProfileSummaries = async (
   options: IRepositoryGetManyOptions<'id_asc' | 'name_asc', IGroupProfile['id']>,
   implementations: IImplementations,
-): Promise<IGroupProfile[]> => implementations.groupProfileRepository.getMany(options);
+): Promise<IGroupProfileSummary[]> => implementations.groupProfileRepository.getSummaries(options);

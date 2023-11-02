@@ -3,7 +3,7 @@ import { IGroupMemberContext } from '../../contexts/IGroupMemberContext.ts';
 import { IInstanceOperatorContext } from '../../contexts/IInstanceOperatorContext.ts';
 import { IGroupProfile } from '../../entities/group-profile/IGroupProfile.ts';
 import { IItemTypeSummary } from '../../entities/item-type/IItemTypeSummary.ts';
-import { IItemSummary } from '../../entities/item/IItemSummary.ts';
+import { IBadge } from '../../entities/item/IBadge.ts';
 import { InternalContextValidationError } from '../../errors/InternalContextValidationError.ts';
 
 class GroupProfileInternal implements IGroupProfile {
@@ -45,7 +45,7 @@ class GroupProfileInternal implements IGroupProfile {
   }
 
   public setBadges(
-    newBadges: IItemSummary[],
+    newBadges: IBadge[],
     _instanceOperatorContext: IInstanceOperatorContext,
   ): IGroupProfile {
     return new GroupProfileInternal({ ...this, badges: this.badges.toReplaced(...newBadges) });

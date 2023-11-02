@@ -1,8 +1,8 @@
-import { JSONSchema7 } from 'json-schema';
 import { IInstanceAdminContext } from '../../contexts/IInstanceAdminContext.ts';
 import { IItemTypeOptions } from '../../values/IItemTypeOption.ts';
 import { TDisplayName } from '../../values/TDisplayName.ts';
 import { TId } from '../../values/TId.ts';
+import { TItemSchema } from '../../values/TItemSchema.ts';
 import { TName } from '../../values/TName.ts';
 
 /**
@@ -34,7 +34,7 @@ export interface IItemType {
   /**
    * アイテムの種類のスキーマ。
    */
-  readonly schema: JSONSchema7;
+  readonly schema: TItemSchema;
 
   /**
    * アイテムのオプション。

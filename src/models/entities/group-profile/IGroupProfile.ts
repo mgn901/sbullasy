@@ -6,6 +6,7 @@ import { TDisplayName } from '../../values/TDisplayName.ts';
 import { TName } from '../../values/TName.ts';
 import { IGroup } from '../group/IGroup.ts';
 import { IItemTypeSummary } from '../item-type/IItemTypeSummary.ts';
+import { IBadge } from '../item/IBadge.ts';
 import { IItemSummary } from '../item/IItemSummary.ts';
 
 /**
@@ -35,7 +36,7 @@ export interface IGroupProfile {
    * グループが保有しているバッジの一覧。
    * グループが大学の公認団体であることを表す際などに用いる。
    */
-  readonly badges: Readonly<ArrayWithDiff<IItemSummary>>;
+  readonly badges: Readonly<ArrayWithDiff<IBadge>>;
 
   /**
    * グループが編集できるアイテムの種類の一覧。
@@ -62,10 +63,7 @@ export interface IGroupProfile {
    * @param newBadges 変更後の値。
    * @param instanceOperatorContext この操作を行おうとしているユーザーがインスタンスのオペレーターであることを示す情報。
    */
-  setBadges(
-    newBadges: IItemSummary[],
-    instanceOperatorContext: IInstanceOperatorContext,
-  ): IGroupProfile;
+  setBadges(newBadges: IBadge[], instanceOperatorContext: IInstanceOperatorContext): IGroupProfile;
 
   /**
    * グループが編集できるアイテムの種類の一覧を変更する。

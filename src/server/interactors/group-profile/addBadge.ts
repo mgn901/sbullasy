@@ -26,7 +26,7 @@ export const addBadge = async (
   const operatorGroupMemberDirectory =
     await implementations.groupMemberDirectoryRepository.getOneByIdOrThrow(operatorGroupId);
   const groupProfile = await implementations.groupProfileRepository.getOneByIdOrThrow(groupId);
-  const badge = await implementations.itemRepository.getOneSummaryByIdOrThrow(badgeItemId);
+  const badge = await implementations.itemRepository.getOneBadgeByIdOrThrow(badgeItemId);
 
   const context = createInstanceOperatorContextOrThrow(
     userProfile,
