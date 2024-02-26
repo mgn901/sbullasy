@@ -49,7 +49,7 @@ export interface IItemType {
   updateItemType(
     newItemType: Pick<
       IItemType,
-      'id' | 'nameSingular' | 'namePlural' | 'displayName' | 'schema' | 'options'
+      'nameSingular' | 'namePlural' | 'displayName' | 'schema' | 'options'
     >,
     instanceAdminContext: IInstanceAdminContext,
   ): IItemType;

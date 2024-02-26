@@ -36,7 +36,9 @@ export interface IItemRepository {
    * @param options 取得時の挙動の設定。
    */
   getSummaries(
-    options: IRepositoryGetManyOptions<'id_asc' | 'displayName_asc', IItemSummary['id']>,
+    options: IRepositoryGetManyOptions<'id_asc' | 'titleForUrl_asc', IItemSummary['id']> & {
+      itemTypeId: IItem['type']['id'];
+    },
   ): Promise<IItemSummary[]>;
 
   /**

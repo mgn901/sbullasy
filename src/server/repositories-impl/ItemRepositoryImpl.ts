@@ -56,10 +56,13 @@ export class ItemRepositoryImpl implements IItemRepository {
   }
 
   public async getSummaries(
-    options: IRepositoryGetManyOptions<'id_asc' | 'displayName_asc', IItemSummary['id']>,
+    options: IRepositoryGetManyOptions<'id_asc' | 'titleForUrl_asc', IItemSummary['id']> & {
+      itemTypeId: IItem['type']['id'];
+    },
   ): Promise<IItemSummary[]> {
     const results = await this.prisma.item.findMany({
       ...repositoryGetManyOptionsToFindArgs(options),
+      where: { typeId: options.itemTypeId },
       orderBy: orderStringToPrismaOrder(options.order),
       include: itemIncludeForItemSummary,
     });

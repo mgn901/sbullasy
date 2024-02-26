@@ -11,7 +11,7 @@ import { IImplementations } from '../IImplementations.ts';
  * @returns 取得したアイテムのエンティティオブジェクト。
  */
 export const getItem = async (
-  itemIdOrTitleForUrl: IItem['id'] | `@${IItem['title']}`,
+  itemIdOrTitleForUrl: string,
   implementations: IImplementations,
 ): Promise<IItem> => {
   if (itemIdOrTitleForUrl.startsWith('@')) {
@@ -22,8 +22,9 @@ export const getItem = async (
     return implementations.itemRepository.getOneByTitleForUrlOrThrow(itemTitleForUrl);
   }
 
-  if (!isId(itemIdOrTitleForUrl)) {
-    throw new InvalidRequestException();
+  if (isId<IItem>(itemIdOrTitleForUrl)) {
+    return implementations.itemRepository.getOneByIdOrThrow(itemIdOrTitleForUrl);
   }
-  return implementations.itemRepository.getOneByIdOrThrow(itemIdOrTitleForUrl);
+
+  throw new InvalidRequestException();
 };

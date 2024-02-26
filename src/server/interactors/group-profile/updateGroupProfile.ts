@@ -15,7 +15,7 @@ export const updateGroupProfile = async (
   param: Pick<IGroupProfile, 'name' | 'displayName'>,
   tokenSecret: TLongSecret,
   implementations: IImplementations,
-) => {
+): Promise<void> => {
   const user =
     await implementations.userRepository.getOneByAuthenticationTokenSecretOrThrow(tokenSecret);
   const userProfile = await implementations.userProfileRepository.getOneByIdOrThrow(user.id);

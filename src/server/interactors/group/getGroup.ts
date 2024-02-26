@@ -1,4 +1,3 @@
-import { IGroupProfile } from '../../../models/entities/group-profile/IGroupProfile.ts';
 import { IGroup } from '../../../models/entities/group/IGroup.ts';
 import { InvalidRequestException } from '../../../models/errors/InvalidRequestException.ts';
 import { isId } from '../../../models/values/TId.ts';
@@ -12,7 +11,7 @@ import { IImplementations } from '../IImplementations.ts';
  * @returns グループのエンティティオブジェクト。
  */
 export const getGroup = async (
-  groupIdOrName: IGroup['id'] | `@${IGroupProfile['name']}`,
+  groupIdOrName: string,
   implementations: IImplementations,
 ): Promise<IGroup> => {
   if (groupIdOrName[0] === '@') {

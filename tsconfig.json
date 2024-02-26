@@ -18,6 +18,7 @@
     "./scripts/**/*",
     "./*.config.js",
     "./*.config.cjs",
-    ".eslintrc.cjs"
+    ".eslintrc.cjs",
+    "./src/**/.eslintrc.cjs"
   ]
 }

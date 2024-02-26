@@ -5,7 +5,7 @@ import { TLongSecret } from '../../../models/values/TLongSecret.ts';
 import { IImplementations } from '../IImplementations.ts';
 
 /**
- * グループからバッジを削除する。
+ * グループにバッジを付与する。
  * @param groupId 操作対象のグループのID。
  * @param badgeItemId 操作対象のグループにバッジとして付与するアイテムのID。
  * @param tokenSecret 操作を行おうとしているユーザーの認証用トークンのシークレット値。

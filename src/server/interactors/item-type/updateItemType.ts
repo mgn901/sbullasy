@@ -14,10 +14,7 @@ import { IImplementations } from '../IImplementations.ts';
  */
 export const updateItemType = async (
   itemTypeId: IItemType['id'],
-  param: Pick<
-    IItemType,
-    'nameSingular' | 'namePlural' | 'displayName' | 'schema' | 'options' | 'id'
-  >,
+  param: Pick<IItemType, 'nameSingular' | 'namePlural' | 'displayName' | 'schema' | 'options'>,
   groupId: IGroup['id'],
   tokenSecret: TLongSecret,
   implementations: IImplementations,
