@@ -1,7 +1,12 @@
 /** @type {import('jest').Config} */
 const config = {
   transform: {
-    '^.+\\.tsx?$': 'esbuild-jest',
+    '^.+\\.tsx?$': [
+      'esbuild-jest',
+      {
+        sourcemap: true,
+      },
+    ],
   },
   collectCoverage: true,
   coverageProvider: 'v8',
