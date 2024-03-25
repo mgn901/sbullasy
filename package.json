@@ -12,7 +12,7 @@
     "dev:start": "cross-env NODE_ENV=development tsx ./scripts/devStart.ts"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.6.1",
+    "@biomejs/biome": "^1.6.2",
     "@jest/globals": "^29.7.0",
     "@k-vyn/coloralgorithm": "^1.0.0",
     "@types/json-schema": "^7.0.15",
