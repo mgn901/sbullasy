@@ -9,8 +9,8 @@ dependencies:
     specifier: ^9.3.1
     version: 9.3.1
   '@fastify/etag':
-    specifier: ^4.2.0
-    version: 4.2.0
+    specifier: ^5.1.0
+    version: 5.1.0
   '@fastify/helmet':
     specifier: ^11.1.1
     version: 11.1.1
@@ -1018,8 +1018,8 @@ packages:
     resolution: {integrity: sha512-wWSvph+29GR783IhmvdwWnN4bUxTD01Vm5Xad4i7i1VuAOItLvbPAb69sb0IQ2N57yprvhNIwAP5B6xfKTmjmQ==}
     dev: false
 
-  /@fastify/etag@4.2.0:
-    resolution: {integrity: sha512-stvRYricpLAAcDsLFi6gUvFtU8sK+EnygajcgAVhvjw4MabTINNIuh35wu3r4x5JmfD1unh4YCQAFPK2H9vuVQ==}
+  /@fastify/etag@5.1.0:
+    resolution: {integrity: sha512-j/huE8baxgF22idzY35a579b6uP+9ykE9Jt02xY4ZApELNr2KGZmQOKTQsZS94TfKMLfPHwkoM8FfZRq8OZDXg==}
     dependencies:
       fastify-plugin: 4.5.1
     dev: false
@@ -1719,6 +1719,7 @@ packages:
   /autoprefixer@10.4.19(postcss@8.4.38):
     resolution: {integrity: sha512-BaENR2+zBZ8xXhM4pUaKUxlVdxZ0EZhjvbopwnXmxRUfqDmwSpC2lAi/QXvx7NRdPCo1WKEcEF6mV64si1z4Ew==}
     engines: {node: ^10 || ^12 || >=14}
+    hasBin: true
     peerDependencies:
       postcss: ^8.1.0
     dependencies:
@@ -3295,6 +3296,7 @@ packages:
   /jest-cli@29.7.0(@types/node@20.11.30):
     resolution: {integrity: sha512-OVVobw2IubN/GSYsxETi+gOe7Ka59EFMR/twOU3Jb2GnKKeMGJB5SGUUrEz3SFVmJASUdZUzy83sLNNQ2gZslg==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
+    hasBin: true
     peerDependencies:
       node-notifier: ^8.0.1 || ^9.0.0 || ^10.0.0
     peerDependenciesMeta:
@@ -3702,6 +3704,7 @@ packages:
   /jest@29.7.0(@types/node@20.11.30):
     resolution: {integrity: sha512-NIy3oAFp9shda19hy4HK0HRTWKtPJmGdnvywu01nOqNC2vZg+Z+fvJDxpMQA88eb2I9EcafcdjYgsDthnYTvGw==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
+    hasBin: true
     peerDependencies:
       node-notifier: ^8.0.1 || ^9.0.0 || ^10.0.0
     peerDependenciesMeta:
@@ -5327,6 +5330,7 @@ packages:
 
   /update-browserslist-db@1.0.13(browserslist@4.23.0):
     resolution: {integrity: sha512-xebP81SNcPuNpPP3uzeW1NYXxI3rxyJzF3pD6sH4jE7o/IX+WtSpwnVU+qIsDPyk0d3hmFQ7mjqc6AtV604hbg==}
+    hasBin: true
     peerDependencies:
       browserslist: '>= 4.21.0'
     dependencies:
