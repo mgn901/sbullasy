@@ -1,5 +1,5 @@
-import type { TNominalPrimitive } from '../../utils/primitives/TNominalPrimitive.ts';
-import { type TId, generateId } from '../../utils/random-values/TId.ts';
+import type { TNominalPrimitive } from '../../utils/primitive.ts';
+import { type TId, generateId } from '../../utils/random-values/id.ts';
 import { Success, type TResult } from '../../utils/result.ts';
 import type { EmailVerificationPassedCertificate } from '../certificates/EmailVerificationPassedCertificate.ts';
 import type { MyselfCertificate } from '../certificates/MyselfCertificate.ts';

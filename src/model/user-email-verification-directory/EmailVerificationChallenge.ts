@@ -1,6 +1,6 @@
-import type { TNominalPrimitive } from '../../utils/primitives/TNominalPrimitive.ts';
-import type { TId } from '../../utils/random-values/TId.ts';
-import type { TShortSecret } from '../../utils/random-values/TShortSecret.ts';
+import type { TNominalPrimitive } from '../../utils/primitive.ts';
+import type { TId } from '../../utils/random-values/id.ts';
+import type { TShortSecret } from '../../utils/random-values/short-secret.ts';
 import type { IUserProperties } from '../user/User.ts';
 import type { TEmail } from '../values/TEmail.ts';
 

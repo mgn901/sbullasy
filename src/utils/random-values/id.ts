@@ -1,4 +1,4 @@
-import type { TNominalPrimitive } from '../primitives/TNominalPrimitive.ts';
+import type { TNominalPrimitive } from '../primitive.ts';
 
 /**
  * エンティティ`E`のID文字列を表す公称プリミティブ型。

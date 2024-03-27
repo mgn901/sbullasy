@@ -1,4 +1,4 @@
-import type { TNominalPrimitive } from '../primitives/TNominalPrimitive.ts';
+import type { TNominalPrimitive } from '../primitive.ts';
 
 /**
  * 短い8文字のシークレット文字列を表す公称プリミティブ型。

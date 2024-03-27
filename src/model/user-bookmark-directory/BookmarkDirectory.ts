@@ -1,6 +1,6 @@
-import type { TExcludeFromTuple } from '../../utils/TExcludeFromTuple.ts';
 import { exclude } from '../../utils/predicate.ts';
 import { Success } from '../../utils/result.ts';
+import type { TExcludeFromTuple } from '../../utils/tuple.ts';
 import type { IUserProperties } from '../user/User.ts';
 import { Bookmark, type IBookmarkProperties } from './Bookmark.ts';
 

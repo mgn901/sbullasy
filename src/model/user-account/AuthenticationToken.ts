@@ -1,6 +1,6 @@
-import type { TNominalPrimitive } from '../../utils/primitives/TNominalPrimitive.ts';
-import type { TId } from '../../utils/random-values/TId.ts';
-import type { TLongSecret } from '../../utils/random-values/TLongSecret.ts';
+import type { TNominalPrimitive } from '../../utils/primitive.ts';
+import type { TId } from '../../utils/random-values/id.ts';
+import type { TLongSecret } from '../../utils/random-values/long-secret.ts';
 import type { IUserProperties } from '../user/User.ts';
 
 const authenticationTokenTypeSymbol = Symbol('authenticationTokenTypeSymbol');

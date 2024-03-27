@@ -1,4 +1,4 @@
-import type { TExcludeFromTuple } from './TExcludeFromTuple.ts';
+import type { TExcludeFromTuple } from './tuple.ts';
 
 type Entries<T> = (keyof T extends infer U ? (U extends keyof T ? [U, T[U]] : never) : never)[];
 

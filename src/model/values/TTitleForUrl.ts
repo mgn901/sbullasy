@@ -1,4 +1,4 @@
-import type { TNominalPrimitive } from '../../utils/primitives/TNominalPrimitive.ts';
+import type { TNominalPrimitive } from '../../utils/primitive.ts';
 
 const titleForUrlTypeSymbol = Symbol('titleForUrlTypeSymbol');
 

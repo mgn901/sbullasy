@@ -1,5 +1,5 @@
-import type { TNominalPrimitive } from '../../utils/primitives/TNominalPrimitive.ts';
-import type { TId } from '../../utils/random-values/TId.ts';
+import type { TNominalPrimitive } from '../../utils/primitive.ts';
+import type { TId } from '../../utils/random-values/id.ts';
 
 const itemTypeSymbol = Symbol('itemTypeSymbol');
 
