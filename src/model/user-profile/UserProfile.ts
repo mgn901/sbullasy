@@ -5,6 +5,7 @@ import type {
 } from '../certificates/EmailVerificationPassedCertificate.ts';
 import type { MyselfCertificate } from '../certificates/MyselfCertificate.ts';
 import { USER_PROFILE_EXPIRATION_MS } from '../constants.ts';
+import { ApplicationErrorOrException } from '../errors/ApplicationErrorOrException.ts';
 import type { IGroupProperties } from '../group/Group.ts';
 import type { IUserProperties } from '../user/User.ts';
 import type { TDisplayName } from '../values/TDisplayName.ts';
@@ -66,6 +67,10 @@ export class UserProfile<
         belongsTo: [] as const,
       }),
     });
+  }
+
+  public isValidAt(param: { readonly date?: Date }): Success<{ readonly isValid: boolean }> {
+    return new Success({ isValid: (param.date ?? new Date()) < this.expiresAt });
   }
 
   public toBodySet<
@@ -143,4 +148,8 @@ export class UserProfile<
     this.expiresAt = param.expiresAt;
     this.belongsTo = param.belongsTo;
   }
+}
+
+export class UserProfileExpiredException extends ApplicationErrorOrException {
+  public readonly name = 'UserProfileExpiredException';
 }

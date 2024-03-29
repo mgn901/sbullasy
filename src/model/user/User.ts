@@ -1,6 +1,6 @@
 import type { TNominalPrimitive } from '../../utils/primitive.ts';
 import { type TId, generateId } from '../../utils/random-values/id.ts';
-import { Success, type TResult } from '../../utils/result.ts';
+import { Success } from '../../utils/result.ts';
 import type { EmailVerificationPassedCertificate } from '../certificates/EmailVerificationPassedCertificate.ts';
 import type { MyselfCertificate } from '../certificates/MyselfCertificate.ts';
 import { UserAccount } from '../user-account/UserAccount.ts';
@@ -31,7 +31,7 @@ export class User<
     Id extends IUserProperties['id'] = IUserProperties['id'],
   >(param: {
     readonly email: Email;
-  }): TResult<{
+  }): Success<{
     readonly user: User<Id, Email, IUserProperties['createdAt']>;
     readonly userAccount: UserAccount<Id, readonly []>;
     readonly emailVerificationDirectory: EmailVerificationDirectory<Id, readonly []>;

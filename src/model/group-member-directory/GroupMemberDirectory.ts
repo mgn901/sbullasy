@@ -8,7 +8,7 @@ import type {
 } from '../certificates/MyselfCertificate.ts';
 import { ApplicationErrorOrException } from '../errors/ApplicationErrorOrException.ts';
 import type { IGroupProperties } from '../group/Group.ts';
-import type { UserProfile } from '../user-profile/UserProfile.ts';
+import { type UserProfile, UserProfileExpiredException } from '../user-profile/UserProfile.ts';
 import { type IMemberProperties, Member } from './Member.ts';
 
 const groupMemberDirectoryTypeSymbol = Symbol('groupMemberDirectoryTypeSymbol');
@@ -65,16 +65,27 @@ export class GroupMemberDirectory<
   }
 
   public toMemberAdded<UserId extends IMemberProperties['userId']>(param: {
-    readonly userProfile: UserProfile<UserId>;
     readonly answer: IGroupMemberDirectoryProperties['invitationSecret'];
+    readonly userProfile: UserProfile<UserId>;
     readonly myselfCertificate: MyselfCertificate<UserId>;
-  }): TResult<{
-    readonly groupMemberDirectory: GroupMemberDirectory<
-      Id,
-      InvitationSecret,
-      readonly [...Members, Member<Id, UserId, 'default'>]
-    >;
-  }> {
+  }): TResult<
+    {
+      readonly groupMemberDirectory: GroupMemberDirectory<
+        Id,
+        InvitationSecret,
+        readonly [...Members, Member<Id, UserId, 'default'>]
+      >;
+    },
+    WrongInvitationSecretException | UserProfileExpiredException
+  > {
+    if (!param.userProfile.isValidAt({}).value.isValid) {
+      return new Failure(
+        new UserProfileExpiredException({
+          message:
+            '学生認証の期限が切れています。グループに参加するには、学生認証を受けてください。',
+        }),
+      );
+    }
     if (this.invitationSecret !== param.answer) {
       return new Failure(
         new WrongInvitationSecretException({ message: '正しい招待コードを入力してください。' }),
@@ -100,16 +111,16 @@ export class GroupMemberDirectory<
   public toMemberRemovedByMyself<UserId extends IMemberProperties['userId']>(param: {
     readonly userId: UserId;
     readonly myselfCertificate: MyselfCertificate<UserId>;
-  }): TResult<{
-    readonly groupMemberDirectory: GroupMemberDirectory<
-      Id,
-      InvitationSecret,
-      TExcludeFromTuple<Members, Member<Id, UserId>>
-    >;
-  }> {
-    const a = (['a', 1, 'b', 2, 2] as const).filter<1 | 2>(
-      (exists): exists is 1 | 2 => exists === 1 || exists === 2,
-    );
+  }): TResult<
+    {
+      readonly groupMemberDirectory: GroupMemberDirectory<
+        Id,
+        InvitationSecret,
+        TExcludeFromTuple<Members, Member<Id, UserId>>
+      >;
+    },
+    InsufficientAdminsException
+  > {
     const newGroupMemberDirectory = GroupMemberDirectory.fromParam({
       id: this.id,
       invitationSecret: this.invitationSecret,

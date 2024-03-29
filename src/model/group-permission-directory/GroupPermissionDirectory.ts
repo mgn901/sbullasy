@@ -99,6 +99,10 @@ export class GroupPermissionDirectory<
   }
 }
 
+export class NotInstanceAdminException extends ApplicationErrorOrException {
+  public readonly name = 'NotInstanceAdminException';
+}
+
 export class NotAllowedToModifyException extends ApplicationErrorOrException {
   public readonly name = 'NotAllowedToModifyException';
 }

@@ -39,9 +39,12 @@ export class GroupProfile<
     readonly displayName: NewDisplayName;
     readonly groupMemberDirectory: GroupMemberDirectory<Id>;
     readonly myselfCertificate: MyselfCertificate<IMyselfCertificateProperties['userId']>;
-  }): TResult<{
-    readonly groupProfile: GroupProfile<Id, NewName, NewDisplayName, Items>;
-  }> {
+  }): TResult<
+    {
+      readonly groupProfile: GroupProfile<Id, NewName, NewDisplayName, Items>;
+    },
+    NotGroupAdminException
+  > {
     if (
       !param.groupMemberDirectory.members.some(
         (exists) =>

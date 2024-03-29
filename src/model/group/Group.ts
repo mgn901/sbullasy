@@ -1,7 +1,7 @@
 import type { TNominalPrimitive } from '../../utils/primitive.ts';
 import { type TId, generateId } from '../../utils/random-values/id.ts';
 import { generateShortSecret } from '../../utils/random-values/short-secret.ts';
-import { Success, type TResult } from '../../utils/result.ts';
+import { Failure, Success, type TResult } from '../../utils/result.ts';
 import type { MyselfCertificate } from '../certificates/MyselfCertificate.ts';
 import {
   GroupMemberDirectory,
@@ -10,7 +10,7 @@ import {
 import { Member } from '../group-member-directory/Member.ts';
 import { GroupPermissionDirectory } from '../group-permission-directory/GroupPermissionDirectory.ts';
 import { GroupProfile, type IGroupProfileProperties } from '../group-profile/GroupProfile.ts';
-import type { UserProfile } from '../user-profile/UserProfile.ts';
+import { type UserProfile, UserProfileExpiredException } from '../user-profile/UserProfile.ts';
 import type { IUserProperties } from '../user/User.ts';
 
 const groupTypeSymbol = Symbol('groupTypeSymbol');
@@ -38,17 +38,29 @@ export class Group<
     readonly displayName: DisplayName;
     readonly userProfile: UserProfile<UserId>;
     readonly myselfCertificate: MyselfCertificate<UserId>;
-  }): TResult<{
-    readonly group: Group<Id>;
-    readonly groupMemberDirectory: GroupMemberDirectory<
-      Id,
-      IGroupMemberDirectoryProperties['invitationSecret'],
-      readonly [Member<Id, UserId>]
-    >;
-    readonly groupPermissionDirectory: GroupPermissionDirectory<Id, 'default', readonly []>;
-    readonly groupProfile: GroupProfile<Id, Name, DisplayName, readonly []>;
-  }> {
+  }): TResult<
+    {
+      readonly group: Group<Id>;
+      readonly groupMemberDirectory: GroupMemberDirectory<
+        Id,
+        IGroupMemberDirectoryProperties['invitationSecret'],
+        readonly [Member<Id, UserId>]
+      >;
+      readonly groupPermissionDirectory: GroupPermissionDirectory<Id, 'default', readonly []>;
+      readonly groupProfile: GroupProfile<Id, Name, DisplayName, readonly []>;
+    },
+    UserProfileExpiredException
+  > {
     const id = generateId() as Id;
+
+    if (!param.userProfile.isValidAt({}).value.isValid) {
+      return new Failure(
+        new UserProfileExpiredException({
+          message:
+            '学生認証の期限が切れています。グループを作成する前に、再度学生認証を受けてください。',
+        }),
+      );
+    }
 
     return new Success({
       group: Group.fromParam({
