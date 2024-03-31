@@ -1,4 +1,4 @@
-import { Success } from '../../utils/result.ts';
+import { Success, type TResult } from '../../utils/result.ts';
 import type {
   EmailVerificationPassedCertificate,
   IEmailVerificationPassedCertificateProperties,
@@ -6,7 +6,9 @@ import type {
 import type { MyselfCertificate } from '../certificates/MyselfCertificate.ts';
 import { USER_PROFILE_EXPIRATION_MS } from '../constants.ts';
 import { ApplicationErrorOrException } from '../errors/ApplicationErrorOrException.ts';
-import type { IGroupProperties } from '../group/Group.ts';
+import type { MemberWithGroupProfile } from '../group-member-directory/MemberWithGroupProfile.ts';
+import type { IMemberWithGroupProfileRepositoryGetManyParams } from '../repositories/IMemberWithGroupProfileRepository.ts';
+import type { IUserProfileRepositoryGetOneByIdParams } from '../repositories/IUserProfileRepository.ts';
 import type { IUserProperties } from '../user/User.ts';
 import type { TDisplayName } from '../values/TDisplayName.ts';
 import type { TName } from '../values/TName.ts';
@@ -18,7 +20,6 @@ export interface IUserProfileProperties {
   readonly name: TName;
   readonly displayName: TDisplayName;
   readonly expiresAt: Date;
-  readonly belongsTo: readonly IGroupProperties['id'][];
 }
 
 export class UserProfile<
@@ -26,14 +27,12 @@ export class UserProfile<
   Name extends IUserProfileProperties['name'] = IUserProfileProperties['name'],
   DisplayName extends IUserProfileProperties['displayName'] = IUserProfileProperties['displayName'],
   ExpiresAt extends IUserProfileProperties['expiresAt'] = IUserProfileProperties['expiresAt'],
-  BelongsTo extends IUserProfileProperties['belongsTo'] = IUserProfileProperties['belongsTo'],
 > {
   public readonly [userProfileTypeSymbol]: unknown;
   public readonly id: Id;
   public readonly name: Name;
   public readonly displayName: DisplayName;
   public readonly expiresAt: ExpiresAt;
-  public readonly belongsTo: BelongsTo;
 
   public static create<
     Id extends IUserProfileProperties['id'],
@@ -50,13 +49,7 @@ export class UserProfile<
       'userProfile:create'
     >;
   }): Success<{
-    readonly userProfile: UserProfile<
-      Id,
-      Name,
-      DisplayName,
-      IUserProfileProperties['expiresAt'],
-      readonly []
-    >;
+    readonly userProfile: UserProfile<Id, Name, DisplayName, IUserProfileProperties['expiresAt']>;
   }> {
     return new Success({
       userProfile: UserProfile.fromParam({
@@ -64,12 +57,46 @@ export class UserProfile<
         name: param.name,
         displayName: param.displayName,
         expiresAt: new Date(Date.now() + USER_PROFILE_EXPIRATION_MS),
-        belongsTo: [] as const,
       }),
     });
   }
 
-  public isValidAt(param: { readonly date?: Date }): Success<{ readonly isValid: boolean }> {
+  public static createGetByIdRequest<Id extends IUserProfileProperties['id']>(param: {
+    readonly id: Id;
+    readonly myselfCertificate: MyselfCertificate<Id>;
+  }): Success<{
+    readonly daoRequest: IUserProfileRepositoryGetOneByIdParams<Id>;
+  }> {
+    return new Success({
+      daoRequest: { id: param.id },
+    });
+  }
+
+  public createGetBelongsToRequest(param: {
+    readonly myselfCertificate: MyselfCertificate<Id>;
+    readonly options: IMemberWithGroupProfileRepositoryGetManyParams<
+      MemberWithGroupProfile,
+      Record<never, never>
+    >['options'];
+  }): TResult<{
+    readonly daoRequest: IMemberWithGroupProfileRepositoryGetManyParams<
+      MemberWithGroupProfile,
+      { readonly userId: Id }
+    >;
+  }> {
+    return new Success({
+      daoRequest: {
+        query: { userId: this.id },
+        options: param.options,
+      },
+    });
+  }
+
+  public isValidAt(param: {
+    readonly date?: Date;
+  }): Success<{
+    readonly isValid: boolean;
+  }> {
     return new Success({ isValid: (param.date ?? new Date()) < this.expiresAt });
   }
 
@@ -81,14 +108,13 @@ export class UserProfile<
     readonly displayName: NewDisplayName;
     readonly myselfCertificate: MyselfCertificate<Id>;
   }): Success<{
-    readonly userProfile: UserProfile<Id, NewName, NewDisplayName, ExpiresAt, BelongsTo>;
+    readonly userProfile: UserProfile<Id, NewName, NewDisplayName, ExpiresAt>;
   }> {
     return new Success({
       userProfile: UserProfile.fromParam({
         id: this.id,
         name: param.name,
         displayName: param.displayName,
-        belongsTo: this.belongsTo,
         expiresAt: this.expiresAt,
       }),
     });
@@ -102,20 +128,13 @@ export class UserProfile<
       'userProfile:create'
     >;
   }): Success<{
-    readonly userProfile: UserProfile<
-      Id,
-      Name,
-      DisplayName,
-      IUserProfileProperties['expiresAt'],
-      BelongsTo
-    >;
+    readonly userProfile: UserProfile<Id, Name, DisplayName, IUserProfileProperties['expiresAt']>;
   }> {
     return new Success({
       userProfile: UserProfile.fromParam({
         id: this.id,
         name: this.name,
         displayName: this.displayName,
-        belongsTo: this.belongsTo,
         expiresAt: new Date(Date.now() + USER_PROFILE_EXPIRATION_MS),
       }),
     });
@@ -126,27 +145,19 @@ export class UserProfile<
     Name extends IUserProfileProperties['name'],
     DisplayName extends IUserProfileProperties['displayName'],
     ExpiresAt extends IUserProfileProperties['expiresAt'],
-    BelongsTo extends IUserProfileProperties['belongsTo'],
   >(
-    param: Pick<
-      UserProfile<Id, Name, DisplayName, ExpiresAt, BelongsTo>,
-      keyof IUserProfileProperties
-    >,
-  ): UserProfile<Id, Name, DisplayName, ExpiresAt, BelongsTo> {
+    param: Pick<UserProfile<Id, Name, DisplayName, ExpiresAt>, keyof IUserProfileProperties>,
+  ): UserProfile<Id, Name, DisplayName, ExpiresAt> {
     return new UserProfile(param);
   }
 
   private constructor(
-    param: Pick<
-      UserProfile<Id, Name, DisplayName, ExpiresAt, BelongsTo>,
-      keyof IUserProfileProperties
-    >,
+    param: Pick<UserProfile<Id, Name, DisplayName, ExpiresAt>, keyof IUserProfileProperties>,
   ) {
     this.id = param.id;
     this.name = param.name;
     this.displayName = param.displayName;
     this.expiresAt = param.expiresAt;
-    this.belongsTo = param.belongsTo;
   }
 }
 

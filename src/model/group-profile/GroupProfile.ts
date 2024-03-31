@@ -8,15 +8,21 @@ import {
   NotGroupAdminException,
 } from '../group-member-directory/GroupMemberDirectory.ts';
 import type { IGroupProperties } from '../group/Group.ts';
-import type { IItemProperties } from '../item/Item.ts';
+import type { Item } from '../item/Item.ts';
+import type {
+  IGroupProfileRepositoryGetManyParams,
+  IGroupProfileRepositoryGetOneByIdParams,
+} from '../repositories/IGroupProfileRepository.ts';
+import type { IItemRepositoryGetManyParams } from '../repositories/IItemRepository.ts';
 import type { TDisplayName } from '../values/TDisplayName.ts';
 import type { TName } from '../values/TName.ts';
+
+const groupProfileTypeSymbol = Symbol('groupProfileTypeSymbol');
 
 export interface IGroupProfileProperties {
   readonly id: IGroupProperties['id'];
   readonly name: TName;
   readonly displayName: TDisplayName;
-  readonly items: readonly IItemProperties['id'][];
 }
 
 export class GroupProfile<
@@ -24,12 +30,50 @@ export class GroupProfile<
   Name extends IGroupProfileProperties['name'] = IGroupProfileProperties['name'],
   DisplayName extends
     IGroupProfileProperties['displayName'] = IGroupProfileProperties['displayName'],
-  Items extends IGroupProfileProperties['items'] = IGroupProfileProperties['items'],
 > {
+  public readonly [groupProfileTypeSymbol]: unknown;
   public readonly id: Id;
   public readonly name: Name;
   public readonly displayName: DisplayName;
-  public readonly items: Items;
+
+  public static createGetByIdRequest<Id extends IGroupProfileProperties['id']>(param: {
+    readonly id: Id;
+  }): Success<{
+    readonly daoRequest: IGroupProfileRepositoryGetOneByIdParams<Id>;
+  }> {
+    return new Success({
+      daoRequest: { id: param.id },
+    });
+  }
+
+  public static createGetManyRequest(param: {
+    readonly options?: IGroupProfileRepositoryGetManyParams<
+      GroupProfile,
+      Record<never, never>
+    >['options'];
+  }): Success<{
+    readonly daoRequest: IGroupProfileRepositoryGetManyParams<GroupProfile, Record<never, never>>;
+  }> {
+    return new Success({
+      daoRequest: {
+        query: {},
+        options: param.options,
+      },
+    });
+  }
+
+  public createGetItemsRequest(param: {
+    readonly options?: IItemRepositoryGetManyParams<Item, { readonly createdBy: Id }>['options'];
+  }): Success<{
+    readonly daoRequest: IItemRepositoryGetManyParams<Item, { readonly createdBy: Id }>;
+  }> {
+    return new Success({
+      daoRequest: {
+        query: { createdBy: this.id },
+        options: param.options,
+      },
+    });
+  }
 
   public toBodySet<
     NewName extends IGroupProfileProperties['name'],
@@ -41,14 +85,13 @@ export class GroupProfile<
     readonly myselfCertificate: MyselfCertificate<IMyselfCertificateProperties['userId']>;
   }): TResult<
     {
-      readonly groupProfile: GroupProfile<Id, NewName, NewDisplayName, Items>;
+      readonly groupProfile: GroupProfile<Id, NewName, NewDisplayName>;
     },
     NotGroupAdminException
   > {
     if (
       !param.groupMemberDirectory.members.some(
-        (exists) =>
-          exists.permission === 'admin' && exists.userId === param.myselfCertificate.userId,
+        (exists) => exists.role === 'admin' && exists.userId === param.myselfCertificate.userId,
       )
     ) {
       return new Failure(
@@ -61,7 +104,6 @@ export class GroupProfile<
     return new Success({
       groupProfile: GroupProfile.fromParam({
         id: this.id,
-        items: this.items,
         name: param.name,
         displayName: param.displayName,
       }),
@@ -72,19 +114,17 @@ export class GroupProfile<
     Id extends IGroupProfileProperties['id'],
     Name extends IGroupProfileProperties['name'],
     DisplayName extends IGroupProfileProperties['displayName'],
-    Items extends IGroupProfileProperties['items'],
   >(
-    param: Pick<GroupProfile<Id, Name, DisplayName, Items>, keyof IGroupProfileProperties>,
-  ): GroupProfile<Id, Name, DisplayName, Items> {
+    param: Pick<GroupProfile<Id, Name, DisplayName>, keyof IGroupProfileProperties>,
+  ): GroupProfile<Id, Name, DisplayName> {
     return new GroupProfile(param);
   }
 
   private constructor(
-    param: Pick<GroupProfile<Id, Name, DisplayName, Items>, keyof IGroupProfileProperties>,
+    param: Pick<GroupProfile<Id, Name, DisplayName>, keyof IGroupProfileProperties>,
   ) {
     this.id = param.id;
     this.name = param.name;
     this.displayName = param.displayName;
-    this.items = param.items;
   }
 }

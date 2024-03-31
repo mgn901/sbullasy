@@ -8,8 +8,11 @@ import type {
 } from '../certificates/MyselfCertificate.ts';
 import { ApplicationErrorOrException } from '../errors/ApplicationErrorOrException.ts';
 import type { IGroupProperties } from '../group/Group.ts';
+import type { IGroupMemberDirectoryRepositoryGetOneByIdParams } from '../repositories/IGroupMemberDirectoryRepository.ts';
+import type { IMemberWithUserProfileRepositoryGetManyParams } from '../repositories/IMemberWithUserProfileRepository.ts';
 import { type UserProfile, UserProfileExpiredException } from '../user-profile/UserProfile.ts';
 import { type IMemberProperties, Member } from './Member.ts';
+import type { MemberWithUserProfile } from './MemberWithUserProfile.ts';
 
 const groupMemberDirectoryTypeSymbol = Symbol('groupMemberDirectoryTypeSymbol');
 
@@ -31,10 +34,67 @@ export class GroupMemberDirectory<
   public readonly invitationSecret: InvitationSecret;
   public readonly members: Members;
 
-  public toInvitationSecretResetRequestCreated<
-    AdminUserId extends IMyselfCertificateProperties['userId'],
-  >(param: {
-    readonly myselfCertificate: MyselfCertificate<AdminUserId>;
+  public static createGetByIdRequest<Id extends IGroupProperties['id']>(param: {
+    readonly id: Id;
+    readonly groupMemberDirectory: GroupMemberDirectory<Id>;
+    readonly myselfCertificate: MyselfCertificate<IMyselfCertificateProperties['userId']>;
+  }): TResult<
+    {
+      readonly daoRequest: IGroupMemberDirectoryRepositoryGetOneByIdParams<Id>;
+    },
+    NotGroupMemberException
+  > {
+    if (
+      !param.groupMemberDirectory.members.some(extract({ userId: param.myselfCertificate.userId }))
+    ) {
+      return new Failure(
+        new NotGroupMemberException({
+          message: 'メンバー以外がグループのメンバーの一覧を閲覧することはできません。',
+        }),
+      );
+    }
+
+    return new Success({
+      daoRequest: { id: param.id },
+    });
+  }
+
+  public createGetMembersRequest(param: {
+    readonly options: IMemberWithUserProfileRepositoryGetManyParams<
+      MemberWithUserProfile<Id>,
+      { readonly groupId: Id }
+    >['options'];
+    readonly groupMemberDirectory: GroupMemberDirectory<Id>;
+    readonly myselfCertificate: MyselfCertificate<IMyselfCertificateProperties['userId']>;
+  }): TResult<
+    {
+      readonly daoRequest: IMemberWithUserProfileRepositoryGetManyParams<
+        MemberWithUserProfile<Id>,
+        { readonly groupId: Id }
+      >;
+    },
+    NotGroupMemberException
+  > {
+    if (
+      !param.groupMemberDirectory.members.some(extract({ userId: param.myselfCertificate.userId }))
+    ) {
+      return new Failure(
+        new NotGroupMemberException({
+          message: 'メンバー以外がグループのメンバーの一覧を閲覧することはできません。',
+        }),
+      );
+    }
+
+    return new Success({
+      daoRequest: {
+        query: { groupId: this.id },
+        options: param.options,
+      },
+    });
+  }
+
+  public toInvitationSecretResetRequestCreated(param: {
+    readonly myselfCertificate: MyselfCertificate<IMyselfCertificateProperties['userId']>;
   }): TResult<
     {
       readonly groupMemberDirectory: GroupMemberDirectory<
@@ -45,9 +105,7 @@ export class GroupMemberDirectory<
     },
     NotGroupAdminException
   > {
-    if (
-      !this.members.some(extract({ userId: param.myselfCertificate.userId, permission: 'admin' }))
-    ) {
+    if (!this.members.some(extract({ userId: param.myselfCertificate.userId, role: 'admin' }))) {
       return new Failure(
         new NotGroupAdminException({
           message: '管理者以外のメンバーがグループの招待コードをリセットすることはできません。',
@@ -101,7 +159,7 @@ export class GroupMemberDirectory<
           Member.fromParam({
             groupId: this.id,
             userId: param.userProfile.id,
-            permission: 'default',
+            role: 'default',
           }),
         ] as const,
       }),
@@ -127,7 +185,7 @@ export class GroupMemberDirectory<
       members: this.members.filter(exclude<Member, Member<Id, UserId>>({ userId: param.userId })),
     });
 
-    if (!newGroupMemberDirectory.members.some(extract({ permission: 'admin' }))) {
+    if (!newGroupMemberDirectory.members.some(extract({ role: 'admin' }))) {
       return new Failure(
         new InsufficientAdminsException({
           message:
@@ -154,9 +212,7 @@ export class GroupMemberDirectory<
     },
     NotGroupAdminException
   > {
-    if (
-      !this.members.some(extract({ userId: param.myselfCertificate.userId, permission: 'admin' }))
-    ) {
+    if (!this.members.some(extract({ userId: param.myselfCertificate.userId, role: 'admin' }))) {
       return new Failure(
         new NotGroupAdminException({
           message: '管理者以外のメンバーが他のメンバーをグループから退出させることはできません。',

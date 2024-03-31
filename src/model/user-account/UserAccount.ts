@@ -9,6 +9,7 @@ import type {
 } from '../certificates/EmailVerificationPassedCertificate.ts';
 import type { MyselfCertificate } from '../certificates/MyselfCertificate.ts';
 import { AUTHENTICATION_TOKEN_EXPIRATION_MS } from '../constants.ts';
+import type { IUserAccountRepositoryGetOneByIdParams } from '../repositories/IUserAccountRepository.ts';
 import type { IUserProperties } from '../user/User.ts';
 import { AuthenticationToken, type IAuthenticationTokenProperties } from './AuthenticationToken.ts';
 
@@ -27,6 +28,17 @@ export class UserAccount<
   public readonly [userAccountTypeSymbol]: unknown;
   public readonly id: Id;
   public readonly authenticationTokens: AuthenticationTokens;
+
+  public static createGetByIdRequest<Id extends IUserAccountProperties['id']>(param: {
+    readonly id: Id;
+    readonly myselfCertificate: MyselfCertificate<Id>;
+  }): Success<{
+    readonly daoRequest: IUserAccountRepositoryGetOneByIdParams<Id>;
+  }> {
+    return new Success({
+      daoRequest: { id: param.id },
+    });
+  }
 
   public toAuthenticationTokenCreated<
     IPAddress extends IAuthenticationTokenProperties['ipAddress'],

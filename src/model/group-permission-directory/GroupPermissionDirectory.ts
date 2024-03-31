@@ -7,6 +7,7 @@ import { ApplicationErrorOrException } from '../errors/ApplicationErrorOrExcepti
 import type { GroupMemberDirectory } from '../group-member-directory/GroupMemberDirectory.ts';
 import { NotGroupMemberException } from '../group-member-directory/GroupMemberDirectory.ts';
 import type { IGroupProperties } from '../group/Group.ts';
+import type { IGroupPermissionDirectoryRepositoryGetOneByIdParams } from '../repositories/IGroupPermissionDirectoryRepository.ts';
 import type { ITemplateProperties } from '../template/Template.ts';
 
 const groupPermissionDirectoryTypeSymbol = Symbol('groupPermissionDirectoryTypeSymbol');
@@ -28,6 +29,16 @@ export class GroupPermissionDirectory<
   public readonly id: Id;
   public readonly roleInInstance: RoleInInstance;
   public readonly allowedToModify: AllowedToModify;
+
+  public static createGetByIdRequest<Id extends IGroupPermissionDirectoryProperties['id']>(param: {
+    readonly id: Id;
+  }): Success<{
+    readonly daoRequest: IGroupPermissionDirectoryRepositoryGetOneByIdParams<Id>;
+  }> {
+    return new Success({
+      daoRequest: { id: param.id },
+    });
+  }
 
   public toBodySet<
     NewRoleInInstance extends IGroupPermissionDirectoryProperties['roleInInstance'],

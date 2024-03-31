@@ -1,3 +1,4 @@
+import { extract } from '../../utils/predicate.ts';
 import type { TNominalPrimitive } from '../../utils/primitive.ts';
 import { type TId, generateId } from '../../utils/random-values/id.ts';
 import { generateShortSecret } from '../../utils/random-values/short-secret.ts';
@@ -6,10 +7,19 @@ import type { MyselfCertificate } from '../certificates/MyselfCertificate.ts';
 import {
   GroupMemberDirectory,
   type IGroupMemberDirectoryProperties,
+  NotGroupMemberException,
 } from '../group-member-directory/GroupMemberDirectory.ts';
 import { Member } from '../group-member-directory/Member.ts';
 import { GroupPermissionDirectory } from '../group-permission-directory/GroupPermissionDirectory.ts';
 import { GroupProfile, type IGroupProfileProperties } from '../group-profile/GroupProfile.ts';
+import type { IGroupMemberDirectoryRepositoryDeleteOneParams } from '../repositories/IGroupMemberDirectoryRepository.ts';
+import type { IGroupPermissionDirectoryRepositoryDeleteOneParams } from '../repositories/IGroupPermissionDirectoryRepository.ts';
+import type { IGroupProfileRepositoryDeleteOneParams } from '../repositories/IGroupProfileRepository.ts';
+import type {
+  IGroupRepositoryDeleteOneParams,
+  IGroupRepositoryGetOneByIdParams,
+} from '../repositories/IGroupRepository.ts';
+import type { IItemRepositoryDeleteManyParams } from '../repositories/IItemRepository.ts';
 import { type UserProfile, UserProfileExpiredException } from '../user-profile/UserProfile.ts';
 import type { IUserProperties } from '../user/User.ts';
 
@@ -44,10 +54,10 @@ export class Group<
       readonly groupMemberDirectory: GroupMemberDirectory<
         Id,
         IGroupMemberDirectoryProperties['invitationSecret'],
-        readonly [Member<Id, UserId>]
+        readonly [Member<Id, UserId, 'admin'>]
       >;
       readonly groupPermissionDirectory: GroupPermissionDirectory<Id, 'default', readonly []>;
-      readonly groupProfile: GroupProfile<Id, Name, DisplayName, readonly []>;
+      readonly groupProfile: GroupProfile<Id, Name, DisplayName>;
     },
     UserProfileExpiredException
   > {
@@ -71,7 +81,11 @@ export class Group<
         id,
         invitationSecret: generateShortSecret(),
         members: [
-          Member.fromParam({ groupId: id, userId: param.userProfile.id, permission: 'admin' }),
+          Member.fromParam({
+            groupId: id,
+            userId: param.userProfile.id,
+            role: 'admin',
+          }),
         ] as const,
       }),
       groupPermissionDirectory: GroupPermissionDirectory.fromParam({
@@ -83,8 +97,55 @@ export class Group<
         id,
         name: param.name,
         displayName: param.displayName,
-        items: [] as const,
       }),
+    });
+  }
+
+  public static createGetByIdRequest<Id extends IGroupProperties['id']>(param: {
+    readonly id: Id;
+  }): Success<{
+    readonly daoRequest: IGroupRepositoryGetOneByIdParams<Id>;
+  }> {
+    return new Success({
+      daoRequest: { id: param.id },
+    });
+  }
+
+  public createDeleteRequest(param: {
+    readonly groupMemberDirectory: GroupMemberDirectory<Id>;
+    readonly myselfCertificate: MyselfCertificate<IUserProperties['id']>;
+  }): TResult<
+    {
+      readonly daoRequests: readonly [
+        IItemRepositoryDeleteManyParams,
+        IGroupMemberDirectoryRepositoryDeleteOneParams<Id>,
+        IGroupPermissionDirectoryRepositoryDeleteOneParams<Id>,
+        IGroupProfileRepositoryDeleteOneParams<Id>,
+        IGroupRepositoryDeleteOneParams<Id>,
+      ];
+    },
+    NotGroupMemberException
+  > {
+    if (
+      !param.groupMemberDirectory.members.some(
+        extract({ userId: param.myselfCertificate.userId, role: 'admin' }),
+      )
+    ) {
+      return new Failure(
+        new NotGroupMemberException({
+          message: 'グループの管理者以外のユーザーがグループを削除することはできません。',
+        }),
+      );
+    }
+
+    return new Success({
+      daoRequests: [
+        { query: { createdBy: this.id } },
+        { id: this.id },
+        { id: this.id },
+        { id: this.id },
+        { id: this.id },
+      ] as const,
     });
   }
 

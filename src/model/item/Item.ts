@@ -10,6 +10,11 @@ import { NotGroupMemberException } from '../group-member-directory/GroupMemberDi
 import type { GroupPermissionDirectory } from '../group-permission-directory/GroupPermissionDirectory.ts';
 import { NotAllowedToModifyException } from '../group-permission-directory/GroupPermissionDirectory.ts';
 import type { IGroupProperties } from '../group/Group.ts';
+import type {
+  IItemRepositoryDeleteOneParams,
+  IItemRepositoryGetOneByIdParams,
+  IItemRepositoryGetOneByTitleForUrlParams,
+} from '../repositories/IItemRepository.ts';
 import type { ITemplateProperties, Template } from '../template/Template.ts';
 import { type UserProfile, UserProfileExpiredException } from '../user-profile/UserProfile.ts';
 import type { IUserProperties } from '../user/User.ts';
@@ -63,7 +68,7 @@ export class Item<
     TemplateId extends IItemProperties['template'],
     CreatedBy extends IItemProperties['createdBy'],
     Properties extends IItemProperties['properties'],
-    UserId extends IUserProperties['id'] = IUserProperties['id'],
+    UserId extends IUserProperties['id'],
   >(param: {
     readonly title: Title;
     readonly titleForUrl: TitleForUrl;
@@ -145,11 +150,79 @@ export class Item<
     });
   }
 
+  public static createGetByIdRequest<Id extends IItemProperties['id']>(param: {
+    readonly id: Id;
+  }): Success<{
+    readonly daoRequest: IItemRepositoryGetOneByIdParams<Id>;
+  }> {
+    return new Success({
+      daoRequest: { id: param.id },
+    });
+  }
+
+  public static createGetByTitleForUrlRequest<
+    TitleForUrl extends IItemProperties['titleForUrl'],
+  >(param: {
+    readonly titleForUrl: TitleForUrl;
+  }): Success<{
+    readonly daoRequest: IItemRepositoryGetOneByTitleForUrlParams<TitleForUrl>;
+  }> {
+    return new Success({
+      daoRequest: { titleForUrl: param.titleForUrl },
+    });
+  }
+
+  public createDeleteRequest<UserId extends IUserProperties['id']>(param: {
+    readonly userProfile: UserProfile<UserId>;
+    readonly groupMemberDirectory: GroupMemberDirectory<CreatedBy>;
+    readonly groupPermissionDirectory: GroupPermissionDirectory<CreatedBy>;
+    readonly myselfCertificate: MyselfCertificate<UserId>;
+  }): TResult<
+    {
+      readonly daoRequest: IItemRepositoryDeleteOneParams<Id>;
+    },
+    NotAllowedToModifyException | NotGroupMemberException | UserProfileExpiredException
+  > {
+    if (!param.userProfile.isValidAt({}).value.isValid) {
+      return new Failure(
+        new UserProfileExpiredException({
+          message:
+            '学生認証の期限が切れています。アイテムを削除する前に、再度学生認証を受けてください。',
+        }),
+      );
+    }
+
+    if (
+      !param.groupMemberDirectory.members.some(extract({ userId: param.myselfCertificate.userId }))
+    ) {
+      return new Failure(
+        new NotGroupMemberException({
+          message:
+            '作成したグループのメンバー以外のユーザーがこのアイテムを削除することはできません。',
+        }),
+      );
+    }
+
+    if (
+      !param.groupPermissionDirectory.allowedToModify.some((exists) => exists === this.template)
+    ) {
+      return new Failure(
+        new NotAllowedToModifyException({
+          message: 'グループにこの種類のアイテムを操作する権限がありません。',
+        }),
+      );
+    }
+
+    return new Success({
+      daoRequest: { id: this.id },
+    });
+  }
+
   public toBodySet<
     NewTitle extends IItemProperties['title'],
     NewTitleForUrl extends IItemProperties['titleForUrl'],
     NewProperties extends IItemProperties['properties'],
-    UserId extends IUserProperties['id'] = IUserProperties['id'],
+    UserId extends IUserProperties['id'],
   >(param: {
     readonly title: NewTitle;
     readonly properties: NewProperties;

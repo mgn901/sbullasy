@@ -1,6 +1,7 @@
 import type { TNominalPrimitive } from '../../utils/primitive.ts';
 import type { TId } from '../../utils/random-values/id.ts';
 import type { TLongSecret } from '../../utils/random-values/long-secret.ts';
+import { Success } from '../../utils/result.ts';
 import type { IUserProperties } from '../user/User.ts';
 
 const authenticationTokenTypeSymbol = Symbol('authenticationTokenTypeSymbol');
@@ -38,6 +39,14 @@ export class AuthenticationToken<
   public readonly expiresAt: ExpiresAt;
   public readonly ipAddress: IPAddress;
   public readonly userAgent: UserAgent;
+
+  public isValidAt(param: {
+    readonly date?: Date;
+  }): Success<{
+    readonly isValid: boolean;
+  }> {
+    return new Success({ isValid: (param.date ?? new Date()) < this.expiresAt });
+  }
 
   public static fromParam<
     Id extends IAuthenticationTokenProperties['id'],

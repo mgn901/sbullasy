@@ -12,7 +12,13 @@ import {
 } from '../group-member-directory/GroupMemberDirectory.ts';
 import type { GroupPermissionDirectory } from '../group-permission-directory/GroupPermissionDirectory.ts';
 import type { IGroupProperties } from '../group/Group.ts';
-import type { Item } from '../item/Item.ts';
+import type { IItemRepositoryDeleteManyParams } from '../repositories/IItemRepository.ts';
+import type {
+  ITemplateRepositoryDeleteOneParams,
+  ITemplateRepositoryGetManyParams,
+  ITemplateRepositoryGetOneByIdParams,
+} from '../repositories/ITemplateRepository.ts';
+import type { IDaoRequestOptions } from '../repositories/dao-types.ts';
 import type { TDisplayName } from '../values/TDisplayName.ts';
 import type { TName } from '../values/TName.ts';
 
@@ -24,8 +30,8 @@ export interface ITemplateProperties {
   readonly nameInPlural: TName;
   readonly displayName: TDisplayName;
   readonly propertiesSchema: IPropertiesSchema;
+  readonly keysIncludedInSummary: readonly (keyof IPropertiesSchema)[];
   readonly createdAt: Date;
-  readonly items: readonly Item[];
 }
 
 export class Template<
@@ -36,33 +42,37 @@ export class Template<
   DisplayName extends ITemplateProperties['displayName'] = ITemplateProperties['displayName'],
   PropertiesSchema extends
     ITemplateProperties['propertiesSchema'] = ITemplateProperties['propertiesSchema'],
+  KeysIncludedInSummary extends
+    readonly (keyof PropertiesSchema)[] = readonly (keyof PropertiesSchema)[],
   CreatedAt extends ITemplateProperties['createdAt'] = ITemplateProperties['createdAt'],
-  Items extends ITemplateProperties['items'] = ITemplateProperties['items'],
 > {
+  public readonly [templateTypeSymbol]: unknown;
   public readonly id: Id;
   public readonly nameInSingular: NameInSingular;
   public readonly nameInPlural: NameInPlural;
   public readonly displayName: DisplayName;
   public readonly propertiesSchema: PropertiesSchema;
+  public readonly keysIncludedInSummary: KeysIncludedInSummary;
   public readonly createdAt: CreatedAt;
-  public readonly items: Items;
 
   public static create<
     NameInSingular extends ITemplateProperties['nameInSingular'],
     NameInPlural extends ITemplateProperties['nameInPlural'],
     DisplayName extends ITemplateProperties['displayName'],
     PropertiesSchema extends ITemplateProperties['propertiesSchema'],
-    InstanceAdminId extends IGroupProperties['id'] = IGroupProperties['id'],
+    KeysIncludedInSummary extends readonly (keyof PropertiesSchema)[],
+    InstanceAdminGroupId extends IGroupProperties['id'],
   >(param: {
     readonly nameInSingular: NameInSingular;
     readonly nameInPlural: NameInPlural;
     readonly displayName: DisplayName;
     readonly propertiesSchema: PropertiesSchema;
+    readonly keysIncludedInSummary: KeysIncludedInSummary;
     readonly instanceAdminGroupPermissionDirectory: GroupPermissionDirectory<
-      InstanceAdminId,
+      InstanceAdminGroupId,
       'admin'
     >;
-    readonly instanceAdminGroupMemberDirectory: GroupMemberDirectory<InstanceAdminId>;
+    readonly instanceAdminGroupMemberDirectory: GroupMemberDirectory<InstanceAdminGroupId>;
     readonly myselfCertificate: MyselfCertificate<IMyselfCertificateProperties['userId']>;
   }): TResult<
     {
@@ -72,8 +82,8 @@ export class Template<
         NameInPlural,
         DisplayName,
         PropertiesSchema,
-        ITemplateProperties['createdAt'],
-        readonly []
+        KeysIncludedInSummary,
+        ITemplateProperties['createdAt']
       >;
     },
     NotGroupMemberException
@@ -98,9 +108,74 @@ export class Template<
         nameInPlural: param.nameInPlural,
         displayName: param.displayName,
         propertiesSchema: param.propertiesSchema,
+        keysIncludedInSummary: param.keysIncludedInSummary,
         createdAt: new Date(),
-        items: [] as const,
       }),
+    });
+  }
+
+  public static createGetByIdRequest<Id extends ITemplateProperties['id']>(param: {
+    readonly id: Id;
+  }): Success<{
+    readonly daoRequest: ITemplateRepositoryGetOneByIdParams<Id>;
+  }> {
+    return new Success({
+      daoRequest: { id: param.id },
+    });
+  }
+
+  public static createGetManyRequest(param: {
+    readonly options?: ITemplateRepositoryGetManyParams<Template, Record<never, never>>['options'];
+  }): Success<{
+    readonly daoRequest: ITemplateRepositoryGetManyParams<Template, Record<never, never>>;
+  }> {
+    return new Success({
+      daoRequest: {
+        query: {},
+        options: param.options,
+      },
+    });
+  }
+
+  public createDeleteRequest<InstanceAdminGroupId extends IGroupProperties['id']>(param: {
+    readonly instanceAdminGroupPermissionDirectory: GroupPermissionDirectory<
+      InstanceAdminGroupId,
+      'admin'
+    >;
+    readonly instanceAdminGroupMemberDirectory: GroupMemberDirectory<InstanceAdminGroupId>;
+    readonly myselfCertificate: MyselfCertificate<IMyselfCertificateProperties['userId']>;
+  }): TResult<
+    {
+      readonly daoRequests: readonly [
+        IItemRepositoryDeleteManyParams,
+        ITemplateRepositoryDeleteOneParams<Id>,
+      ];
+    },
+    NotGroupMemberException
+  > {
+    if (
+      !param.instanceAdminGroupMemberDirectory.members.some(
+        extract({ userId: param.myselfCertificate.userId }),
+      )
+    ) {
+      return new Failure(
+        new NotGroupMemberException({
+          message:
+            'インスタンス管理者のメンバー以外のユーザーがテンプレートを削除することはできません。',
+        }),
+      );
+    }
+
+    return new Success({
+      daoRequests: [{ query: { template: this.id } }, { id: this.id }] as const,
+    });
+  }
+
+  public createGetItemsRequest(param: IItemSearchRequest<PropertiesSchema>): Success<{
+    readonly seatchRequest: typeof param;
+  }> {
+    return new Success({
+      seatchRequest: param,
     });
   }
 
@@ -109,17 +184,19 @@ export class Template<
     NewNameInPlural extends ITemplateProperties['nameInPlural'],
     NewDisplayName extends ITemplateProperties['displayName'],
     NewPropertiesSchema extends ITemplateProperties['propertiesSchema'],
-    InstanceAdminId extends IGroupProperties['id'] = IGroupProperties['id'],
+    NewKeysIncludedInSummary extends readonly (keyof NewPropertiesSchema)[],
+    InstanceAdminGroupId extends IGroupProperties['id'],
   >(param: {
     readonly nameInSingular: NewNameInSingular;
     readonly nameInPlural: NewNameInPlural;
     readonly displayName: NewDisplayName;
     readonly propertiesSchema: NewPropertiesSchema;
     readonly instanceAdminGroupPermissionDirectory: GroupPermissionDirectory<
-      InstanceAdminId,
+      InstanceAdminGroupId,
       'admin'
     >;
-    readonly instanceAdminGroupMemberDirectory: GroupMemberDirectory<InstanceAdminId>;
+    readonly keysIncludedInSummary: NewKeysIncludedInSummary;
+    readonly instanceAdminGroupMemberDirectory: GroupMemberDirectory<InstanceAdminGroupId>;
     readonly myselfCertificate: MyselfCertificate<IMyselfCertificateProperties['userId']>;
   }): TResult<
     {
@@ -129,8 +206,8 @@ export class Template<
         NewNameInPlural,
         NewDisplayName,
         NewPropertiesSchema,
-        CreatedAt,
-        Items
+        NewKeysIncludedInSummary,
+        CreatedAt
       >;
     },
     NotGroupMemberException
@@ -155,8 +232,8 @@ export class Template<
         nameInPlural: param.nameInPlural,
         displayName: param.displayName,
         propertiesSchema: param.propertiesSchema,
+        keysIncludedInSummary: param.keysIncludedInSummary,
         createdAt: this.createdAt,
-        items: this.items,
       }),
     });
   }
@@ -167,20 +244,44 @@ export class Template<
     NameInPlural extends ITemplateProperties['nameInPlural'],
     DisplayName extends ITemplateProperties['displayName'],
     PropertiesSchema extends ITemplateProperties['propertiesSchema'],
+    KeysIncludedInSummary extends readonly (keyof PropertiesSchema)[],
     CreatedAt extends ITemplateProperties['createdAt'],
-    Items extends ITemplateProperties['items'],
   >(
     param: Pick<
-      Template<Id, NameInSingular, NameInPlural, DisplayName, PropertiesSchema, CreatedAt, Items>,
+      Template<
+        Id,
+        NameInSingular,
+        NameInPlural,
+        DisplayName,
+        PropertiesSchema,
+        KeysIncludedInSummary,
+        CreatedAt
+      >,
       keyof ITemplateProperties
     >,
-  ): Template<Id, NameInSingular, NameInPlural, DisplayName, PropertiesSchema, CreatedAt, Items> {
+  ): Template<
+    Id,
+    NameInSingular,
+    NameInPlural,
+    DisplayName,
+    PropertiesSchema,
+    KeysIncludedInSummary,
+    CreatedAt
+  > {
     return new Template(param);
   }
 
   private constructor(
     param: Pick<
-      Template<Id, NameInSingular, NameInPlural, DisplayName, PropertiesSchema, CreatedAt, Items>,
+      Template<
+        Id,
+        NameInSingular,
+        NameInPlural,
+        DisplayName,
+        PropertiesSchema,
+        KeysIncludedInSummary,
+        CreatedAt
+      >,
       keyof ITemplateProperties
     >,
   ) {
@@ -189,22 +290,51 @@ export class Template<
     this.nameInPlural = param.nameInPlural;
     this.displayName = param.displayName;
     this.propertiesSchema = param.propertiesSchema;
+    this.keysIncludedInSummary = param.keysIncludedInSummary;
     this.createdAt = param.createdAt;
-    this.items = param.items;
   }
 }
 
-interface IPropertiesSchema {
-  readonly type?: 'object';
-  readonly properties?: {
-    readonly [K: string]: IPropertiesSchemaProperty;
+export interface IPropertiesSchema {
+  readonly type: 'object';
+  readonly properties: {
+    readonly [K: string]: TPropertiesSchemaPrimitiveTypeProperty | TPropertiesSchemaArrayProperty;
   };
   readonly required?: string[];
 }
 
-interface IPropertiesSchemaProperty {
-  readonly type?: 'string' | 'number' | 'boolean' | 'array';
-  readonly items?: {
-    readonly type?: Exclude<IPropertiesSchemaProperty['type'], 'array'>;
+type TPropertiesSchemaPrimitiveTypeProperty = {
+  readonly type: 'string' | 'number' | 'boolean';
+};
+type TPropertiesSchemaArrayProperty = {
+  readonly type: 'array';
+  readonly items: {
+    readonly type: 'string' | 'number' | 'boolean';
   };
+};
+
+export interface IItemSearchRequest<
+  PropertiesSchema extends ITemplateProperties['propertiesSchema'],
+> {
+  readonly query: {
+    [K in keyof PropertiesSchema['properties']]?: PropertiesSchema['properties'][K] extends TPropertiesSchemaArrayProperty
+      ? readonly (readonly [
+          'includes' | 'notIncludes',
+          {
+            string: string;
+            number: number;
+            boolean: boolean;
+          }[PropertiesSchema['properties'][K]['items']['type']],
+        ])[]
+      : readonly (readonly [
+          '===' | '!==' | '<' | '>',
+          {
+            string: string;
+            number: number;
+            boolean: boolean;
+            array: never;
+          }[PropertiesSchema['properties'][K]['type']],
+        ])[];
+  };
+  readonly options: Pick<IDaoRequestOptions<PropertiesSchema['properties']>, 'limit' | 'offset'>;
 }

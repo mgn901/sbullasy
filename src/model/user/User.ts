@@ -1,11 +1,21 @@
 import type { TNominalPrimitive } from '../../utils/primitive.ts';
 import { type TId, generateId } from '../../utils/random-values/id.ts';
 import { Success } from '../../utils/result.ts';
+import type { BelongsToNoGroupCertificate } from '../certificates/BelongsToNoGroupCertificate.ts';
 import type { EmailVerificationPassedCertificate } from '../certificates/EmailVerificationPassedCertificate.ts';
 import type { MyselfCertificate } from '../certificates/MyselfCertificate.ts';
+import type { IBookmarkDirectoryRepositoryDeleteOneParams } from '../repositories/IBookmarkDirectoryRepository.ts';
+import type { IEmailVerificationDirectoryRepositoryDeleteOneParams } from '../repositories/IEmailVerificationDirectoryRepository.ts';
+import type { IUserAccountRepositoryDeleteOneParams } from '../repositories/IUserAccountRepository.ts';
+import type { IUserProfileRepositoryDeleteOneParams } from '../repositories/IUserProfileRepository.ts';
+import type {
+  IUserRepositoryDeleteOneParams,
+  IUserRepositoryGetOneByIdParams,
+} from '../repositories/IUserRepository.ts';
 import { UserAccount } from '../user-account/UserAccount.ts';
 import { BookmarkDirectory } from '../user-bookmark-directory/BookmarkDirectory.ts';
 import { EmailVerificationDirectory } from '../user-email-verification-directory/EmailVerificationDirectory.ts';
+import type { UserProfile } from '../user-profile/UserProfile.ts';
 import type { TEmail } from '../values/TEmail.ts';
 
 const userTypeSymbol = Symbol('userTypeSymbol');
@@ -57,6 +67,42 @@ export class User<
         id,
         bookmarks: [] as const,
       }),
+    });
+  }
+
+  public static createGetByIdRequest<Id extends IUserProperties['id']>(param: {
+    readonly id: Id;
+    readonly myselfCeritificate: MyselfCertificate<Id>;
+  }): Success<{
+    readonly daoRequest: IUserRepositoryGetOneByIdParams<Id>;
+  }> {
+    return new Success({
+      daoRequest: { id: param.id },
+    });
+  }
+
+  public createDeleteRequest(param: {
+    readonly id: Id;
+    readonly userProfile: UserProfile<Id>;
+    readonly belongsToNoGroupCertificate: BelongsToNoGroupCertificate<Id>;
+    readonly myselfCertificate: MyselfCertificate<Id>;
+  }): Success<{
+    readonly daoRequests: readonly [
+      IUserAccountRepositoryDeleteOneParams<Id>,
+      IBookmarkDirectoryRepositoryDeleteOneParams<Id>,
+      IEmailVerificationDirectoryRepositoryDeleteOneParams<Id>,
+      IUserProfileRepositoryDeleteOneParams<Id>,
+      IUserRepositoryDeleteOneParams<Id>,
+    ];
+  }> {
+    return new Success({
+      daoRequests: [
+        { id: param.id },
+        { id: param.id },
+        { id: param.id },
+        { id: param.id },
+        { id: param.id },
+      ],
     });
   }
 
