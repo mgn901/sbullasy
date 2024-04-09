@@ -4,8 +4,8 @@ import type { TNominalPrimitive } from '../primitive.ts';
  * 長い64文字のシークレット文字列を表す公称プリミティブ型。
  * 64文字の英数字、`_`および`_`から成る。
  */
-const symbol = Symbol();
-export type TLongSecret = TNominalPrimitive<string, typeof symbol>;
+const longSecretTypeSymbol = Symbol();
+export type TLongSecret = TNominalPrimitive<string, typeof longSecretTypeSymbol>;
 
 /**
  * 文字列が長いシークレットになりうるかを判定する関数。

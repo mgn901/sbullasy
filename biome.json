@@ -13,12 +13,12 @@
     "enabled": true,
     "rules": {
       "recommended": true,
-      "suspicious": {
-        "noConfusingVoidType": "warn"
-      },
       "style": {
         "noNonNullAssertion": "warn",
         "useSelfClosingElements": "warn"
+      },
+      "suspicious": {
+        "noConfusingVoidType": "warn"
       },
       "nursery": {
         "useSortedClasses": "error"
