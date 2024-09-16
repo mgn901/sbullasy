@@ -15,3 +15,11 @@ export class Failure<E extends Error = Error> {
     this.value = value;
   }
 }
+
+export const isSuccess = <S, E extends Error>(value: TResult<S, E>): value is Success<S> => {
+  return value instanceof Success;
+};
+
+export const isFailure = <S, E extends Error>(value: TResult<S, E>): value is Failure<E> => {
+  return value instanceof Failure;
+};
