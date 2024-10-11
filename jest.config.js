@@ -1,16 +1,12 @@
 /** @type {import('jest').Config} */
 const config = {
   transform: {
-    '^.+\\.tsx?$': [
-      'esbuild-jest',
-      {
-        sourcemap: true,
-      },
-    ],
+    '^.+\\.tsx?$': ['@swc/jest'],
   },
   collectCoverage: true,
   coverageProvider: 'v8',
   coverageReporters: ['text'],
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
 };
 
 export default config;
