@@ -1,12 +1,13 @@
 import type {
   AccessControlServiceDependencies,
-  verifyAccessTokenAndGetLoginUserAccount,
+  verifyAccessTokenAndGetLogInUserAccount,
 } from '../../lib/access-control.ts';
 import type {
+  ClientContextMap,
   ContextMap,
   ContextRepository,
   I18nMap,
-  RequestContextMap,
+  LogInUserClientContextMap,
   SystemConfigurationMap,
 } from '../../lib/context.ts';
 import type {
@@ -63,6 +64,17 @@ Verification code: \${emailVerification.verificationCode}
 //#endregion
 
 //#region UserAccount and UserAccountRepository
+
+/**
+ * ユーザアカウントを表す。
+ *
+ * この型のオブジェクトはユーザアカウントの作成が開始される際に作成される。
+ */
+export type UserAccount =
+  | UserAccountRegistrationRequested
+  | UserAccountRegistered
+  | UserAccountEmailAddressUpdateRequested;
+
 abstract class UserAccountBase {
   public readonly id: UserId;
   public readonly emailAddress: EmailAddress;
@@ -75,9 +87,15 @@ abstract class UserAccountBase {
   //#endregion
 }
 
+/**
+ * 作成完了前のユーザアカウントを表す。
+ */
 export class UserAccountRegistrationRequested extends UserAccountBase {
   public readonly associatedEmailVerificationChallengeId: EmailVerificationChallengeId;
 
+  /**
+   * 新しいユーザアカウントを作成して返す。
+   */
   public static create<
     P extends {
       readonly emailAddress: TEmailAddress;
@@ -92,6 +110,9 @@ export class UserAccountRegistrationRequested extends UserAccountBase {
     return UserAccountRegistrationRequested.from({ ...params, id: generateId() as UserId });
   }
 
+  /**
+   * このユーザアカウントをユーザアカウント作成試行完了後のユーザアカウントにして返す。
+   */
   public toRegistrationCompleted<T extends UserAccountRegistrationRequested>(
     this: T,
   ): TypedInstance<UserAccountRegistered, T & { readonly registeredAt: Date }> {
@@ -115,9 +136,15 @@ export class UserAccountRegistrationRequested extends UserAccountBase {
   //#endregion
 }
 
+/**
+ * 作成完了後のユーザアカウントを表す。
+ */
 export class UserAccountRegistered extends UserAccountBase {
   public readonly registeredAt: Date;
 
+  /**
+   * このユーザアカウントをEメールアドレス変更完了前のユーザアカウントにして返す。
+   */
   public toEmailAddressUpdateRequested<
     P extends {
       readonly newEmailAddress: TNewEmailAddress;
@@ -144,11 +171,17 @@ export class UserAccountRegistered extends UserAccountBase {
   //#endregion
 }
 
+/**
+ * Eメールアドレス変更完了前のユーザアカウントを表す。
+ */
 export class UserAccountEmailAddressUpdateRequested extends UserAccountBase {
   public readonly registeredAt: Date;
   public readonly newEmailAddress: EmailAddress;
   public readonly associatedEmailVerificationChallengeId: EmailVerificationChallengeId;
 
+  /**
+   * このユーザアカウントのEメールアドレスの変更を完了にしたものを返す。
+   */
   public toEmailAddressUpdateCompleted<
     T extends UserAccountEmailAddressUpdateRequested & {
       readonly newEmailAddress: TNewEmailAddress;
@@ -160,6 +193,9 @@ export class UserAccountEmailAddressUpdateRequested extends UserAccountBase {
     return UserAccountRegistered.from({ ...this, emailAddress: this.newEmailAddress });
   }
 
+  /**
+   * このユーザアカウントのEメールアドレスの変更を中止にしたものを返す。
+   */
   public toEmailAddressUpdateCanceled<T extends UserAccountEmailAddressUpdateRequested>(
     this: T,
   ): TypedInstance<UserAccountRegistered, T> {
@@ -187,15 +223,8 @@ export class UserAccountEmailAddressUpdateRequested extends UserAccountBase {
 }
 
 /**
- * ユーザアカウントを表す。
- *
- * この型のオブジェクトはユーザアカウントの作成が開始される際に作成される。
+ * {@linkcode UserAccount}を永続化するリポジトリ。
  */
-export type UserAccount =
-  | UserAccountRegistrationRequested
-  | UserAccountRegistered
-  | UserAccountEmailAddressUpdateRequested;
-
 export interface UserAccountRepository {
   getOneById<TId extends UserId>(
     this: UserAccountRepository,
@@ -260,15 +289,15 @@ export interface UserAccountServiceDependencies {
     typeof cancel,
     EmailVerificationServiceDependencies
   >;
-  readonly verifyAccessTokenAndGetLoginUserAccount: PreApplied<
-    typeof verifyAccessTokenAndGetLoginUserAccount,
+  readonly verifyAccessTokenAndGetLogInUserAccount: PreApplied<
+    typeof verifyAccessTokenAndGetLogInUserAccount,
     AccessControlServiceDependencies
   >;
   readonly userAccountRepository: UserAccountRepository;
   readonly contextRepository: ContextRepository<
     UserAccountConfigurationMap & SystemConfigurationMap
   >;
-  readonly requestContextRepository: ContextRepository<RequestContextMap>;
+  readonly clientContextRepository: ContextRepository<ClientContextMap & LogInUserClientContextMap>;
 }
 
 /**
@@ -277,8 +306,8 @@ export interface UserAccountServiceDependencies {
 export const getMyUserAccount = async (
   params: UserAccountServiceDependencies,
 ): Promise<{ readonly userAccount: UserAccount }> => {
-  return params.verifyAccessTokenAndGetLoginUserAccount({
-    accessTokenSecret: params.requestContextRepository.get('request.accessTokenSecret'),
+  return params.verifyAccessTokenAndGetLogInUserAccount({
+    accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
 };
 
@@ -290,14 +319,14 @@ export const getMyUserAccount = async (
 export const requestEmailAddressUpdate = async (
   params: { readonly newEmailAddress: EmailAddress } & UserAccountServiceDependencies,
 ): Promise<{ readonly userId: UserId; readonly sentAt: Date; readonly expiredAt: Date }> => {
-  const { userAccount } = await params.verifyAccessTokenAndGetLoginUserAccount({
-    accessTokenSecret: params.requestContextRepository.get('request.accessTokenSecret'),
+  const { userAccount } = await params.verifyAccessTokenAndGetLogInUserAccount({
+    accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
   if (userAccount instanceof UserAccountRegistered === false) {
-    throw new Exception({ exceptionName: 'userAccount.notExists' });
+    throw Exception.create({ exceptionName: 'userAccount.notExists' });
   }
 
-  const acceptedLanguages = params.requestContextRepository.get('request.acceptedLanguages');
+  const acceptedLanguages = params.clientContextRepository.get('client.acceptedLanguages');
 
   const {
     id: associatedEmailVerificationChallengeId,
@@ -333,17 +362,20 @@ export const requestEmailAddressUpdate = async (
 
 /**
  * Eメールアドレス確認の確認コードが正しいのかを確認して、Eメールアドレスの更新を完了する。
+ *
+ * @throws Eメールアドレスの更新が開始されていない場合は{@linkcode Exception}（`userAccount.emailAddressUpdateNotStarted`）を投げる。
+ * @throws 確認コードが正しくない場合は{@linkcode Exception}（`userAccount.verificationCodeIncorrect`）を投げる。
  */
 export const completeEmailAddressUpdate = async (
   params: {
     readonly enteredVerificationCode: EmailVerificationChallengeVerificationCode;
   } & UserAccountServiceDependencies,
 ): Promise<void> => {
-  const { userAccount } = await params.verifyAccessTokenAndGetLoginUserAccount({
-    accessTokenSecret: params.requestContextRepository.get('request.accessTokenSecret'),
+  const { userAccount } = await params.verifyAccessTokenAndGetLogInUserAccount({
+    accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
   if (userAccount instanceof UserAccountEmailAddressUpdateRequested === false) {
-    throw new Exception({ exceptionName: 'userAccount.notExists' });
+    throw Exception.create({ exceptionName: 'userAccount.emailAddressUpdateNotStarted' });
   }
 
   const { isCorrect } = await params.answerEmailVerificationChallenge({
@@ -351,20 +383,24 @@ export const completeEmailAddressUpdate = async (
     enteredVerificationCode: params.enteredVerificationCode,
   });
   if (isCorrect === false) {
-    throw new Exception({ exceptionName: 'userAccount.verificationCodeIncorrect' });
+    throw Exception.create({ exceptionName: 'userAccount.verificationCodeIncorrect' });
   }
 
   const userAccountEmailAddressUpdateCompleted = userAccount.toEmailAddressUpdateCompleted();
   await params.userAccountRepository.updateOne(userAccountEmailAddressUpdateCompleted);
 };
 
-/** Eメールアドレスの変更を中止する。 */
+/**
+ * Eメールアドレスの変更を中止する。
+ *
+ * @throws Eメールアドレスの更新が開始されていない場合は{@linkcode Exception}（`userAccount.emailAddressUpdateNotStarted`）を投げる。
+ */
 export const cancelEmailAddressUpdate = async (params: UserAccountServiceDependencies) => {
-  const { userAccount } = await params.verifyAccessTokenAndGetLoginUserAccount({
-    accessTokenSecret: params.requestContextRepository.get('request.accessTokenSecret'),
+  const { userAccount } = await params.verifyAccessTokenAndGetLogInUserAccount({
+    accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
   if (userAccount instanceof UserAccountEmailAddressUpdateRequested === false) {
-    throw new Exception({ exceptionName: 'userAccount.notExists' });
+    throw Exception.create({ exceptionName: 'userAccount.emailAddressUpdateNotStarted' });
   }
 
   await params.cancelEmailVerificationChallenge({
@@ -381,8 +417,8 @@ export const cancelEmailAddressUpdate = async (params: UserAccountServiceDepende
 export const deleteMyUserAccount = async (
   params: UserAccountServiceDependencies,
 ): Promise<void> => {
-  const { userAccount } = await params.verifyAccessTokenAndGetLoginUserAccount({
-    accessTokenSecret: params.requestContextRepository.get('request.accessTokenSecret'),
+  const { userAccount } = await params.verifyAccessTokenAndGetLogInUserAccount({
+    accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
 
   params.userAccountRepository.deleteOneById(userAccount.id);

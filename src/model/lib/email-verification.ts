@@ -9,16 +9,19 @@ import type { FieldsOf, PickEssential, TypedInstance } from './type-utils.ts';
 //#region Email and EmailClient
 const emailTypeSymbol = Symbol();
 
+/** Eメールを表す。 */
 export class Email {
   public readonly id: NominalPrimitive<Id, typeof emailTypeSymbol>;
   public readonly to: readonly EmailAddress[];
   public readonly subject: string;
   public readonly body: string;
 
+  /** 新しいEメールを作成して返す。 */
   public static create(this: unknown, params: Pick<Email, 'to' | 'subject' | 'body'>): Email {
     return Email.from({ ...params, id: generateId() as Email['id'] });
   }
 
+  //#region constructors
   public static from(this: unknown, params: FieldsOf<Email>): Email {
     return new Email(params);
   }
@@ -29,9 +32,12 @@ export class Email {
     this.subject = params.subject;
     this.body = params.body;
   }
+  //#endregion
 }
 
+/** Eメールクライアント。 */
 export interface EmailClient {
+  /** 指定されたEメールを送信する。 */
   send(this: EmailClient, email: Email): Promise<void>;
 }
 //#endregion
@@ -65,6 +71,13 @@ export type EmailVerificationChallengeVerificationCode = NominalPrimitive<
   typeof typeSymbol
 >;
 
+/** Eメールアドレス確認を表す。 */
+export type EmailVerificationChallenge =
+  | EmailVerificationChallengePrepared
+  | EmailVerificationChallengeSent
+  | EmailVerificationChallengeTerminated
+  | EmailVerificationChallengeTerminated;
+
 abstract class EmailVerificationChallengeBase {
   public readonly id: EmailVerificationChallengeId;
   public readonly emailAddress: EmailAddress;
@@ -83,7 +96,7 @@ abstract class EmailVerificationChallengeBase {
 export class EmailVerificationChallengePrepared extends EmailVerificationChallengeBase {
   public readonly preparedAt: Date;
 
-  /** 新しいEメールアドレス確認を作成する。 */
+  /** 新しいEメールアドレス確認を作成して返す。 */
   public static create<
     P extends { readonly emailAddress: TEmailAddress },
     TEmailAddress extends EmailAddress,
@@ -97,7 +110,7 @@ export class EmailVerificationChallengePrepared extends EmailVerificationChallen
     });
   }
 
-  /** 関連する{@linkcode EmailQueueExecutionId}と確認期限を設定して{@linkcode EmailVerificationChallengeSent}にする。 */
+  /** 関連する{@linkcode EmailQueueExecutionId}と確認期限を設定して{@linkcode EmailVerificationChallengeSent}にしたものを返す。 */
   public toSent<
     P extends {
       readonly associatedExecutionId: TAssociatedExecutionId;
@@ -138,10 +151,13 @@ export class EmailVerificationChallengeSent extends EmailVerificationChallengeBa
   public readonly expiredAt: Date;
 
   /**
-   * Eメールアドレス確認に回答する。
-   * 期限が切れている場合はEメールアドレス確認が中止になる。
-   * 確認コードが間違っている場合は不正解になる。
-   * 期限が切れておらず、確認コードも正しい場合は正解になり、Eメールアドレス確認が完了になる。
+   * Eメールアドレス確認に回答して、その結果を返す。
+   *
+   * - 期限が切れている場合はEメールアドレス確認が中止になる。
+   * - 確認コードが間違っている場合は不正解になる。
+   * - 期限が切れておらず、確認コードも正しい場合は正解になり、Eメールアドレス確認が完了になる。
+   *
+   * @returns 確認コードが正しいかどうかと、確認の結果更新されたこのオブジェクトのコピーを返す。
    */
   public answer<T extends EmailVerificationChallengeSent>(
     this: T,
@@ -185,7 +201,7 @@ export class EmailVerificationChallengeSent extends EmailVerificationChallengeBa
     };
   }
 
-  /** Eメールアドレス確認を中止にする。 */
+  /** Eメールアドレス確認を中止にすたものを返す。 */
   public toCanceled<T extends EmailVerificationChallengeSent>(
     this: T,
   ): TypedInstance<EmailVerificationChallengeTerminated, T & { readonly status: 'canceled' }> {
@@ -241,13 +257,7 @@ export class EmailVerificationChallengeTerminated extends EmailVerificationChall
   //#endregion
 }
 
-/** Eメールアドレス確認を表す。 */
-export type EmailVerificationChallenge =
-  | EmailVerificationChallengePrepared
-  | EmailVerificationChallengeSent
-  | EmailVerificationChallengeTerminated
-  | EmailVerificationChallengeTerminated;
-
+/** {@linkcode EmailVerificationChallenge}を永続化するリポジトリ。 */
 export interface EmailVerificationChallengeRepository {
   getOneById<TId extends EmailVerificationChallengeId>(
     this: EmailVerificationChallengeRepository,
@@ -284,12 +294,12 @@ export interface EmailVerificationChallengeRepository {
   //   },
   // ): Promise<readonly EmailVerificationChallenge[] | readonly []>;
 
-  count<TEmailAddress extends EmailAddress>(
+  count(
     this: EmailVerificationChallengeRepository,
     params: {
       readonly filters?:
         | {
-            readonly emailAddress?: TEmailAddress | undefined;
+            readonly emailAddress?: EmailAddress | undefined;
             readonly preparedAt?:
               | { readonly from?: Date | undefined; readonly until?: Date | undefined }
               | undefined;
@@ -330,7 +340,9 @@ export interface EmailVerificationServiceDependencies {
 
 /**
  * Eメールアドレス確認を送信する。
- * Eメールアドレス確認を作成・リポジトリに保存し、その確認コードが含まれるEメールを送信する。
+ * Eメールアドレス確認を作成し、その確認コードが含まれるEメールを送信する。
+ *
+ * @returns Eメールアドレス確認のID、送信日時、確認期限を返す。
  */
 export const send = async (
   params: {
@@ -383,6 +395,8 @@ export const send = async (
 
 /**
  * Eメールアドレス確認に回答する。
+ *
+ * @returns 確認コードが正しいかどうかを返す。
  */
 export const answer = async (
   params: {

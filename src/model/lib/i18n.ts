@@ -13,6 +13,11 @@ export const selectLanguage = (params: {
   return selected ?? params.default ?? 'en';
 };
 
+/**
+ * `i18nMap`から、`acceptedLanguages`または`defaultLanguage`に含まれる言語で優先順位が上位である言語の項目を選択する。
+ *
+ * @param params `acceptedLanguages`では、希望する言語を優先順位が高い順に配列で指定する。
+ */
 export const localize = (params: {
   readonly i18nMap: I18nMap;
   readonly acceptedLanguages: readonly LanguageCode[];
