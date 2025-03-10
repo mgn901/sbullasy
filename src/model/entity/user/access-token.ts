@@ -1,12 +1,23 @@
 import type { NominalPrimitive } from '../../../utils/type-utils.ts';
+import type {
+  AccessControlServiceDependencies,
+  verifyAccessToken,
+} from '../../lib/access-control.ts';
+import type {
+  ClientContextMap,
+  ContextMap,
+  ContextRepository,
+  LogInUserClientContextMap,
+} from '../../lib/context.ts';
 import type { EmailVerificationChallengeId } from '../../lib/email-verification.ts';
+import { Exception } from '../../lib/exception.ts';
 import { type Id, generateId } from '../../lib/random-values/id.ts';
 import { type LongSecret, generateLongSecret } from '../../lib/random-values/long-secret.ts';
-import type { FieldsOf, PickEssential, TypedInstance } from '../../lib/type-utils.ts';
+import type { FieldsOf, PickEssential, PreApplied, TypedInstance } from '../../lib/type-utils.ts';
 import type { UserId } from './values.ts';
 
 //#region AccessTokenConfigurationMap
-export interface AccessTokenConfigurationMap {
+export interface AccessTokenConfigurationMap extends ContextMap {
   readonly 'accessToken.expiredAfterMs': number;
 }
 
@@ -281,4 +292,96 @@ export interface AccessTokenRepository {
 
   deleteOneById(this: AccessTokenRepository, id: AccessTokenId): Promise<void>;
 }
+//#endregion
+
+//#region AccessTokenService
+export interface AccessTokenServiceDependencies {
+  readonly accessTokenRepository: AccessTokenRepository;
+  readonly contextRepository: ContextRepository<AccessTokenConfigurationMap>;
+  readonly clientContextRepository: ContextRepository<ClientContextMap & LogInUserClientContextMap>;
+  readonly verifyAccessToken: PreApplied<
+    typeof verifyAccessToken,
+    AccessControlServiceDependencies
+  >;
+}
+
+/**
+ * 自分自身のユーザアカウントに関連するアクセストークンを取得する。
+ */
+export const getAccessTokens = async (
+  params: {
+    readonly orderBy: { readonly attemptedAt: 'asc' | 'desc' };
+    readonly offset?: number | undefined;
+    readonly limit?: number | undefined;
+  } & AccessTokenServiceDependencies,
+): Promise<readonly AccessToken[] | readonly []> => {
+  const { userAccount } = await params.verifyAccessToken({
+    accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
+  });
+
+  // TODO: デフォルトの制限
+  return params.accessTokenRepository.getMany({
+    filters: { logInUserId: userAccount.id },
+    orderBy: params.orderBy,
+    offset: params.offset,
+    limit: params.limit,
+  });
+};
+
+/**
+ * クライアントが使用しているアクセストークンの有効期限を延長して、新しいシークレットと有効期限を返す。
+ */
+export const extendExpirationDate = async (
+  params: AccessTokenServiceDependencies,
+): Promise<{ readonly [accessTokenSecretSymbol]: AccessTokenSecret; readonly expiredAt: Date }> => {
+  const { accessToken } = await params.verifyAccessToken({
+    accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
+  });
+
+  const accessTokenExpirationDateExtended = accessToken.toExpirationDateExtended({
+    expiredAfterMs: params.contextRepository.get('accessToken.expiredAfterMs'),
+  });
+  await params.accessTokenRepository.updateOne(accessTokenExpirationDateExtended);
+
+  return {
+    [accessTokenSecretSymbol]: accessTokenExpirationDateExtended[accessTokenSecretSymbol],
+    expiredAt: accessTokenExpirationDateExtended.expiredAt,
+  };
+};
+
+/**
+ * 指定されたIDのアクセストークンを無効化する。
+ *
+ * @throws アクセストークンが見つからない場合、またはアクセストークンが自分自身以外のユーザのものである場合は、{@linkcode Exception}（`accessToken.notExists`）を返す。
+ */
+export const manuallyExpire = async (
+  params: { readonly id: AccessTokenId } & AccessTokenServiceDependencies,
+): Promise<void> => {
+  const { userAccount } = await params.verifyAccessToken({
+    accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
+  });
+
+  const accessToken = await params.accessTokenRepository.getOneById(params.id);
+  if (
+    accessToken instanceof AccessTokenValid === false ||
+    accessToken.logInUserId !== userAccount.id
+  ) {
+    throw Exception.create({ exceptionName: 'accessToken.notExists' });
+  }
+
+  const accessTokenManuallyExpired = accessToken.toManuallyExpired();
+  await params.accessTokenRepository.updateOne(accessTokenManuallyExpired);
+};
+
+/**
+ * ログアウトする（クライアントが使用しているアクセストークンを無効化する）。
+ */
+export const logOut = async (params: AccessTokenServiceDependencies): Promise<void> => {
+  const { accessToken } = await params.verifyAccessToken({
+    accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
+  });
+
+  const accessTokenManuallyExpired = accessToken.toManuallyExpired();
+  await params.accessTokenRepository.updateOne(accessTokenManuallyExpired);
+};
 //#endregion

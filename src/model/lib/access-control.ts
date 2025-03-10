@@ -1,4 +1,8 @@
-import type { AccessTokenRepository, AccessTokenSecret } from '../entity/user/access-token.ts';
+import {
+  type AccessTokenRepository,
+  type AccessTokenSecret,
+  AccessTokenValid,
+} from '../entity/user/access-token.ts';
 import {
   type UserAccount,
   UserAccountRegistrationRequested,
@@ -12,11 +16,14 @@ export interface AccessControlServiceDependencies {
 }
 
 /** 指定されたシークレットに対応するアクセストークンが正しいかどうかを検証し、アクセストークンに対応するユーザアカウントを返す。 */
-export const verifyAccessTokenAndGetLogInUserAccount = async (
+export const verifyAccessToken = async (
   params: { readonly accessTokenSecret: AccessTokenSecret } & AccessControlServiceDependencies,
-): Promise<{ readonly userAccount: UserAccount }> => {
+): Promise<{
+  readonly userAccount: Exclude<UserAccount, UserAccountRegistrationRequested>;
+  readonly accessToken: AccessTokenValid;
+}> => {
   const accessToken = await params.accessTokenRepository.getOneBySecret(params.accessTokenSecret);
-  if (accessToken === undefined) {
+  if (accessToken instanceof AccessTokenValid === false) {
     throw Exception.create({ exceptionName: 'accessControl.notAuthorized' });
   }
 
@@ -25,5 +32,5 @@ export const verifyAccessTokenAndGetLogInUserAccount = async (
     throw Exception.create({ exceptionName: 'accessControl.notAuthorized' });
   }
 
-  return { userAccount };
+  return { userAccount, accessToken };
 };

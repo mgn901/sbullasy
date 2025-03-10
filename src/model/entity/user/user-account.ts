@@ -1,6 +1,6 @@
 import type {
   AccessControlServiceDependencies,
-  verifyAccessTokenAndGetLogInUserAccount,
+  verifyAccessToken,
 } from '../../lib/access-control.ts';
 import type {
   ClientContextMap,
@@ -293,8 +293,8 @@ export interface UserAccountServiceDependencies {
     typeof cancel,
     EmailVerificationServiceDependencies
   >;
-  readonly verifyAccessTokenAndGetLogInUserAccount: PreApplied<
-    typeof verifyAccessTokenAndGetLogInUserAccount,
+  readonly verifyAccessToken: PreApplied<
+    typeof verifyAccessToken,
     AccessControlServiceDependencies
   >;
   readonly userAccountRepository: UserAccountRepository;
@@ -310,7 +310,7 @@ export interface UserAccountServiceDependencies {
 export const getMyUserAccount = async (
   params: UserAccountServiceDependencies,
 ): Promise<{ readonly userAccount: UserAccount }> => {
-  return params.verifyAccessTokenAndGetLogInUserAccount({
+  return params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
 };
@@ -323,7 +323,7 @@ export const getMyUserAccount = async (
 export const requestEmailAddressUpdate = async (
   params: { readonly newEmailAddress: EmailAddress } & UserAccountServiceDependencies,
 ): Promise<{ readonly userId: UserId; readonly sentAt: Date; readonly expiredAt: Date }> => {
-  const { userAccount } = await params.verifyAccessTokenAndGetLogInUserAccount({
+  const { userAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
   if (userAccount instanceof UserAccountRegistered === false) {
@@ -375,7 +375,7 @@ export const completeEmailAddressUpdate = async (
     readonly enteredVerificationCode: EmailVerificationChallengeVerificationCode;
   } & UserAccountServiceDependencies,
 ): Promise<void> => {
-  const { userAccount } = await params.verifyAccessTokenAndGetLogInUserAccount({
+  const { userAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
   if (userAccount instanceof UserAccountEmailAddressUpdateRequested === false) {
@@ -400,7 +400,7 @@ export const completeEmailAddressUpdate = async (
  * @throws Eメールアドレスの更新が開始されていない場合は{@linkcode Exception}（`userAccount.emailAddressUpdateNotStarted`）を投げる。
  */
 export const cancelEmailAddressUpdate = async (params: UserAccountServiceDependencies) => {
-  const { userAccount } = await params.verifyAccessTokenAndGetLogInUserAccount({
+  const { userAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
   if (userAccount instanceof UserAccountEmailAddressUpdateRequested === false) {
@@ -416,12 +416,12 @@ export const cancelEmailAddressUpdate = async (params: UserAccountServiceDepende
 };
 
 /**
- * ユーザアカウントを削除する。
+ * 自分自身のユーザアカウントを削除する。
  */
 export const deleteMyUserAccount = async (
   params: UserAccountServiceDependencies,
 ): Promise<void> => {
-  const { userAccount } = await params.verifyAccessTokenAndGetLogInUserAccount({
+  const { userAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
 

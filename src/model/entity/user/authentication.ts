@@ -486,7 +486,10 @@ export const completeLogInOrRegistrationWithEmailVerification = async (
     readonly id: AuthenticationAttemptId;
     readonly enteredVerificationCode: EmailVerificationChallengeVerificationCode;
   } & UserAuthenticationServiceDependencies,
-): Promise<{ readonly [accessTokenSymbol.secret]: AccessTokenSecret }> => {
+): Promise<{
+  readonly [accessTokenSymbol.secret]: AccessTokenSecret;
+  readonly expiredAt: Date;
+}> => {
   const attempt = await params.authenticationAttemptRepository.getOneById(params.id);
 
   if (attempt instanceof LogInAttempt) {
@@ -609,7 +612,10 @@ const completeLogInWithEmailVerification = async (
     readonly accessToken: AccessTokenLogInRequested;
     readonly enteredVerificationCode: EmailVerificationChallengeVerificationCode;
   } & UserAuthenticationServiceDependencies,
-): Promise<{ readonly [accessTokenSymbol.secret]: AccessTokenSecret }> => {
+): Promise<{
+  readonly [accessTokenSymbol.secret]: AccessTokenSecret;
+  readonly expiredAt: Date;
+}> => {
   const { isCorrect } = await params.answerEmailVerificationChallenge({
     id: params.accessToken.associatedEmailVerificationChallengeId,
     enteredVerificationCode: params.enteredVerificationCode,
@@ -626,7 +632,10 @@ const completeLogInWithEmailVerification = async (
   const attemptCompleted = params.attempt.toCompleted();
   await params.authenticationAttemptRepository.updateOne(attemptCompleted);
 
-  return { [accessTokenSymbol.secret]: accessTokenLogInCompleted[accessTokenSymbol.secret] };
+  return {
+    [accessTokenSymbol.secret]: accessTokenLogInCompleted[accessTokenSymbol.secret],
+    expiredAt: accessTokenLogInCompleted.expiredAt,
+  };
 };
 
 /**
@@ -716,7 +725,10 @@ const completeRegistrationWithEmailVerification = async (
     readonly userAccount: UserAccountRegistrationRequested;
     readonly enteredVerificationCode: EmailVerificationChallengeVerificationCode;
   } & UserAuthenticationServiceDependencies,
-): Promise<{ readonly [accessTokenSymbol.secret]: AccessTokenSecret }> => {
+): Promise<{
+  readonly [accessTokenSymbol.secret]: AccessTokenSecret;
+  readonly expiredAt: Date;
+}> => {
   const { isCorrect } = await params.answerEmailVerificationChallenge({
     id: params.userAccount.associatedEmailVerificationChallengeId,
     enteredVerificationCode: params.enteredVerificationCode,
@@ -742,7 +754,10 @@ const completeRegistrationWithEmailVerification = async (
   });
   await params.accessTokenRepository.createOne(accessToken);
 
-  return { [accessTokenSymbol.secret]: accessToken[accessTokenSymbol.secret] };
+  return {
+    [accessTokenSymbol.secret]: accessToken[accessTokenSymbol.secret],
+    expiredAt: accessToken.expiredAt,
+  };
 };
 
 /**

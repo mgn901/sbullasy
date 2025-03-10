@@ -2,6 +2,7 @@ type ExceptionName =
   | 'userAccount.notExists'
   | 'userAccount.verificationCodeIncorrect'
   | 'userAccount.emailAddressUpdateNotStarted'
+  | 'accessToken.notExists'
   | 'authentication.notExists'
   | 'authentication.verificationCodeIncorrect'
   | 'authentication.tooManyRequests'
