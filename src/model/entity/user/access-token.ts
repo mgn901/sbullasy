@@ -46,6 +46,7 @@ abstract class AccessTokenBase {
   public readonly ipAddress: string;
   public readonly userAgent: string;
   public readonly logInUserId: UserId;
+  public readonly attemptedAt: Date;
 
   //#region constructors
   public constructor(params: FieldsOf<AccessTokenBase>) {
@@ -54,6 +55,7 @@ abstract class AccessTokenBase {
     this.ipAddress = params.ipAddress;
     this.userAgent = params.userAgent;
     this.logInUserId = params.logInUserId;
+    this.attemptedAt = params.attemptedAt;
   }
   //#endregion
 }
@@ -84,12 +86,17 @@ export class AccessTokenLogInRequested extends AccessTokenBase {
     params: P,
   ): TypedInstance<
     AccessTokenLogInRequested,
-    P & { readonly id: AccessTokenId; readonly [accessTokenSecretSymbol]: AccessTokenSecret }
+    P & {
+      readonly id: AccessTokenId;
+      readonly [accessTokenSecretSymbol]: AccessTokenSecret;
+      readonly attemptedAt: Date;
+    }
   > {
     return AccessTokenLogInRequested.from({
       ...params,
       id: generateId() as AccessTokenId,
       [accessTokenSecretSymbol]: generateLongSecret() as AccessTokenSecret,
+      attemptedAt: new Date(),
     });
   }
 
@@ -151,9 +158,16 @@ export class AccessTokenValid extends AccessTokenBase {
   public toExpirationDateExtended<
     P extends { readonly expiredAfterMs: number },
     T extends AccessTokenValid,
-  >(this: T, params: P): TypedInstance<AccessTokenValid, T> {
+  >(
+    this: T,
+    params: P,
+  ): TypedInstance<
+    AccessTokenValid,
+    T & { readonly [accessTokenSecretSymbol]: AccessTokenSecret }
+  > {
     return AccessTokenValid.from({
       ...this,
+      [accessTokenSecretSymbol]: generateLongSecret(),
       expiredAt: new Date(Date.now() + params.expiredAfterMs),
     });
   }
@@ -201,8 +215,8 @@ export class AccessTokenExpired extends AccessTokenBase {
 
   private constructor(params: FieldsOf<AccessTokenExpired>) {
     super(params);
-    this.status = params.status;
     this.expiredAt = params.expiredAt;
+    this.status = params.status;
   }
   //#endregion
 }
@@ -229,10 +243,7 @@ export interface AccessTokenRepository {
             readonly ipAddress?: string | undefined;
             readonly userAgent?: string | undefined;
             readonly logInUserId?: UserId | undefined;
-            readonly loggedInAt?:
-              | { readonly from?: Date | undefined; readonly until?: Date | undefined }
-              | undefined;
-            readonly expiredAt?:
+            readonly attemptedAt?:
               | { readonly from?: Date | undefined; readonly until?: Date | undefined }
               | undefined;
           }
@@ -242,12 +253,11 @@ export interface AccessTokenRepository {
         | { readonly ipAddress: 'asc' | 'desc' }
         | { readonly userAgent: 'asc' | 'desc' }
         | { readonly logInUserId: 'asc' | 'desc' }
-        | { readonly loggedInAt: 'asc' | 'desc' }
-        | { readonly expiredAt: 'asc' | 'desc' };
+        | { readonly attemptedAt: 'asc' | 'desc' };
       readonly offset?: number | undefined;
       readonly limit?: number | undefined;
     },
-  ): Promise<readonly AccessTokenRepository[] | readonly []>;
+  ): Promise<readonly AccessToken[] | readonly []>;
 
   count(
     this: AccessTokenRepository,
@@ -257,10 +267,7 @@ export interface AccessTokenRepository {
             readonly ipAddress?: string | undefined;
             readonly userAgent?: string | undefined;
             readonly logInUserId?: UserId | undefined;
-            readonly loggedInAt?:
-              | { readonly from?: Date | undefined; readonly until?: Date | undefined }
-              | undefined;
-            readonly expiredAt?:
+            readonly attemptedAt?:
               | { readonly from?: Date | undefined; readonly until?: Date | undefined }
               | undefined;
           }

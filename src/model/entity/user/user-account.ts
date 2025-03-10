@@ -78,11 +78,13 @@ export type UserAccount =
 abstract class UserAccountBase {
   public readonly id: UserId;
   public readonly emailAddress: EmailAddress;
+  public readonly attemptedAt: Date;
 
   //#region constructors
   public constructor(params: FieldsOf<UserAccountBase>) {
     this.id = params.id;
     this.emailAddress = params.emailAddress;
+    this.attemptedAt = params.attemptedAt;
   }
   //#endregion
 }
@@ -106,8 +108,15 @@ export class UserAccountRegistrationRequested extends UserAccountBase {
   >(
     this: unknown,
     params: P,
-  ): TypedInstance<UserAccountRegistrationRequested, P & { readonly id: UserId }> {
-    return UserAccountRegistrationRequested.from({ ...params, id: generateId() as UserId });
+  ): TypedInstance<
+    UserAccountRegistrationRequested,
+    P & { readonly id: UserId; readonly attemptedAt: Date }
+  > {
+    return UserAccountRegistrationRequested.from({
+      ...params,
+      id: generateId() as UserId,
+      attemptedAt: new Date(),
+    });
   }
 
   /**
@@ -241,12 +250,7 @@ export interface UserAccountRepository {
     params: {
       readonly filters?:
         | {
-            readonly createdAt?:
-              | { readonly from?: Date | undefined; readonly until?: Date | undefined }
-              | undefined;
-          }
-        | {
-            readonly registeredAt?:
+            readonly attemptedAt?:
               | { readonly from?: Date | undefined; readonly until?: Date | undefined }
               | undefined;
           }
