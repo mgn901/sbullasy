@@ -25,6 +25,10 @@ import { type Id, generateId } from '../../lib/random-values/id.ts';
 import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
 import type { PickEssential, PreApplied } from '../../lib/type-utils.ts';
 import type { EmailAddress } from '../../values.ts';
+import {
+  type RequestWithEmailVerificationChallenge,
+  RequestWithEmailVerificationChallengeReducers,
+} from './request-with-email-verification-challenge.ts';
 import type { UserId } from './values.ts';
 
 //#region UserAccountConfigurationMap
@@ -166,15 +170,14 @@ export type UserAccountEmailAddressUpdateRequest = {
   readonly id: UserAccountEmailAddressUpdateRequestId;
   readonly userId: UserId;
   readonly newEmailAddress: EmailAddress;
-  readonly status: 'requested' | 'completed' | 'canceled';
-  readonly requestedAt: Date;
-  readonly associatedEmailVerificationChallengeId: EmailVerificationChallengeId;
-};
+} & RequestWithEmailVerificationChallenge;
 
 /**
  * {@linkcode UserAccountEmailAddressUpdateRequest}の状態を変更するための関数を提供する。
  */
 export const UserAccountEmailAddressUpdateRequestReducers = {
+  ...RequestWithEmailVerificationChallengeReducers,
+
   /**
    * 新しい{@linkcode UserAccountEmailAddressUpdateRequest}を作成して返す。
    */
@@ -203,27 +206,6 @@ export const UserAccountEmailAddressUpdateRequestReducers = {
       requestedAt: new Date(),
       associatedEmailVerificationChallengeId: params.associatedEmailVerificationChallengeId,
     }) as const,
-
-  /**
-   * 指定されたリクエストを完了にして返す。
-   * @param self 完了にするリクエスト
-   */
-  toCompleted: <S extends UserAccountEmailAddressUpdateRequest & { readonly status: 'requested' }>(
-    self: S,
-  ): S & { readonly status: 'completed' } => ({ ...self, status: 'completed' }) as const,
-
-  /**
-   * 指定されたリクエストを中止にして返す。
-   * @param self 中止にするリクエスト
-   */
-  toCanceled: <S extends UserAccountEmailAddressUpdateRequest & { readonly status: 'requested' }>(
-    self: S,
-  ): S & { readonly status: 'canceled' } => ({ ...self, status: 'canceled' }) as const,
-
-  isNotTerminated: <S extends UserAccountEmailAddressUpdateRequest>(
-    self: S,
-  ): self is S & { readonly status: Exclude<S['status'], 'completed' | 'canceled'> } =>
-    self.status !== 'completed' && self.status !== 'canceled',
 } as const;
 
 export interface UserAccountEmailAddressUpdateRequestRepository {

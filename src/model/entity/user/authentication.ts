@@ -130,9 +130,9 @@ type AuthenticationAttemptBase = {
   readonly emailAddress: EmailAddress;
   readonly ipAddress: string;
   readonly userAgent: string;
+  readonly status: 'attempted' | 'completed' | 'canceled';
   readonly attemptedAt: Date;
   readonly associatedEmailVerificationChallengeId: EmailVerificationChallengeId;
-  readonly status: 'attempted' | 'completed' | 'canceled';
 };
 
 export type UserAccountRegistrationAttempt = {
