@@ -1,14 +1,12 @@
 import {
+  type AccessToken,
+  AccessTokenReducers,
   type AccessTokenRepository,
   type AccessTokenSecret,
-  AccessTokenValid,
 } from '../entity/user/access-token.ts';
-import {
-  type UserAccount,
-  UserAccountRegistrationRequested,
-  type UserAccountRepository,
-} from '../entity/user/user-account.ts';
+import type { UserAccount, UserAccountRepository } from '../entity/user/user-account.ts';
 import { Exception } from './exception.ts';
+import type { FromRepository } from './repository.ts';
 
 export interface AccessControlServiceDependencies {
   readonly accessTokenRepository: AccessTokenRepository;
@@ -19,16 +17,16 @@ export interface AccessControlServiceDependencies {
 export const verifyAccessToken = async (
   params: { readonly accessTokenSecret: AccessTokenSecret } & AccessControlServiceDependencies,
 ): Promise<{
-  readonly userAccount: Exclude<UserAccount, UserAccountRegistrationRequested>;
-  readonly accessToken: AccessTokenValid;
+  readonly userAccount: FromRepository<UserAccount>;
+  readonly accessToken: FromRepository<AccessToken> & { readonly status: 'valid' };
 }> => {
   const accessToken = await params.accessTokenRepository.getOneBySecret(params.accessTokenSecret);
-  if (accessToken instanceof AccessTokenValid === false) {
+  if (accessToken === undefined || !AccessTokenReducers.isValid(accessToken)) {
     throw Exception.create({ exceptionName: 'accessControl.notAuthorized' });
   }
 
   const userAccount = await params.userAccountRepository.getOneById(accessToken.logInUserId);
-  if (userAccount === undefined || userAccount instanceof UserAccountRegistrationRequested) {
+  if (userAccount === undefined) {
     throw Exception.create({ exceptionName: 'accessControl.notAuthorized' });
   }
 

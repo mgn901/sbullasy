@@ -1,7 +1,7 @@
-import type { PickByValue } from '../../utils/type-utils.ts';
+import type { OmitByValue } from '../../utils/type-utils.ts';
 
 /** `T`から、メソッドや値に関数をとるプロパティを取り除いた型を得る。 */
-export type FieldsOf<T> = Omit<T, keyof PickByValue<T, (...args: never[]) => unknown>>;
+export type FieldsOf<T> = OmitByValue<T, ((...args: never[]) => unknown) | symbol>;
 
 /** `U`から`T`にはないフィールドを取り除いた型を得る。 */
 export type PickEssential<T, K> = Pick<T, Extract<keyof T, K>>;

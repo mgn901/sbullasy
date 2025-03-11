@@ -1,3 +1,4 @@
+import type { Filters, FromRepository, OrderBy } from '../model/lib/repository.ts';
 import type { Client } from './asyncify-events/Client.ts';
 import {
   type TimeWindowRateLimitationRule,
@@ -5,56 +6,48 @@ import {
 } from './time-window-rate-limitation.ts';
 import type { TypedEventTarget } from './typed-event-target.ts';
 
-export class Execution<
+const executionTypeSymbol = Symbol('execution.type');
+
+export type Execution<
   TId,
   TFunc extends (this: unknown, ...args: never[]) => TReturned,
   TReturned,
-> {
-  public readonly id: TId;
-  public readonly args: Readonly<Parameters<TFunc>>;
-  public readonly executedAt: Date;
-  public readonly isExecuted: boolean;
+> = {
+  readonly [executionTypeSymbol]: typeof executionTypeSymbol;
+  readonly id: TId;
+  readonly args: Readonly<Parameters<TFunc>>;
+  readonly executedAt: Date;
+  readonly isExecuted: boolean;
+};
 
-  public toExecuted(this: Execution<TId, TFunc, TReturned>): Execution<TId, TFunc, TReturned> {
-    return Execution.from({ ...this, isExecuted: true });
-  }
+export const ExecutionReducers = {
+  createFactory: <
+    TId,
+    TFunc extends (this: unknown, ...args: never[]) => TReturned,
+    TReturned,
+  >(params: { readonly generateId: () => TId }): ((
+    params: Pick<Execution<TId, TFunc, TReturned>, 'args' | 'executedAt'>,
+  ) => Execution<TId, TFunc, TReturned>) => {
+    const { generateId } = params;
 
-  public static createFactory<
+    return (params) => ({
+      [executionTypeSymbol]: executionTypeSymbol,
+      id: generateId() as TId,
+      args: params.args,
+      executedAt: params.executedAt,
+      isExecuted: false,
+    });
+  },
+
+  toExecuted: <
+    S extends Execution<TId, TFunc, TReturned>,
     TId,
     TFunc extends (this: unknown, ...args: never[]) => TReturned,
     TReturned,
   >(
-    this: unknown,
-    params: { readonly generateId: () => TId },
-  ): (
-    params: Pick<Execution<TId, TFunc, TReturned>, 'args' | 'executedAt'>,
-  ) => Execution<TId, TFunc, TReturned> {
-    const { generateId } = params;
-
-    return (params) =>
-      Execution.from({
-        ...params,
-        id: generateId() as Execution<TId, TFunc, TReturned>['id'],
-        isExecuted: false,
-      });
-  }
-
-  public static from<TId, TFunc extends (this: unknown, ...args: never[]) => TReturned, TReturned>(
-    this: unknown,
-    params: Pick<Execution<TId, TFunc, TReturned>, 'id' | 'args' | 'executedAt' | 'isExecuted'>,
-  ): Execution<TId, TFunc, TReturned> {
-    return new Execution(params);
-  }
-
-  private constructor(
-    params: Pick<Execution<TId, TFunc, TReturned>, 'id' | 'args' | 'executedAt' | 'isExecuted'>,
-  ) {
-    this.id = params.id;
-    this.args = params.args;
-    this.executedAt = params.executedAt;
-    this.isExecuted = params.isExecuted;
-  }
-}
+    self: S,
+  ): S => ({ ...self, isExecuted: true }),
+};
 
 export interface ExecutionRepository<
   TId,
@@ -64,42 +57,39 @@ export interface ExecutionRepository<
   getOneById(
     this: ExecutionRepository<TId, TFunc, TReturned>,
     id: TId,
-  ): Promise<Execution<TId, TFunc, TReturned> | undefined>;
+  ): Promise<FromRepository<Execution<TId, TFunc, TReturned>> | undefined>;
 
   getMany(
     this: ExecutionRepository<TId, TFunc, TReturned>,
     params: {
-      readonly filters?:
-        | {
-            readonly executedAt?:
-              | { readonly from?: Date | undefined; readonly until?: Date | undefined }
-              | undefined;
-            readonly isExecuted?: boolean | undefined;
-          }
-        | undefined;
-      readonly orderBy: { readonly executedAt: 'asc' | 'desc' };
+      readonly filters?: Filters<
+        Pick<Execution<TId, TFunc, TReturned>, 'executedAt' | 'isExecuted'> // `id`の型が不定なので取り除いている。以下同様。
+      >;
+      readonly orderBy: OrderBy<
+        Pick<Execution<TId, TFunc, TReturned>, 'executedAt' | 'isExecuted'>
+      >;
       readonly offset?: number | undefined;
       readonly limit?: number | undefined;
     },
-  ): Promise<readonly Execution<TId, TFunc, TReturned>[] | readonly []>;
+  ): Promise<readonly FromRepository<Execution<TId, TFunc, TReturned>>[] | readonly []>;
 
   count(
     this: ExecutionRepository<TId, TFunc, TReturned>,
     params: {
-      readonly filters?:
-        | {
-            readonly executedAt?:
-              | { readonly from?: Date | undefined; readonly until?: Date | undefined }
-              | undefined;
-            readonly isExecuted?: boolean | undefined;
-          }
-        | undefined;
+      readonly filters?: Filters<
+        Pick<Execution<TId, TFunc, TReturned>, 'executedAt' | 'isExecuted'>
+      >;
     },
   ): Promise<number>;
 
-  saveOne(
+  createOne(
     this: ExecutionRepository<TId, TFunc, TReturned>,
     execution: Execution<TId, TFunc, TReturned>,
+  ): Promise<void>;
+
+  updateOne(
+    this: ExecutionRepository<TId, TFunc, TReturned>,
+    execution: FromRepository<Execution<TId, TFunc, TReturned>>,
   ): Promise<void>;
 
   deleteOneById(this: ExecutionRepository<TId, TFunc, TReturned>, id: TId): Promise<void>;
@@ -132,6 +122,7 @@ export interface ExecutionQueue<
     this: ExecutionQueue<TId, TFunc, TReturned>,
     args: Readonly<Parameters<TFunc>>,
   ): Promise<Execution<TId, TFunc, TReturned>>;
+
   cancel(this: ExecutionQueue<TId, TFunc, TReturned>, id: TId): Promise<void>;
 }
 
@@ -178,7 +169,7 @@ export class ExecutionQueueWithTimeWindowRateLimitation<
     });
 
     const execution = this.executionFactory({ args, executedAt });
-    await this.executionRepository.saveOne(execution);
+    await this.executionRepository.createOne(execution);
     this.reservationEventTarget.dispatchEvent(new Event('enqueue'));
 
     return execution;
@@ -199,6 +190,9 @@ export class ExecutionQueueWithTimeWindowRateLimitation<
     }
   }
 
+  /**
+   * 新しい{@linkcode ExecutionQueueWithTimeWindowRateLimitation}を作成して返す。
+   */
   public static create<
     TId,
     TFunc extends (this: unknown, ...args: never[]) => TReturned,
@@ -219,46 +213,51 @@ export class ExecutionQueueWithTimeWindowRateLimitation<
   }
 
   private constructor(params: {
+    /** 目的の処理を呼び出せるような{@linkcode Client}を指定する。 */
     readonly client: Client<TFunc, TReturned>;
+    /** ウィンドウごとの実行回数制限を指定する。 */
     readonly timeWindowRateLimitationRules: readonly TimeWindowRateLimitationRule[];
+    /** 実行を作成する関数を指定する。 */
     readonly executionFactory: (
       this: unknown,
       params: Pick<Execution<TId, TFunc, TReturned>, 'args' | 'executedAt'>,
     ) => Execution<TId, TFunc, TReturned>;
+    /** 実行を永続化するリポジトリを指定する。実行の型に合ったものを指定する。 */
     readonly executionRepository: ExecutionRepository<TId, TFunc, TReturned>;
   }) {
-    // イベントハンドラの定義
     // 予約された実行がない場合は、次の実行待ちを予約する関数
     const registerIfNextExecutionNonregistered = async () => {
       if (this.registeredExecution !== undefined) {
         return;
       }
 
+      // 次の実行待ちを取り出す。
       const [nextExecution] = await this.executionRepository.getMany({
-        orderBy: { executedAt: 'asc' },
         filters: { isExecuted: false },
+        orderBy: { executedAt: 'asc' },
         limit: 1,
       });
       if (nextExecution === undefined) {
         return;
       }
 
+      // 次の実行待ちをフィールドに割り当てて予約する。
       this.registeredExecution = nextExecution;
       this.registeredExecutionAbortController = new AbortController();
       const executionDate = new Date(Math.max(nextExecution.executedAt.getTime(), Date.now()));
 
-      const onExecutionDate = async () => {
-        await this.client.request(...nextExecution.args);
-
-        this.registeredExecution = undefined;
-        this.registeredExecutionAbortController = undefined;
-        await this.executionRepository.saveOne(nextExecution.toExecuted());
-        this.reservationEventTarget.dispatchEvent(new Event('complete'));
-      };
-
       executeAt({
         date: executionDate,
-        func: onExecutionDate,
+        func: async () => {
+          await this.client.request(...nextExecution.args);
+
+          await this.executionRepository.updateOne(ExecutionReducers.toExecuted(nextExecution));
+
+          // 実行が完了したら、フィールドに割り当てた実行を取り除く。
+          this.registeredExecution = undefined;
+          this.registeredExecutionAbortController = undefined;
+          this.reservationEventTarget.dispatchEvent(new Event('complete'));
+        },
         abortSignal: this.registeredExecutionAbortController.signal,
       });
     };
@@ -277,6 +276,10 @@ export class ExecutionQueueWithTimeWindowRateLimitation<
   }
 }
 
+/**
+ * 指定された時間だけ待って解決する`Promise`を返す。
+ * - `abortSignal`を指定していて、`abortSignal`に紐付いている`AbortController`で`abort`を呼び出した場合、返した`Promise`を拒否する。
+ */
 const sleep = (params: {
   readonly timeoutMs: number;
   readonly abortSignal?: AbortSignal | undefined;
@@ -317,6 +320,10 @@ const sleep = (params: {
   });
 };
 
+/**
+ * 指定された日時に指定された関数を呼び出し、その戻り値で解決する`Promise`を返す。
+ * - `abortSignal`を指定していて、`abortSignal`に紐付いている`AbortController`で`abort`を呼び出した場合、返した`Promise`を拒否する。
+ */
 const executeAt = async <TFunc extends () => TReturned, TReturned>(params: {
   readonly date: Date;
   readonly func: TFunc;

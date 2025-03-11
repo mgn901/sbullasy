@@ -11,6 +11,7 @@ import type {
   SystemConfigurationMap,
 } from '../../lib/context.ts';
 import type {
+  EmailVerificationChallengeId,
   EmailVerificationChallengeVerificationCode,
   EmailVerificationServiceDependencies,
   answer,
@@ -20,20 +21,19 @@ import type {
 import { Exception } from '../../lib/exception.ts';
 import { localize } from '../../lib/i18n.ts';
 import { type Id, generateId } from '../../lib/random-values/id.ts';
-import type { FieldsOf, PickEssential, PreApplied, TypedInstance } from '../../lib/type-utils.ts';
+import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
+import type { PreApplied } from '../../lib/type-utils.ts';
 import type { EmailAddress } from '../../values.ts';
 import {
   type AccessTokenConfigurationMap,
-  type AccessTokenId,
-  AccessTokenLogInRequested,
+  AccessTokenReducers,
   type AccessTokenRepository,
   type AccessTokenSecret,
   accessTokenSymbol,
 } from './access-token.ts';
 import {
-  type UserAccountEmailAddressUpdateRequested,
-  type UserAccountRegistered,
-  UserAccountRegistrationRequested,
+  type UserAccount,
+  UserAccountReducers,
   type UserAccountRepository,
 } from './user-account.ts';
 import type { UserId } from './values.ts';
@@ -109,7 +109,9 @@ Verification code: \${emailVerification.verificationCode}
 //#endregion
 
 //#region UserAuthenticationAttempt and UserAuthenticationAttemptRepository
-const authenticationAttemptTypeSymbol = Symbol();
+const authenticationAttemptTypeSymbol = Symbol('authenticationAttempt.type');
+const userAccountRegistrationAttemptTypeSymbol = Symbol('userAccountRegistrationAttempt.type');
+const logInAttemptTypeSymbol = Symbol('logInAttempt.type');
 
 export type AuthenticationAttemptId = NominalPrimitive<Id, typeof authenticationAttemptTypeSymbol>;
 
@@ -120,259 +122,171 @@ export type AuthenticationAttemptId = NominalPrimitive<Id, typeof authentication
  * この型のオブジェクトは、認証試行が開始される際にその試行ごとに作成される。
  * 認証の完了や中止の際は、ユーザ認証の試行を指す識別子には、ユーザIDではなく、認証ごとに作成される認証試行のIDを用いる。
  */
-export type AuthenticationAttempt =
-  | UserAccountRegistrationAttempt
-  | UserAccountRegistrationAttemptTerminated
-  | LogInAttempt
-  | LogInAttemptTerminated;
+export type AuthenticationAttempt = UserAccountRegistrationAttempt | LogInAttempt;
 
-abstract class AuthenticationAttemptBase {
-  public readonly id: AuthenticationAttemptId;
-  public readonly emailAddress: EmailAddress;
-  public readonly ipAddress: string;
-  public readonly userAgent: string;
-  public readonly attemptedAt: Date;
+type AuthenticationAttemptBase = {
+  readonly [authenticationAttemptTypeSymbol]: typeof authenticationAttemptTypeSymbol;
+  readonly id: AuthenticationAttemptId;
+  readonly emailAddress: EmailAddress;
+  readonly ipAddress: string;
+  readonly userAgent: string;
+  readonly attemptedAt: Date;
+  readonly associatedEmailVerificationChallengeId: EmailVerificationChallengeId;
+  readonly status: 'attempted' | 'completed' | 'canceled';
+};
 
-  //#region constructors
-  public constructor(params: FieldsOf<AuthenticationAttemptBase>) {
-    this.id = params.id;
-    this.emailAddress = params.emailAddress;
-    this.ipAddress = params.ipAddress;
-    this.userAgent = params.userAgent;
-    this.attemptedAt = params.attemptedAt;
-  }
-  //#endregion
-}
+export type UserAccountRegistrationAttempt = {
+  readonly [userAccountRegistrationAttemptTypeSymbol]: typeof userAccountRegistrationAttemptTypeSymbol;
+} & AuthenticationAttemptBase;
 
-/**
- * ユーザアカウント作成の試行で終了していないものを表す。
- */
-export class UserAccountRegistrationAttempt extends AuthenticationAttemptBase {
-  public readonly associatedUserId: UserId;
+export type LogInAttempt = AuthenticationAttemptBase & {
+  readonly [logInAttemptTypeSymbol]: typeof logInAttemptTypeSymbol;
+  readonly logInUserId: UserId;
+};
 
+/** {@linkcode AuthenticationAttempt}の状態を変更するための関数を提供する。 */
+export const AuthenticationAttemptReducers = {
   /**
-   * 新しいユーザアカウント作成の試行を作成する。
-   *
-   * @param params `associatedUserId`には、作成しようとしているユーザのIDを指定する。
+   * 新しいユーザアカウント作成試行を作成して返す。
    */
-  public static create<
+  createUserAccountRegistrationAttempt: <
     P extends {
-      readonly emailAddress: EmailAddress;
-      readonly ipAddress: string;
-      readonly userAgent: string;
-      readonly associatedUserId: UserId;
+      readonly emailAddress: TEmailAddress;
+      readonly ipAddress: TIpAddress;
+      readonly userAgent: TUserAgent;
+      readonly associatedEmailVerificationChallengeId: TAssociatedEmailVerificationChallengeId;
     },
+    TEmailAddress extends EmailAddress,
+    TIpAddress extends string,
+    TUserAgent extends string,
+    TAssociatedEmailVerificationChallengeId extends EmailVerificationChallengeId,
   >(
     params: P,
-  ): TypedInstance<
-    UserAccountRegistrationAttempt,
-    P & { readonly id: AuthenticationAttemptId; readonly attemptedAt: Date }
-  > {
-    return UserAccountRegistrationAttempt.from({
-      ...params,
+  ): UserAccountRegistrationAttempt & { readonly status: 'attempted' } & Pick<
+      P,
+      'emailAddress' | 'ipAddress' | 'userAgent' | 'associatedEmailVerificationChallengeId'
+    > =>
+    ({
+      [authenticationAttemptTypeSymbol]: authenticationAttemptTypeSymbol,
+      [userAccountRegistrationAttemptTypeSymbol]: userAccountRegistrationAttemptTypeSymbol,
       id: generateId() as AuthenticationAttemptId,
+      emailAddress: params.emailAddress,
+      ipAddress: params.ipAddress,
+      userAgent: params.userAgent,
       attemptedAt: new Date(),
-    });
-  }
+      associatedEmailVerificationChallengeId: params.associatedEmailVerificationChallengeId,
+      status: 'attempted',
+    }) as const,
 
   /**
-   * この試行を完了にしたものを返す。
+   * 新しいログイン試行を作成して返す。
    */
-  public toCompleted<T extends UserAccountRegistrationAttempt>(
-    this: T,
-  ): TypedInstance<UserAccountRegistrationAttemptTerminated, T & { readonly status: 'completed' }> {
-    return UserAccountRegistrationAttemptTerminated.from({ ...this, status: 'completed' });
-  }
-
-  /**
-   * この試行を中止にしたものを返す。
-   */
-  public toCanceled<T extends UserAccountRegistrationAttempt>(
-    this: T,
-  ): TypedInstance<UserAccountRegistrationAttemptTerminated, T & { readonly status: 'canceled' }> {
-    return UserAccountRegistrationAttemptTerminated.from({ ...this, status: 'canceled' });
-  }
-
-  //#region constructors
-  public static from<P extends FieldsOf<UserAccountRegistrationAttempt>>(
-    params: PickEssential<P, keyof FieldsOf<UserAccountRegistrationAttempt>>,
-  ): TypedInstance<UserAccountRegistrationAttempt, P> {
-    return new UserAccountRegistrationAttempt(params) as TypedInstance<
-      UserAccountRegistrationAttempt,
-      P
-    >;
-  }
-
-  private constructor(params: FieldsOf<UserAccountRegistrationAttempt>) {
-    super(params);
-    this.associatedUserId = params.associatedUserId;
-  }
-  //#endregion
-}
-
-/**
- * ユーザアカウント作成の試行で終了したものを表す。
- */
-export class UserAccountRegistrationAttemptTerminated extends AuthenticationAttemptBase {
-  public readonly associatedUserId: UserId;
-  public readonly status: 'canceled' | 'completed';
-
-  //#region constructors
-  public static from<P extends FieldsOf<UserAccountRegistrationAttemptTerminated>>(
-    params: PickEssential<P, keyof FieldsOf<UserAccountRegistrationAttemptTerminated>>,
-  ): TypedInstance<UserAccountRegistrationAttemptTerminated, P> {
-    return new UserAccountRegistrationAttemptTerminated(params) as TypedInstance<
-      UserAccountRegistrationAttemptTerminated,
-      P
-    >;
-  }
-
-  private constructor(params: FieldsOf<UserAccountRegistrationAttemptTerminated>) {
-    super(params);
-    this.associatedUserId = params.associatedUserId;
-    this.status = params.status;
-  }
-  //#endregion
-}
-
-/**
- * ログインの試行で終了していないものを表す。
- */
-export class LogInAttempt extends AuthenticationAttemptBase {
-  public readonly associatedAccessTokenId: AccessTokenId;
-
-  /**
-   * 新しいログインの試行を作成する。
-   *
-   * @param params `associatedAccessTokenId`には、作成しようとしているアクセストークンを指定する。
-   */
-  public static create<
+  createLogInAttempt: <
     P extends {
-      readonly emailAddress: EmailAddress;
-      readonly ipAddress: string;
-      readonly userAgent: string;
-      readonly associatedAccessTokenId: AccessTokenId;
+      readonly emailAddress: TEmailAddress;
+      readonly ipAddress: TIpAddress;
+      readonly userAgent: TUserAgent;
+      readonly logInUserId: TLogInUserId;
+      readonly associatedEmailVerificationChallengeId: TAssociatedEmailVerificationChallengeId;
     },
+    TEmailAddress extends EmailAddress,
+    TIpAddress extends string,
+    TUserAgent extends string,
+    TLogInUserId extends UserId,
+    TAssociatedEmailVerificationChallengeId extends EmailVerificationChallengeId,
   >(
     params: P,
-  ): TypedInstance<
-    LogInAttempt,
-    P & { readonly id: AuthenticationAttemptId; readonly attemptedAt: Date }
-  > {
-    return LogInAttempt.from({
-      ...params,
+  ): LogInAttempt & { readonly status: 'attempted' } & Pick<
+      P,
+      | 'emailAddress'
+      | 'ipAddress'
+      | 'userAgent'
+      | 'logInUserId'
+      | 'associatedEmailVerificationChallengeId'
+    > =>
+    ({
+      [authenticationAttemptTypeSymbol]: authenticationAttemptTypeSymbol,
+      [logInAttemptTypeSymbol]: logInAttemptTypeSymbol,
       id: generateId() as AuthenticationAttemptId,
+      emailAddress: params.emailAddress,
+      ipAddress: params.ipAddress,
+      userAgent: params.userAgent,
+      logInUserId: params.logInUserId,
       attemptedAt: new Date(),
-    });
-  }
+      associatedEmailVerificationChallengeId: params.associatedEmailVerificationChallengeId,
+      status: 'attempted',
+    }) as const,
 
   /**
-   * この試行を完了にしたものを返す。
+   * 指定された認証試行を完了にする。
+   * @param self 完了にする認証試行
    */
-  public toCompleted<T extends LogInAttempt>(
-    this: T,
-  ): TypedInstance<LogInAttemptTerminated, T & { readonly status: 'completed' }> {
-    return LogInAttemptTerminated.from({ ...this, status: 'completed' });
-  }
+  toCompleted: <S extends AuthenticationAttempt & { readonly status: 'attempted' }>(
+    self: S,
+  ): S & { readonly status: 'completed' } => ({ ...self, status: 'completed' }) as const,
 
   /**
-   * この試行を中止にしたものを返す。
+   * 指定された認証試行を中止にする。
+   * @param self 中止にする認証試行
    */
-  public toCanceled<T extends LogInAttempt>(
-    this: T,
-  ): TypedInstance<LogInAttemptTerminated, T & { readonly status: 'canceled' }> {
-    return LogInAttemptTerminated.from({ ...this, status: 'canceled' });
-  }
+  toCanceled: <S extends AuthenticationAttempt & { readonly status: 'attempted' }>(
+    self: S,
+  ): S & { readonly status: 'canceled' } => ({ ...self, status: 'canceled' }) as const,
 
-  //#region constructors
-  public static from<P extends FieldsOf<LogInAttempt>>(
-    params: PickEssential<P, keyof FieldsOf<LogInAttempt>>,
-  ): TypedInstance<LogInAttempt, P> {
-    return new LogInAttempt(params) as TypedInstance<LogInAttempt, P>;
-  }
+  isNotTerminated: <S extends AuthenticationAttempt>(
+    self: S,
+  ): self is S & {
+    readonly status: Exclude<AuthenticationAttempt['status'], 'completed' | 'canceled'>;
+  } => self.status !== 'completed' && self.status !== 'canceled',
 
-  private constructor(params: FieldsOf<LogInAttempt>) {
-    super(params);
-    this.associatedAccessTokenId = params.associatedAccessTokenId;
-  }
-  //#endregion
-}
+  /**
+   * 指定された認証試行が{@linkcode UserAccountRegistrationAttempt}であれば`true`を返し、そうでないならば`false`を返す。
+   */
+  isUserAccountRegistrationAttempt: <S extends AuthenticationAttempt>(
+    self: S,
+  ): self is S & UserAccountRegistrationAttempt =>
+    userAccountRegistrationAttemptTypeSymbol in self &&
+    self[userAccountRegistrationAttemptTypeSymbol] === userAccountRegistrationAttemptTypeSymbol,
 
-/**
- * ログインの試行で終了したものを表す。
- */
-export class LogInAttemptTerminated extends AuthenticationAttemptBase {
-  public readonly associatedAccessTokenId: AccessTokenId;
-  public readonly status: 'canceled' | 'completed';
-
-  //#region constructors
-  public static from<P extends FieldsOf<LogInAttemptTerminated>>(
-    params: PickEssential<P, keyof FieldsOf<LogInAttemptTerminated>>,
-  ): TypedInstance<LogInAttemptTerminated, P> {
-    return new LogInAttemptTerminated(params) as TypedInstance<LogInAttemptTerminated, P>;
-  }
-
-  private constructor(params: FieldsOf<LogInAttemptTerminated>) {
-    super(params);
-    this.associatedAccessTokenId = params.associatedAccessTokenId;
-    this.status = params.status;
-  }
-  //#endregion
-}
+  /**
+   * 指定された認証試行が{@linkcode LogInAttempt}であれば`true`を返し、そうでないならば`false`を返す。
+   */
+  isLogInAttempt: <S extends AuthenticationAttempt>(self: S): self is S & LogInAttempt =>
+    logInAttemptTypeSymbol in self && self[logInAttemptTypeSymbol] === logInAttemptTypeSymbol,
+};
 
 export interface AuthenticationAttemptRepository {
   getOneById<TUserAuthenticationAttemptId extends AuthenticationAttemptId>(
     this: AuthenticationAttemptRepository,
     id: TUserAuthenticationAttemptId,
-  ): Promise<(AuthenticationAttempt & { readonly id: TUserAuthenticationAttemptId }) | undefined>;
+  ): Promise<
+    | FromRepository<AuthenticationAttempt & { readonly id: TUserAuthenticationAttemptId }>
+    | undefined
+  >;
 
   getMany(
     this: unknown,
     params: {
-      readonly filters?:
-        | {
-            readonly emailAddress?: string | undefined;
-            readonly ipAddress?: string | undefined;
-            readonly userAgent?: string | undefined;
-            readonly attemptedAt?:
-              | { readonly from?: Date | undefined; readonly until?: Date | undefined }
-              | undefined;
-          }
-        | undefined;
-      readonly orderBy:
-        | { readonly emailAddress: 'asc' | 'desc' }
-        | { readonly ipAddress: 'asc' | 'desc' }
-        | { readonly userAgent: 'asc' | 'desc' }
-        | { readonly attemptedAt: 'asc' | 'desc' };
+      readonly filters?: Filters<AuthenticationAttempt>;
+      readonly orderBy: OrderBy<AuthenticationAttempt>;
       readonly offset?: number | undefined;
       readonly limit?: number | undefined;
     },
-  ): Promise<readonly AuthenticationAttempt[] | readonly []>;
+  ): Promise<readonly FromRepository<AuthenticationAttempt>[] | readonly []>;
 
   count(
     this: unknown,
-    params: {
-      readonly filters?:
-        | {
-            readonly emailAddress?: string | undefined;
-            readonly ipAddress?: string | undefined;
-            readonly userAgent?: string | undefined;
-            readonly attemptedAt?:
-              | { readonly from?: Date | undefined; readonly until?: Date | undefined }
-              | undefined;
-          }
-        | undefined;
-    },
+    params: { readonly filters?: Filters<AuthenticationAttempt> },
   ): Promise<number>;
 
   createOne(
     this: AuthenticationAttemptRepository,
-    userAuthenticationAttempt: AuthenticationAttempt,
+    authenticationAttempt: AuthenticationAttempt,
   ): Promise<void>;
 
   updateOne(
     this: AuthenticationAttemptRepository,
-    userAuthenticationAttempt: AuthenticationAttempt,
+    authenticationAttempt: FromRepository<AuthenticationAttempt>,
   ): Promise<void>;
 
   deleteOneById(this: AuthenticationAttemptRepository, id: AuthenticationAttemptId): Promise<void>;
@@ -404,10 +318,8 @@ export interface UserAuthenticationServiceDependencies {
 
 /**
  * Eメールアドレスを指定して、Eメールアドレス確認を用いた認証試行（ユーザアカウントの作成またはログイン。{@linkcode AuthenticationAttempt}）を開始する。
- *
- * - 指定されたEメールアドレスに対応するユーザアカウントが存在し、作成が完了している場合は、{@linkcode AccessTokenLogInRequested}を作成して、ログインの試行を開始する。
- * - 指定されたEメールアドレスに対応するユーザアカウントが存在しない、または作成が完了していない場合は、{@linkcode UserAccountRegistrationRequested}を作成して、ユーザアカウント作成の試行を開始する。
- *
+ * - 指定されたEメールアドレスに対応するユーザアカウントが存在する場合は、{@linkcode AccessTokenLogInRequested}を作成して、ログインの試行を開始する。
+ * - 指定されたEメールアドレスに対応するユーザアカウントが存在しない場合は、{@linkcode UserAccountRegistrationRequested}を作成して、ユーザアカウント作成の試行を開始する。
  * @returns 開始された認証試行のID、Eメールアドレス確認の送信日時、期限の日時を返す。
  * @throws 指定されたEメールアドレスに対する一定時間中の認証試行回数が制限を超えた場合は{@linkcode Exception}（`authentication.tooManyRequests`）を投げる。
  */
@@ -462,22 +374,12 @@ export const requestLogInOrRegistrationWithEmailVerification = async (
     return requestRegistrationWithEmailVerification(params);
   }
 
-  if (userAccount instanceof UserAccountRegistrationRequested) {
-    await params.cancelEmailVerificationChallenge({
-      id: userAccount.associatedEmailVerificationChallengeId,
-    });
-    await params.userAccountRepository.deleteOneById(userAccount.id);
-
-    return requestRegistrationWithEmailVerification(params);
-  }
-
   return requestLogInWithEmailVerification({ ...params, userAccount });
 };
 
 /**
  * Eメールアドレス確認の確認コードが正しいのかを確認して、Eメールアドレス確認を用いた認証試行（ユーザアカウントの作成またはログイン）を完了する。
- *
- * @returns アクセストークン（{@linkcode AccessToken}）のシークレットを返す。
+ * @returns アクセストークン（{@linkcode AccessToken}）のシークレットとアクセストークンの有効期限を返す。
  * @throws 認証試行が見つからない場合は{@linkcode Exception}（`authenitcation.notExists`）を投げる。
  * @throws Eメールアドレス確認の確認コードが正しくない場合は{@linkcode Exception}（`authenitcation.verificationCodeIncorrect`）を投げる。
  */
@@ -492,54 +394,35 @@ export const completeLogInOrRegistrationWithEmailVerification = async (
 }> => {
   const attempt = await params.authenticationAttemptRepository.getOneById(params.id);
 
-  if (attempt instanceof LogInAttempt) {
-    const accessToken = await params.accessTokenRepository.getOneById(
-      attempt.associatedAccessTokenId,
-    );
-    if (accessToken instanceof AccessTokenLogInRequested) {
-      return completeLogInWithEmailVerification({ ...params, attempt, accessToken });
-    }
+  if (attempt === undefined || !AuthenticationAttemptReducers.isNotTerminated(attempt)) {
+    throw Exception.create({ exceptionName: 'authentication.notExists' });
   }
 
-  if (attempt instanceof UserAccountRegistrationAttempt) {
-    const userAccount = await params.userAccountRepository.getOneById(attempt.associatedUserId);
-    if (userAccount instanceof UserAccountRegistrationRequested) {
-      return completeRegistrationWithEmailVerification({ ...params, attempt, userAccount });
-    }
+  if (AuthenticationAttemptReducers.isLogInAttempt(attempt)) {
+    return completeLogInWithEmailVerification({ ...params, attempt });
   }
 
-  throw Exception.create({ exceptionName: 'authentication.notExists' });
+  return completeRegistrationWithEmailVerification({ ...params, attempt });
 };
 
 /**
  * Eメールアドレス確認を用いたユーザアカウントの作成またはログインを中止する。
- *
  * @throws 認証試行が見つからない場合は{@linkcode Exception}（`authenitcation.notExists`）を投げる。
  */
 export const cancelLogInOrRegistrationWithEmailVerification = async (
   params: { readonly id: AuthenticationAttemptId } & UserAuthenticationServiceDependencies,
 ): Promise<void> => {
   const attempt = await params.authenticationAttemptRepository.getOneById(params.id);
-
-  if (attempt instanceof LogInAttempt) {
-    const accessToken = await params.accessTokenRepository.getOneById(
-      attempt.associatedAccessTokenId,
-    );
-    if (accessToken instanceof AccessTokenLogInRequested) {
-      await cancelLogInWithEmailVerification({ ...params, attempt, accessToken });
-      return;
-    }
+  if (attempt === undefined || !AuthenticationAttemptReducers.isNotTerminated(attempt)) {
+    throw Exception.create({ exceptionName: 'authentication.notExists' });
   }
 
-  if (attempt instanceof UserAccountRegistrationAttempt) {
-    const userAccount = await params.userAccountRepository.getOneById(attempt.associatedUserId);
-    if (userAccount instanceof UserAccountRegistrationRequested) {
-      await cancelRegistrationWithEmailVerification({ ...params, attempt, userAccount });
-      return;
-    }
-  }
+  await params.cancelEmailVerificationChallenge({
+    id: attempt.associatedEmailVerificationChallengeId,
+  });
 
-  throw Exception.create({ exceptionName: 'authentication.notExists' });
+  const attemptCanceled = AuthenticationAttemptReducers.toCanceled(attempt);
+  await params.authenticationAttemptRepository.updateOne(attemptCanceled);
 };
 //#endregion
 
@@ -550,7 +433,7 @@ export const cancelLogInOrRegistrationWithEmailVerification = async (
  */
 const requestLogInWithEmailVerification = async (
   params: {
-    readonly userAccount: UserAccountRegistered | UserAccountEmailAddressUpdateRequested;
+    readonly userAccount: UserAccount;
     readonly ipAddress: string;
     readonly userAgent: string;
   } & UserAuthenticationServiceDependencies,
@@ -584,19 +467,12 @@ const requestLogInWithEmailVerification = async (
     },
   });
 
-  const accessToken = AccessTokenLogInRequested.create({
-    ipAddress: params.ipAddress,
-    userAgent: params.userAgent,
-    associatedEmailVerificationChallengeId,
-    logInUserId: params.userAccount.id,
-  });
-  await params.accessTokenRepository.createOne(accessToken);
-
-  const attempt = LogInAttempt.create({
+  const attempt = AuthenticationAttemptReducers.createLogInAttempt({
     emailAddress: params.userAccount.emailAddress,
-    associatedAccessTokenId: accessToken.id,
     ipAddress: params.ipAddress,
     userAgent: params.userAgent,
+    logInUserId: params.userAccount.id,
+    associatedEmailVerificationChallengeId,
   });
   await params.authenticationAttemptRepository.createOne(attempt);
 
@@ -608,8 +484,8 @@ const requestLogInWithEmailVerification = async (
  */
 const completeLogInWithEmailVerification = async (
   params: {
-    readonly attempt: LogInAttempt;
-    readonly accessToken: AccessTokenLogInRequested;
+    readonly attempt: FromRepository<AuthenticationAttempt> &
+      LogInAttempt & { readonly status: 'attempted' };
     readonly enteredVerificationCode: EmailVerificationChallengeVerificationCode;
   } & UserAuthenticationServiceDependencies,
 ): Promise<{
@@ -617,44 +493,28 @@ const completeLogInWithEmailVerification = async (
   readonly expiredAt: Date;
 }> => {
   const { isCorrect } = await params.answerEmailVerificationChallenge({
-    id: params.accessToken.associatedEmailVerificationChallengeId,
+    id: params.attempt.associatedEmailVerificationChallengeId,
     enteredVerificationCode: params.enteredVerificationCode,
   });
   if (isCorrect === false) {
     throw Exception.create({ exceptionName: 'authentication.verificationCodeIncorrect' });
   }
 
-  const accessTokenLogInCompleted = params.accessToken.toLogInCompleted({
+  const accessToken = AccessTokenReducers.create({
+    ipAddress: params.attempt.ipAddress,
+    userAgent: params.attempt.userAgent,
+    logInUserId: params.attempt.logInUserId,
     expiredAfterMs: params.contextRepository.get('accessToken.expiredAfterMs'),
   });
-  await params.accessTokenRepository.updateOne(accessTokenLogInCompleted);
+  await params.accessTokenRepository.createOne(accessToken);
 
-  const attemptCompleted = params.attempt.toCompleted();
+  const attemptCompleted = AuthenticationAttemptReducers.toCompleted(params.attempt);
   await params.authenticationAttemptRepository.updateOne(attemptCompleted);
 
   return {
-    [accessTokenSymbol.secret]: accessTokenLogInCompleted[accessTokenSymbol.secret],
-    expiredAt: accessTokenLogInCompleted.expiredAt,
+    [accessTokenSymbol.secret]: accessToken[accessTokenSymbol.secret],
+    expiredAt: accessToken.expiredAt,
   };
-};
-
-/**
- * Eメールアドレス確認を用いたログインを中止する。
- */
-const cancelLogInWithEmailVerification = async (
-  params: {
-    readonly attempt: LogInAttempt;
-    readonly accessToken: AccessTokenLogInRequested;
-  } & UserAuthenticationServiceDependencies,
-): Promise<void> => {
-  await params.cancelEmailVerificationChallenge({
-    id: params.accessToken.associatedEmailVerificationChallengeId,
-  });
-
-  await params.accessTokenRepository.deleteOneById(params.accessToken.id);
-
-  const attemptCanceled = params.attempt.toCanceled();
-  await params.authenticationAttemptRepository.updateOne(attemptCanceled);
 };
 //#endregion
 
@@ -699,17 +559,11 @@ const requestRegistrationWithEmailVerification = async (
     },
   });
 
-  const userAccount = UserAccountRegistrationRequested.create({
-    emailAddress: params.emailAddress,
-    associatedEmailVerificationChallengeId,
-  });
-  await params.userAccountRepository.createOne(userAccount);
-
-  const attempt = UserAccountRegistrationAttempt.create({
+  const attempt = AuthenticationAttemptReducers.createUserAccountRegistrationAttempt({
     emailAddress: params.emailAddress,
     ipAddress: params.ipAddress,
     userAgent: params.userAgent,
-    associatedUserId: userAccount.id,
+    associatedEmailVerificationChallengeId,
   });
   await params.authenticationAttemptRepository.createOne(attempt);
 
@@ -721,8 +575,8 @@ const requestRegistrationWithEmailVerification = async (
  */
 const completeRegistrationWithEmailVerification = async (
   params: {
-    readonly attempt: UserAccountRegistrationAttempt;
-    readonly userAccount: UserAccountRegistrationRequested;
+    readonly attempt: FromRepository<AuthenticationAttempt> &
+      UserAccountRegistrationAttempt & { readonly status: 'attempted' };
     readonly enteredVerificationCode: EmailVerificationChallengeVerificationCode;
   } & UserAuthenticationServiceDependencies,
 ): Promise<{
@@ -730,52 +584,30 @@ const completeRegistrationWithEmailVerification = async (
   readonly expiredAt: Date;
 }> => {
   const { isCorrect } = await params.answerEmailVerificationChallenge({
-    id: params.userAccount.associatedEmailVerificationChallengeId,
+    id: params.attempt.associatedEmailVerificationChallengeId,
     enteredVerificationCode: params.enteredVerificationCode,
   });
   if (isCorrect === false) {
     throw Exception.create({ exceptionName: 'authentication.verificationCodeIncorrect' });
   }
 
-  const userAccountRegistrationCompleted = params.userAccount.toRegistrationCompleted();
-  await params.userAccountRepository.updateOne(userAccountRegistrationCompleted);
+  const userAccount = UserAccountReducers.create({ emailAddress: params.attempt.emailAddress });
+  await params.userAccountRepository.createOne(userAccount);
 
-  const attemptCompleted = params.attempt.toCompleted();
-  await params.authenticationAttemptRepository.updateOne(attemptCompleted);
-
-  const accessToken = AccessTokenLogInRequested.create({
-    ipAddress: attemptCompleted.ipAddress,
-    userAgent: attemptCompleted.userAgent,
-    logInUserId: userAccountRegistrationCompleted.id,
-    associatedEmailVerificationChallengeId:
-      params.userAccount.associatedEmailVerificationChallengeId,
-  }).toLogInCompleted({
+  const accessToken = AccessTokenReducers.create({
+    ipAddress: params.attempt.ipAddress,
+    userAgent: params.attempt.userAgent,
+    logInUserId: userAccount.id,
     expiredAfterMs: params.contextRepository.get('accessToken.expiredAfterMs'),
   });
   await params.accessTokenRepository.createOne(accessToken);
+
+  const attemptCompleted = AuthenticationAttemptReducers.toCompleted(params.attempt);
+  await params.authenticationAttemptRepository.updateOne(attemptCompleted);
 
   return {
     [accessTokenSymbol.secret]: accessToken[accessTokenSymbol.secret],
     expiredAt: accessToken.expiredAt,
   };
-};
-
-/**
- * Eメールアドレス確認を用いたユーザアカウントの作成を中止する。
- */
-const cancelRegistrationWithEmailVerification = async (
-  params: {
-    readonly attempt: UserAccountRegistrationAttempt;
-    readonly userAccount: UserAccountRegistrationRequested;
-  } & UserAuthenticationServiceDependencies,
-): Promise<void> => {
-  await params.cancelEmailVerificationChallenge({
-    id: params.userAccount.associatedEmailVerificationChallengeId,
-  });
-
-  await params.userAccountRepository.deleteOneById(params.userAccount.id);
-
-  const attemptCanceled = params.attempt.toCanceled();
-  await params.authenticationAttemptRepository.updateOne(attemptCanceled);
 };
 //#endregion

@@ -9,11 +9,11 @@ import type {
   ContextRepository,
   LogInUserClientContextMap,
 } from '../../lib/context.ts';
-import type { EmailVerificationChallengeId } from '../../lib/email-verification.ts';
 import { Exception } from '../../lib/exception.ts';
 import { type Id, generateId } from '../../lib/random-values/id.ts';
 import { type LongSecret, generateLongSecret } from '../../lib/random-values/long-secret.ts';
-import type { FieldsOf, PickEssential, PreApplied, TypedInstance } from '../../lib/type-utils.ts';
+import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
+import type { PreApplied } from '../../lib/type-utils.ts';
 import type { UserId } from './values.ts';
 
 //#region AccessTokenConfigurationMap
@@ -27,9 +27,9 @@ const accessTokenConfigurationMap = {
 //#endregion
 
 //#region AccessToken and AccessTokenRepository
-const accessTokenTypeSymbol = Symbol();
+const accessTokenTypeSymbol = Symbol('accessToken.type');
 
-const accessTokenSecretSymbol = Symbol();
+const accessTokenSecretSymbol = Symbol('accessToken.secret');
 
 export const accessTokenSymbol = {
   type: accessTokenTypeSymbol,
@@ -43,194 +43,90 @@ export type AccessTokenSecret = NominalPrimitive<LongSecret, typeof accessTokenT
 /**
  * アクセストークンを表す。
  *
- * この型のオブジェクトはログインの試行が開始される際に作成される。
- *
  * ユーザが認証試行を完了させると、アクセストークンのシークレットを得ることができる。
  * ユーザは、アクセストークンのシークレットを送信することで、自分が認証を完了させたユーザであることを知らせることができる。
  * サービスは、アクセストークンのシークレットを受け取り、{@linkcode AccessTokenRepository.getOneBySecret}を用いてアクセストークンを取得し、その有効性を確認することで、どのユーザがログインしているのかを知ることができる。
  */
-export type AccessToken = AccessTokenLogInRequested | AccessTokenValid | AccessTokenExpired;
-
-abstract class AccessTokenBase {
-  public readonly id: AccessTokenId;
-  public readonly [accessTokenSecretSymbol]: AccessTokenSecret;
-  public readonly ipAddress: string;
-  public readonly userAgent: string;
-  public readonly logInUserId: UserId;
-  public readonly attemptedAt: Date;
-
-  //#region constructors
-  public constructor(params: FieldsOf<AccessTokenBase>) {
-    this.id = params.id;
-    this[accessTokenSecretSymbol] = params[accessTokenSecretSymbol];
-    this.ipAddress = params.ipAddress;
-    this.userAgent = params.userAgent;
-    this.logInUserId = params.logInUserId;
-    this.attemptedAt = params.attemptedAt;
-  }
-  //#endregion
-}
+export type AccessToken = {
+  readonly [accessTokenTypeSymbol]: typeof accessTokenTypeSymbol;
+  readonly id: AccessTokenId;
+  readonly [accessTokenSecretSymbol]: AccessTokenSecret;
+  readonly logInUserId: UserId;
+  readonly ipAddress: string;
+  readonly userAgent: string;
+  readonly loggedInAt: Date;
+  readonly lastUsedAt: Date;
+  readonly expiredAt: Date;
+  readonly status: 'valid' | 'expired' | 'revoked';
+};
 
 /**
- * ログイン試行完了前のアクセストークンを表す。
+ * {@linkcode AccessToken}の状態を変更するための関数を提供する。
  */
-export class AccessTokenLogInRequested extends AccessTokenBase {
-  public readonly associatedEmailVerificationChallengeId: EmailVerificationChallengeId;
-
+export const AccessTokenReducers = {
   /**
-   * 新しいアクセストークンを作成する。
+   * 新しいアクセストークンを作成して返す。
    */
-  public static create<
+  create: <
     P extends {
+      readonly logInUserId: TUserId;
       readonly ipAddress: TIpAddress;
       readonly userAgent: TUserAgent;
-      readonly associatedEmailVerificationChallengeId: TAssociatedEmailVerificationChallengeId;
-      /** そのアクセストークンがどのユーザのものであるのか。 */
-      readonly logInUserId: TLogInUserId;
+      readonly expiredAfterMs: number;
     },
+    TUserId extends UserId,
     TIpAddress extends string,
     TUserAgent extends string,
-    TLogInUserId extends UserId,
-    TAssociatedEmailVerificationChallengeId extends EmailVerificationChallengeId,
   >(
-    this: unknown,
     params: P,
-  ): TypedInstance<
-    AccessTokenLogInRequested,
-    P & {
-      readonly id: AccessTokenId;
-      readonly [accessTokenSecretSymbol]: AccessTokenSecret;
-      readonly attemptedAt: Date;
-    }
-  > {
-    return AccessTokenLogInRequested.from({
-      ...params,
+  ): AccessToken & { readonly status: 'valid' } & Pick<
+      P,
+      'logInUserId' | 'ipAddress' | 'userAgent'
+    > => {
+    const loggedInAt = new Date();
+    return {
+      [accessTokenTypeSymbol]: accessTokenTypeSymbol,
       id: generateId() as AccessTokenId,
       [accessTokenSecretSymbol]: generateLongSecret() as AccessTokenSecret,
-      attemptedAt: new Date(),
-    });
-  }
-
-  /**
-   * このアクセストークンをログイン試行完了後のアクセストークンにして返す。
-   */
-  public toLogInCompleted<
-    P extends { readonly expiredAfterMs: number },
-    T extends AccessTokenLogInRequested,
-  >(
-    this: T,
-    params: P,
-  ): TypedInstance<AccessTokenValid, T & { readonly loggedInAt: Date; readonly expiredAt: Date }> {
-    const loggedInAt = new Date();
-
-    return AccessTokenValid.from({
-      ...this,
+      logInUserId: params.logInUserId,
+      ipAddress: params.ipAddress,
+      userAgent: params.userAgent,
       loggedInAt: loggedInAt,
       expiredAt: new Date(loggedInAt.getTime() + params.expiredAfterMs),
-    });
-  }
+      lastUsedAt: loggedInAt,
+      status: 'valid',
+    } as const;
+  },
 
   /**
-   * このアクセストークンをログイン試行中止後のアクセストークンにして返す。
+   * 指定されたアクセストークンの有効期限を、指定された期間だけ延長し、シークレットの値を更新して返す。
+   * @param self 有効期限を延長するアクセストークン
    */
-  public toLogInCanceled<T extends AccessTokenLogInRequested>(
-    this: T,
-  ): TypedInstance<
-    AccessTokenExpired,
-    T & { readonly expiredAt: Date; readonly status: 'logInCanceled' }
-  > {
-    return AccessTokenExpired.from({ ...this, expiredAt: new Date(), status: 'logInCanceled' });
-  }
-
-  //#region constructors
-  public static from<P extends FieldsOf<AccessTokenLogInRequested>>(
-    params: PickEssential<P, keyof FieldsOf<AccessTokenLogInRequested>>,
-  ): TypedInstance<AccessTokenLogInRequested, P> {
-    return new AccessTokenLogInRequested(params) as TypedInstance<AccessTokenLogInRequested, P>;
-  }
-
-  private constructor(params: FieldsOf<AccessTokenLogInRequested>) {
-    super(params);
-    this.associatedEmailVerificationChallengeId = params.associatedEmailVerificationChallengeId;
-  }
-  //#endregion
-}
-
-/**
- * ログイン完了後のアクセストークンを表す。
- */
-export class AccessTokenValid extends AccessTokenBase {
-  public readonly loggedInAt: Date;
-  public readonly expiredAt: Date;
-
-  /**
-   * このアクセストークンの期限を延長する。
-   */
-  public toExpirationDateExtended<
+  toExpirationDateExtended: <
+    S extends AccessToken & { readonly status: 'valid' },
     P extends { readonly expiredAfterMs: number },
-    T extends AccessTokenValid,
   >(
-    this: T,
+    self: S,
     params: P,
-  ): TypedInstance<
-    AccessTokenValid,
-    T & { readonly [accessTokenSecretSymbol]: AccessTokenSecret }
-  > {
-    return AccessTokenValid.from({
-      ...this,
-      [accessTokenSecretSymbol]: generateLongSecret(),
+  ): S & { readonly [accessTokenSecretSymbol]: AccessTokenSecret; readonly expiredAt: Date } =>
+    ({
+      ...self,
+      [accessTokenSecretSymbol]: generateLongSecret() as AccessTokenSecret,
       expiredAt: new Date(Date.now() + params.expiredAfterMs),
-    });
-  }
+    }) as const,
 
   /**
-   * このアクセストークンを無効にしたものを返す。
+   * 指定されたアクセストークンを無効にして返す。
+   * @param self 無効にするアクセストークン
    */
-  public toManuallyExpired<T extends AccessTokenValid>(
-    this: T,
-  ): TypedInstance<
-    AccessTokenExpired,
-    T & { readonly expiredAt: Date; readonly status: 'manuallyExpired' }
-  > {
-    return AccessTokenExpired.from({ ...this, expiredAt: new Date(), status: 'manuallyExpired' });
-  }
+  toRevoked: <S extends AccessToken & { readonly status: 'valid' }>(
+    self: S,
+  ): Omit<S, 'status'> & { readonly status: 'revoked' } =>
+    ({ ...self, status: 'revoked' }) as const,
 
-  //#region constructors
-  public static from<P extends FieldsOf<AccessTokenValid>>(
-    params: PickEssential<P, keyof FieldsOf<AccessTokenValid>>,
-  ): TypedInstance<AccessTokenValid, P> {
-    return new AccessTokenValid(params) as TypedInstance<AccessTokenValid, P>;
-  }
-
-  private constructor(params: FieldsOf<AccessTokenValid>) {
-    super(params);
-    this.loggedInAt = params.loggedInAt;
-    this.expiredAt = params.expiredAt;
-  }
-  //#endregion
-}
-
-/**
- * 無効化された後のアクセストークンを表す。
- */
-export class AccessTokenExpired extends AccessTokenBase {
-  public readonly expiredAt: Date;
-  public readonly status: 'logInCanceled' | 'automaticallyExpired' | 'manuallyExpired';
-
-  //#region constructors
-  public static from<P extends FieldsOf<AccessTokenExpired>>(
-    params: PickEssential<P, keyof FieldsOf<AccessTokenExpired>>,
-  ): TypedInstance<AccessTokenExpired, P> {
-    return new AccessTokenExpired(params) as TypedInstance<AccessTokenExpired, P>;
-  }
-
-  private constructor(params: FieldsOf<AccessTokenExpired>) {
-    super(params);
-    this.expiredAt = params.expiredAt;
-    this.status = params.status;
-  }
-  //#endregion
-}
+  isValid: <S extends AccessToken>(self: S): self is S & { readonly status: 'valid' } =>
+    self.status === 'valid',
+};
 
 /**
  * {@linkcode AccessToken}を永続化するリポジトリ。
@@ -239,56 +135,33 @@ export interface AccessTokenRepository {
   getOneById<TId extends AccessTokenId>(
     this: AccessTokenRepository,
     id: TId,
-  ): Promise<(AccessToken & { readonly id: TId }) | undefined>;
+  ): Promise<FromRepository<AccessToken & { readonly id: TId }> | undefined>;
 
   getOneBySecret<TSecret extends AccessTokenSecret>(
     this: AccessTokenRepository,
     secret: TSecret,
-  ): Promise<(AccessToken & { readonly [accessTokenSecretSymbol]: TSecret }) | undefined>;
+  ): Promise<
+    FromRepository<AccessToken & { readonly [accessTokenSecretSymbol]: TSecret }> | undefined
+  >;
 
   getMany(
     this: AccessTokenRepository,
     params: {
-      readonly filters?:
-        | {
-            readonly ipAddress?: string | undefined;
-            readonly userAgent?: string | undefined;
-            readonly logInUserId?: UserId | undefined;
-            readonly attemptedAt?:
-              | { readonly from?: Date | undefined; readonly until?: Date | undefined }
-              | undefined;
-          }
-        | undefined;
-      readonly orderBy:
-        | { readonly id: 'asc' | 'desc' }
-        | { readonly ipAddress: 'asc' | 'desc' }
-        | { readonly userAgent: 'asc' | 'desc' }
-        | { readonly logInUserId: 'asc' | 'desc' }
-        | { readonly attemptedAt: 'asc' | 'desc' };
+      readonly filters?: Filters<AccessToken>;
+      readonly orderBy: OrderBy<AccessToken>;
       readonly offset?: number | undefined;
       readonly limit?: number | undefined;
     },
-  ): Promise<readonly AccessToken[] | readonly []>;
+  ): Promise<readonly FromRepository<AccessToken>[] | readonly []>;
 
   count(
     this: AccessTokenRepository,
-    params: {
-      readonly filters?:
-        | {
-            readonly ipAddress?: string | undefined;
-            readonly userAgent?: string | undefined;
-            readonly logInUserId?: UserId | undefined;
-            readonly attemptedAt?:
-              | { readonly from?: Date | undefined; readonly until?: Date | undefined }
-              | undefined;
-          }
-        | undefined;
-    },
+    params: { readonly filters?: Filters<AccessToken> },
   ): Promise<number>;
 
   createOne(this: AccessTokenRepository, accessToken: AccessToken): Promise<void>;
 
-  updateOne(this: AccessTokenRepository, accessToken: AccessToken): Promise<void>;
+  updateOne(this: AccessTokenRepository, accessToken: FromRepository<AccessToken>): Promise<void>;
 
   deleteOneById(this: AccessTokenRepository, id: AccessTokenId): Promise<void>;
 }
@@ -310,7 +183,8 @@ export interface AccessTokenServiceDependencies {
  */
 export const getAccessTokens = async (
   params: {
-    readonly orderBy: { readonly attemptedAt: 'asc' | 'desc' };
+    readonly filters?: Filters<Pick<AccessToken, 'loggedInAt' | 'lastUsedAt' | 'expiredAt'>>;
+    readonly orderBy: OrderBy<Pick<AccessToken, 'loggedInAt' | 'lastUsedAt' | 'expiredAt'>>;
     readonly offset?: number | undefined;
     readonly limit?: number | undefined;
   } & AccessTokenServiceDependencies,
@@ -321,7 +195,7 @@ export const getAccessTokens = async (
 
   // TODO: デフォルトの制限
   return params.accessTokenRepository.getMany({
-    filters: { logInUserId: userAccount.id },
+    filters: { ...params.filters, logInUserId: userAccount.id },
     orderBy: params.orderBy,
     offset: params.offset,
     limit: params.limit,
@@ -338,9 +212,10 @@ export const extendExpirationDate = async (
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
 
-  const accessTokenExpirationDateExtended = accessToken.toExpirationDateExtended({
-    expiredAfterMs: params.contextRepository.get('accessToken.expiredAfterMs'),
-  });
+  const accessTokenExpirationDateExtended = AccessTokenReducers.toExpirationDateExtended(
+    accessToken,
+    { expiredAfterMs: params.contextRepository.get('accessToken.expiredAfterMs') },
+  );
   await params.accessTokenRepository.updateOne(accessTokenExpirationDateExtended);
 
   return {
@@ -351,8 +226,7 @@ export const extendExpirationDate = async (
 
 /**
  * 指定されたIDのアクセストークンを無効化する。
- *
- * @throws アクセストークンが見つからない場合、またはアクセストークンが自分自身以外のユーザのものである場合は、{@linkcode Exception}（`accessToken.notExists`）を返す。
+ * @throws アクセストークンが見つからない場合、アクセストークンが有効でない場合、アクセストークンが自分自身以外のユーザのものである場合は、{@linkcode Exception}（`accessToken.notExists`）を投げる。
  */
 export const manuallyExpire = async (
   params: { readonly id: AccessTokenId } & AccessTokenServiceDependencies,
@@ -360,17 +234,17 @@ export const manuallyExpire = async (
   const { userAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
-
   const accessToken = await params.accessTokenRepository.getOneById(params.id);
   if (
-    accessToken instanceof AccessTokenValid === false ||
+    accessToken === undefined ||
+    !AccessTokenReducers.isValid(accessToken) ||
     accessToken.logInUserId !== userAccount.id
   ) {
     throw Exception.create({ exceptionName: 'accessToken.notExists' });
   }
 
-  const accessTokenManuallyExpired = accessToken.toManuallyExpired();
-  await params.accessTokenRepository.updateOne(accessTokenManuallyExpired);
+  const accessTokenRevoked = AccessTokenReducers.toRevoked(accessToken);
+  await params.accessTokenRepository.updateOne(accessTokenRevoked);
 };
 
 /**
@@ -381,7 +255,7 @@ export const logOut = async (params: AccessTokenServiceDependencies): Promise<vo
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
 
-  const accessTokenManuallyExpired = accessToken.toManuallyExpired();
-  await params.accessTokenRepository.updateOne(accessTokenManuallyExpired);
+  const accessTokenRevoked = AccessTokenReducers.toRevoked(accessToken);
+  await params.accessTokenRepository.updateOne(accessTokenRevoked);
 };
 //#endregion

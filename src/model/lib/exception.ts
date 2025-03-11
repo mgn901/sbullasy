@@ -1,11 +1,12 @@
 type ExceptionName =
   | 'userAccount.notExists'
   | 'userAccount.verificationCodeIncorrect'
-  | 'userAccount.emailAddressUpdateNotStarted'
+  | 'userAccountEmailAddressUpdate.notExists'
   | 'accessToken.notExists'
   | 'authentication.notExists'
   | 'authentication.verificationCodeIncorrect'
   | 'authentication.tooManyRequests'
+  | 'emailVerification.notExists'
   | 'accessControl.notAuthorized';
 
 /** アプリケーションの例外を表す。 */

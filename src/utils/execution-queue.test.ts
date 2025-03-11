@@ -1,11 +1,18 @@
 import { beforeAll, describe, expect, jest, test } from '@jest/globals';
 import { type Id, generateId } from '../model/lib/random-values/id.ts';
+import {
+  type Filters,
+  type FromRepository,
+  type OrderBy,
+  repositorySymbol,
+} from '../model/lib/repository.ts';
 import { Client } from './asyncify-events/Client.ts';
 import { Server } from './asyncify-events/Server.ts';
 import { EventTargetTerminal } from './asyncify-events/Terminal.ts';
 import {
-  Execution,
+  type Execution,
   ExecutionQueueWithTimeWindowRateLimitation,
+  ExecutionReducers,
   type ExecutionRepository,
 } from './execution-queue.ts';
 
@@ -17,23 +24,22 @@ class ExecutionRepositoryMock<
 {
   public readonly underlyingMap = new Map<TId, Execution<TId, TFunc, TReturned>>();
 
-  public async getOneById(id: TId): Promise<Execution<TId, TFunc, TReturned> | undefined> {
-    return this.underlyingMap.get(id);
+  public async getOneById(
+    id: TId,
+  ): Promise<FromRepository<Execution<TId, TFunc, TReturned>> | undefined> {
+    const latestVersion = this.underlyingMap.get(id);
+    if (latestVersion === undefined) {
+      return undefined;
+    }
+    return { ...latestVersion, [repositorySymbol.latestVersion]: latestVersion };
   }
 
   public async getMany(params: {
-    readonly filters?:
-      | {
-          readonly executedAt?:
-            | { readonly from?: Date | undefined; readonly until?: Date | undefined }
-            | undefined;
-          readonly isExecuted?: boolean | undefined;
-        }
-      | undefined;
-    readonly orderBy: { readonly executedAt: 'asc' | 'desc' };
+    readonly filters?: Filters<Pick<Execution<TId, TFunc, TReturned>, 'executedAt' | 'isExecuted'>>;
+    readonly orderBy: OrderBy<Pick<Execution<TId, TFunc, TReturned>, 'executedAt' | 'isExecuted'>>;
     readonly offset?: number | undefined;
     readonly limit?: number | undefined;
-  }): Promise<readonly Execution<TId, TFunc, TReturned>[] | readonly []> {
+  }): Promise<readonly FromRepository<Execution<TId, TFunc, TReturned>>[] | readonly []> {
     return (await this.getExecutionsBase(params))
       .sort(
         (a, b) =>
@@ -43,61 +49,47 @@ class ExecutionRepositoryMock<
       .slice(
         params.offset ?? 0,
         params.limit !== undefined ? (params.offset ?? 0) + params.limit : undefined,
-      );
+      )
+      .map((item) => ({ ...item, [repositorySymbol.latestVersion]: item }));
   }
 
   public async count(params: {
-    readonly filters?:
-      | {
-          readonly executedAt?:
-            | { readonly from?: Date | undefined; readonly until?: Date | undefined }
-            | undefined;
-          readonly isExecuted?: boolean | undefined;
-        }
-      | undefined;
+    readonly filters?: Filters<Pick<Execution<TId, TFunc, TReturned>, 'executedAt' | 'isExecuted'>>;
   }): Promise<number> {
     return (await this.getExecutionsBase(params)).length;
   }
 
   private async getExecutionsBase(params: {
-    readonly filters?:
-      | {
-          readonly executedAt?:
-            | { readonly from?: Date | undefined; readonly until?: Date | undefined }
-            | undefined;
-          readonly isExecuted?: boolean | undefined;
-        }
-      | undefined;
+    readonly filters?: Filters<Pick<Execution<TId, TFunc, TReturned>, 'executedAt' | 'isExecuted'>>;
   }): Promise<Execution<TId, TFunc, TReturned>[]> {
     return [...this.underlyingMap.entries()]
       .filter(([_, execution]) => {
-        if (
-          params.filters?.executedAt?.from !== undefined &&
-          execution.executedAt < params.filters.executedAt.from
-        ) {
-          return false;
-        }
+        const conditions = [
+          params.filters?.executedAt instanceof Date === false ||
+            execution.executedAt.getTime() === params.filters.executedAt.getTime(),
 
-        if (
-          params.filters?.executedAt?.until !== undefined &&
-          params.filters.executedAt.until < execution.executedAt
-        ) {
-          return false;
-        }
+          params.filters?.executedAt instanceof Date === true ||
+            params.filters?.executedAt?.from === undefined ||
+            params.filters.executedAt.from < execution.executedAt,
 
-        if (
-          params.filters?.isExecuted !== undefined &&
-          execution.isExecuted !== params.filters.isExecuted
-        ) {
-          return false;
-        }
+          params.filters?.executedAt instanceof Date === true ||
+            params.filters?.executedAt?.until === undefined ||
+            execution.executedAt < params.filters.executedAt.until,
 
-        return true;
+          params.filters?.isExecuted === undefined ||
+            execution.isExecuted === params.filters.isExecuted,
+        ];
+
+        return !conditions.some((condition) => condition === false);
       })
       .map(([_, execution]) => execution);
   }
 
-  public async saveOne(execution: Execution<TId, TFunc, TReturned>): Promise<void> {
+  public async createOne(execution: Execution<TId, TFunc, TReturned>): Promise<void> {
+    this.underlyingMap.set(execution.id, execution);
+  }
+
+  public async updateOne(execution: Execution<TId, TFunc, TReturned>): Promise<void> {
     this.underlyingMap.set(execution.id, execution);
   }
 
@@ -133,7 +125,7 @@ const executionQueue = ExecutionQueueWithTimeWindowRateLimitation.create<
 >({
   client,
   timeWindowRateLimitationRules,
-  executionFactory: Execution.createFactory({ generateId }),
+  executionFactory: ExecutionReducers.createFactory({ generateId }),
   executionRepository: executionRepository,
 });
 
