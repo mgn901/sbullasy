@@ -121,8 +121,8 @@ export const EmailVerificationChallengeReducers = {
       readonly expiredAt: TNewExpiredAt;
     },
     TAssociatedExecutionId extends EmailQueueExecutionId,
-    TSentAt extends Date = Date,
-    TNewExpiredAt extends Date = Date,
+    TSentAt extends Date,
+    TNewExpiredAt extends Date,
   >(
     self: S,
     params: P,

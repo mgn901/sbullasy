@@ -1,6 +1,6 @@
 type ExceptionName =
   | 'userAccount.notExists'
-  | 'userAccount.verificationCodeIncorrect'
+  | 'userAccountEmailAddressUpdate.verificationCodeIncorrect'
   | 'userAccountEmailAddressUpdate.notExists'
   | 'accessToken.notExists'
   | 'authentication.notExists'

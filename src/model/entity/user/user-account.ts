@@ -350,8 +350,8 @@ export const requestEmailAddressUpdate = async (
 
 /**
  * Eメールアドレス確認の確認コードが正しいのかを確認して、Eメールアドレスの更新を完了する。
- * @throws Eメールアドレスの更新のリクエストが存在しない場合、完了または中止になっている場合、別のユーザのものである場合は、{@linkcode Exception}（`userAccountEmailUpdate.notExists`）を投げる。
- * @throws 確認コードが正しくない場合は{@linkcode Exception}（`userAccount.verificationCodeIncorrect`）を投げる。
+ * @throws Eメールアドレスの更新のリクエストが存在しない場合、完了または中止になっている場合、別のユーザのものである場合は、{@linkcode Exception}（`userAccountEmailAddressUpdate.notExists`）を投げる。
+ * @throws 確認コードが正しくない場合は{@linkcode Exception}（`userAccountEmailAddressUpdate.verificationCodeIncorrect`）を投げる。
  */
 export const completeEmailAddressUpdate = async (
   params: {
@@ -379,7 +379,9 @@ export const completeEmailAddressUpdate = async (
     enteredVerificationCode: params.enteredVerificationCode,
   });
   if (isCorrect === false) {
-    throw Exception.create({ exceptionName: 'userAccount.verificationCodeIncorrect' });
+    throw Exception.create({
+      exceptionName: 'userAccountEmailAddressUpdate.verificationCodeIncorrect',
+    });
   }
 
   const userAccountEmailAddressUpdated = UserAccountReducers.toEmailAddressUpdated(userAccount, {
@@ -395,8 +397,8 @@ export const completeEmailAddressUpdate = async (
 };
 
 /**
- * Eメールアドレスの変更を中止する。
- * @throws Eメールアドレスの更新のリクエストが存在しない場合、完了または中止になっている場合、別のユーザのものである場合は、{@linkcode Exception}（`userAccountEmailUpdate.notExists`）を投げる。
+ * Eメールアドレスの更新を中止する。
+ * @throws Eメールアドレスの更新のリクエストが存在しない場合、完了または中止になっている場合、別のユーザのものである場合は、{@linkcode Exception}（`userAccountEmailAddressUpdate.notExists`）を投げる。
  */
 export const cancelEmailAddressUpdate = async (
   params: { readonly id: UserAccountEmailAddressUpdateRequestId } & UserAccountServiceDependencies,
