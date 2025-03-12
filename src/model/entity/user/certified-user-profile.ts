@@ -296,11 +296,11 @@ export interface CertifiedUserProfileServiceDependencies {
 export const getMyCertifiedUserProfile = async (
   params: CertifiedUserProfileServiceDependencies,
 ): Promise<CertifiedUserProfile> => {
-  const { userAccount } = await params.verifyAccessToken({
+  const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
   const certifiedUserProfile = await params.certifiedUserProfileRepository.getOneByCertifiedUserId(
-    userAccount.id,
+    myUserAccount.id,
   );
   if (certifiedUserProfile === undefined) {
     throw Exception.create({ exceptionName: 'certifiedUserProfile.notExists' });
@@ -318,10 +318,10 @@ export const editMyCertifiedUserProfile = async (
     readonly displayName: DisplayName;
   } & CertifiedUserProfileServiceDependencies,
 ): Promise<void> => {
-  const { userAccount } = await params.verifyAccessToken({
+  const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
-  const { certifiedUserProfile } = await params.verifyCertifiedUser({ userId: userAccount.id });
+  const { certifiedUserProfile } = await params.verifyCertifiedUser({ userId: myUserAccount.id });
 
   const profileEdited = CertifiedUserProfileReducers.toEdited(certifiedUserProfile, {
     newName: params.name,
@@ -348,11 +348,11 @@ export const requestUserCertification = async (
   readonly sentAt: Date;
   readonly expiredAt: Date;
 }> => {
-  const { userAccount } = await params.verifyAccessToken({
+  const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
   const certifiedUserProfile = await params.certifiedUserProfileRepository.getOneByCertifiedUserId(
-    userAccount.id,
+    myUserAccount.id,
   );
   if (
     certifiedUserProfile !== undefined &&
@@ -399,7 +399,7 @@ export const requestUserCertification = async (
   const request = UserCertificationRequestReducers.create({
     name: params.name,
     displayName: params.displayName,
-    certifiedUserId: userAccount.id,
+    certifiedUserId: myUserAccount.id,
     associatedEmailVerificationChallengeId,
     certificationExpiredAt: new Date(
       params.contextRepository.get('certifiedUserProfile.expiredAt'),
@@ -421,14 +421,14 @@ export const completeUserCertification = async (
     readonly enteredVerificationCode: EmailVerificationChallengeVerificationCode;
   } & CertifiedUserProfileServiceDependencies,
 ) => {
-  const { userAccount } = await params.verifyAccessToken({
+  const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
   const request = await params.userCertificationRequestRepository.getOneById(params.id);
   if (
     request === undefined ||
     !UserCertificationRequestReducers.isNotTerminated(request) ||
-    request.certifiedUserId !== userAccount.id
+    request.certifiedUserId !== myUserAccount.id
   ) {
     throw Exception.create({ exceptionName: 'userCertification.notExists' });
   }
@@ -444,7 +444,7 @@ export const completeUserCertification = async (
   }
 
   const profile = await params.certifiedUserProfileRepository.getOneByCertifiedUserId(
-    userAccount.id,
+    myUserAccount.id,
   );
   if (profile === undefined) {
     const profileCreated = CertifiedUserProfileReducers.create({
@@ -472,7 +472,7 @@ export const completeUserCertification = async (
 export const cancelUserCertification = async (
   params: { readonly id: UserCertificationRequestId } & CertifiedUserProfileServiceDependencies,
 ) => {
-  const { userAccount } = await params.verifyAccessToken({
+  const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
   const request = await params.userCertificationRequestRepository.getOneById(params.id);
@@ -480,7 +480,7 @@ export const cancelUserCertification = async (
   if (
     request === undefined ||
     !UserCertificationRequestReducers.isNotTerminated(request) ||
-    request.certifiedUserId !== userAccount.id
+    request.certifiedUserId !== myUserAccount.id
   ) {
     throw Exception.create({ exceptionName: 'userCertification.notExists' });
   }
@@ -495,10 +495,10 @@ export const cancelUserCertification = async (
 export const deleteMyCertifiedUserProfile = async (
   params: CertifiedUserProfileServiceDependencies,
 ) => {
-  const { userAccount } = await params.verifyAccessToken({
+  const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
 
-  await params.certifiedUserProfileRepository.deleteOneById(userAccount.id);
+  await params.certifiedUserProfileRepository.deleteOneById(myUserAccount.id);
 };
 //#endregion

@@ -277,7 +277,7 @@ export const getMyUserAccount = async (
       await params.verifyAccessToken({
         accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
       })
-    ).userAccount,
+    ).myUserAccount,
   };
 };
 
@@ -293,7 +293,7 @@ export const requestEmailAddressUpdate = async (
   readonly sentAt: Date;
   readonly expiredAt: Date;
 }> => {
-  const { userAccount } = await params.verifyAccessToken({
+  const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
 
@@ -323,7 +323,7 @@ export const requestEmailAddressUpdate = async (
   });
 
   const userAccountEmailAddressUpdateRequest = UserAccountEmailAddressUpdateRequestReducers.create({
-    userId: userAccount.id,
+    userId: myUserAccount.id,
     newEmailAddress: params.newEmailAddress,
     associatedEmailVerificationChallengeId,
   });
@@ -345,7 +345,7 @@ export const completeEmailAddressUpdate = async (
     readonly enteredVerificationCode: EmailVerificationChallengeVerificationCode;
   } & UserAccountServiceDependencies,
 ): Promise<void> => {
-  const { userAccount } = await params.verifyAccessToken({
+  const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
   const userAccountEmailAddressUpdateRequest =
@@ -355,7 +355,7 @@ export const completeEmailAddressUpdate = async (
     !UserAccountEmailAddressUpdateRequestReducers.isNotTerminated(
       userAccountEmailAddressUpdateRequest,
     ) ||
-    userAccountEmailAddressUpdateRequest.userId !== userAccount.id
+    userAccountEmailAddressUpdateRequest.userId !== myUserAccount.id
   ) {
     throw Exception.create({ exceptionName: 'userAccountEmailAddressUpdate.notExists' });
   }
@@ -370,7 +370,7 @@ export const completeEmailAddressUpdate = async (
     });
   }
 
-  const userAccountEmailAddressUpdated = UserAccountReducers.toEmailAddressUpdated(userAccount, {
+  const userAccountEmailAddressUpdated = UserAccountReducers.toEmailAddressUpdated(myUserAccount, {
     newEmailAddress: userAccountEmailAddressUpdateRequest.newEmailAddress,
   });
   await params.userAccountRepository.updateOne(userAccountEmailAddressUpdated);
@@ -389,7 +389,7 @@ export const completeEmailAddressUpdate = async (
 export const cancelEmailAddressUpdate = async (
   params: { readonly id: UserAccountEmailAddressUpdateRequestId } & UserAccountServiceDependencies,
 ) => {
-  const { userAccount } = await params.verifyAccessToken({
+  const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
   const userAccountEmailAddressUpdateRequest =
@@ -399,7 +399,7 @@ export const cancelEmailAddressUpdate = async (
     !UserAccountEmailAddressUpdateRequestReducers.isNotTerminated(
       userAccountEmailAddressUpdateRequest,
     ) ||
-    userAccountEmailAddressUpdateRequest.userId !== userAccount.id
+    userAccountEmailAddressUpdateRequest.userId !== myUserAccount.id
   ) {
     throw Exception.create({ exceptionName: 'userAccountEmailAddressUpdate.notExists' });
   }
@@ -421,10 +421,12 @@ export const cancelEmailAddressUpdate = async (
 export const deleteMyUserAccount = async (
   params: UserAccountServiceDependencies,
 ): Promise<void> => {
-  const { userAccount } = await params.verifyAccessToken({
+  const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
 
-  await params.userAccountRepository.deleteOneById(userAccount.id);
+  // TODO: 認証解除、グループを抜けているかどうかチェック、などの処理を追加する
+
+  await params.userAccountRepository.deleteOneById(myUserAccount.id);
 };
 //#endregion

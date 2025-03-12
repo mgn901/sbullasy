@@ -24,20 +24,20 @@ export interface AccessControlServiceDependencies {
 export const verifyAccessToken = async (
   params: { readonly accessTokenSecret: AccessTokenSecret } & AccessControlServiceDependencies,
 ): Promise<{
-  readonly userAccount: FromRepository<UserAccount>;
-  readonly accessToken: FromRepository<AccessToken> & { readonly status: 'valid' };
+  readonly myUserAccount: FromRepository<UserAccount>;
+  readonly myAccessToken: FromRepository<AccessToken> & { readonly status: 'valid' };
 }> => {
-  const accessToken = await params.accessTokenRepository.getOneBySecret(params.accessTokenSecret);
-  if (accessToken === undefined || !AccessTokenReducers.isValid(accessToken)) {
+  const myAccessToken = await params.accessTokenRepository.getOneBySecret(params.accessTokenSecret);
+  if (myAccessToken === undefined || !AccessTokenReducers.isValid(myAccessToken)) {
     throw Exception.create({ exceptionName: 'accessControl.notAuthorized' });
   }
 
-  const userAccount = await params.userAccountRepository.getOneById(accessToken.logInUserId);
-  if (userAccount === undefined) {
+  const myUserAccount = await params.userAccountRepository.getOneById(myAccessToken.logInUserId);
+  if (myUserAccount === undefined) {
     throw Exception.create({ exceptionName: 'accessControl.notAuthorized' });
   }
 
-  return { userAccount, accessToken };
+  return { myUserAccount, myAccessToken };
 };
 
 /** 指定されたユーザが有効な認証済みユーザプロフィールを持っているかどうかを検証し、指定されたユーザに対応する認証済みユーザプロフィールを返す。 */

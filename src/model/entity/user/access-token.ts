@@ -189,13 +189,13 @@ export const getAccessTokens = async (
     readonly limit?: number | undefined;
   } & AccessTokenServiceDependencies,
 ): Promise<readonly AccessToken[] | readonly []> => {
-  const { userAccount } = await params.verifyAccessToken({
+  const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
 
   // TODO: デフォルトの制限
   return params.accessTokenRepository.getMany({
-    filters: { ...params.filters, logInUserId: userAccount.id },
+    filters: { ...params.filters, logInUserId: myUserAccount.id },
     orderBy: params.orderBy,
     offset: params.offset,
     limit: params.limit,
@@ -208,12 +208,12 @@ export const getAccessTokens = async (
 export const extendExpirationDate = async (
   params: AccessTokenServiceDependencies,
 ): Promise<{ readonly [accessTokenSecretSymbol]: AccessTokenSecret; readonly expiredAt: Date }> => {
-  const { accessToken } = await params.verifyAccessToken({
+  const { myAccessToken } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
 
   const accessTokenExpirationDateExtended = AccessTokenReducers.toExpirationDateExtended(
-    accessToken,
+    myAccessToken,
     { expiredAfterMs: params.contextRepository.get('accessToken.expiredAfterMs') },
   );
   await params.accessTokenRepository.updateOne(accessTokenExpirationDateExtended);
@@ -231,14 +231,14 @@ export const extendExpirationDate = async (
 export const manuallyExpire = async (
   params: { readonly id: AccessTokenId } & AccessTokenServiceDependencies,
 ): Promise<void> => {
-  const { userAccount } = await params.verifyAccessToken({
+  const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
   const accessToken = await params.accessTokenRepository.getOneById(params.id);
   if (
     accessToken === undefined ||
     !AccessTokenReducers.isValid(accessToken) ||
-    accessToken.logInUserId !== userAccount.id
+    accessToken.logInUserId !== myUserAccount.id
   ) {
     throw Exception.create({ exceptionName: 'accessToken.notExists' });
   }
@@ -251,11 +251,11 @@ export const manuallyExpire = async (
  * ログアウトする（クライアントが使用しているアクセストークンを無効化する）。
  */
 export const logOut = async (params: AccessTokenServiceDependencies): Promise<void> => {
-  const { accessToken } = await params.verifyAccessToken({
+  const { myAccessToken } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
 
-  const accessTokenRevoked = AccessTokenReducers.toRevoked(accessToken);
+  const accessTokenRevoked = AccessTokenReducers.toRevoked(myAccessToken);
   await params.accessTokenRepository.updateOne(accessTokenRevoked);
 };
 //#endregion
