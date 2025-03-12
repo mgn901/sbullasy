@@ -272,9 +272,13 @@ export interface UserAccountServiceDependencies {
 export const getMyUserAccount = async (
   params: UserAccountServiceDependencies,
 ): Promise<{ readonly userAccount: UserAccount }> => {
-  return params.verifyAccessToken({
-    accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
-  });
+  return {
+    userAccount: (
+      await params.verifyAccessToken({
+        accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
+      })
+    ).userAccount,
+  };
 };
 
 /**
@@ -421,6 +425,6 @@ export const deleteMyUserAccount = async (
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
 
-  params.userAccountRepository.deleteOneById(userAccount.id);
+  await params.userAccountRepository.deleteOneById(userAccount.id);
 };
 //#endregion
