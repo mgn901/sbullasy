@@ -2,12 +2,18 @@ type ExceptionName =
   | 'userAccount.notExists'
   | 'userAccountEmailAddressUpdate.verificationCodeIncorrect'
   | 'userAccountEmailAddressUpdate.notExists'
+  | 'certifiedUserProfile.notExists'
+  | 'userCertification.notExists'
+  | 'userCertification.alreadyCertified'
+  | 'userCertification.emailAddressRejected'
+  | 'userCertification.verificationCodeIncorrect'
   | 'accessToken.notExists'
   | 'authentication.notExists'
   | 'authentication.verificationCodeIncorrect'
   | 'authentication.tooManyRequests'
   | 'emailVerification.notExists'
-  | 'accessControl.notAuthorized';
+  | 'accessControl.notAuthorized'
+  | 'accessControl.notCertified';
 
 /** アプリケーションの例外を表す。 */
 export class Exception<TExceptionName extends ExceptionName> extends Error {
