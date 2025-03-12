@@ -70,11 +70,11 @@ class ExecutionRepositoryMock<
 
           params.filters?.executedAt instanceof Date === true ||
             params.filters?.executedAt?.from === undefined ||
-            params.filters.executedAt.from < execution.executedAt,
+            params.filters.executedAt.from <= execution.executedAt,
 
           params.filters?.executedAt instanceof Date === true ||
             params.filters?.executedAt?.until === undefined ||
-            execution.executedAt < params.filters.executedAt.until,
+            execution.executedAt <= params.filters.executedAt.until,
 
           params.filters?.isExecuted === undefined ||
             execution.isExecuted === params.filters.isExecuted,

@@ -364,7 +364,7 @@ export const requestLogInOrRegistrationWithEmailVerification = async (
         },
       }),
   });
-  if (nextAttemptedAt.getTime() > Date.now()) {
+  if (Date.now() < nextAttemptedAt.getTime()) {
     throw Exception.create({ exceptionName: 'authentication.tooManyRequests' });
   }
 
