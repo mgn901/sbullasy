@@ -28,17 +28,14 @@ const accessTokenConfigurationMap = {
 
 //#region AccessToken and AccessTokenRepository
 const accessTokenTypeSymbol = Symbol('accessToken.type');
-
 const accessTokenSecretSymbol = Symbol('accessToken.secret');
+export type AccessTokenId = NominalPrimitive<Id, typeof accessTokenTypeSymbol>;
+export type AccessTokenSecret = NominalPrimitive<LongSecret, typeof accessTokenTypeSymbol>;
 
 export const accessTokenSymbol = {
   type: accessTokenTypeSymbol,
   secret: accessTokenSecretSymbol,
 } as const;
-
-export type AccessTokenId = NominalPrimitive<Id, typeof accessTokenTypeSymbol>;
-
-export type AccessTokenSecret = NominalPrimitive<LongSecret, typeof accessTokenTypeSymbol>;
 
 /**
  * アクセストークンを表す。
@@ -99,8 +96,16 @@ export const AccessTokenReducers = {
   },
 
   /**
+   * 指定されたアクセストークンの最終使用日時を更新して返す。
+   * @param self 最終使用日時を更新するアクセストークンを指定する。
+   */
+  toLastUsedAtUpdated: <S extends AccessToken & { readonly status: 'valid' }>(
+    self: S,
+  ): S & { readonly lastUsedAt: Date } => ({ ...self, lastUsedAt: new Date() }) as const,
+
+  /**
    * 指定されたアクセストークンの有効期限を、指定された期間だけ延長し、シークレットの値を更新して返す。
-   * @param self 有効期限を延長するアクセストークン
+   * @param self 有効期限を延長するアクセストークンを指定する。
    */
   toExpirationDateExtended: <
     S extends AccessToken & { readonly status: 'valid' },
@@ -117,7 +122,7 @@ export const AccessTokenReducers = {
 
   /**
    * 指定されたアクセストークンを無効にして返す。
-   * @param self 無効にするアクセストークン
+   * @param self 無効にするアクセストークンを指定する。
    */
   toRevoked: <S extends AccessToken & { readonly status: 'valid' }>(
     self: S,
@@ -164,6 +169,11 @@ export interface AccessTokenRepository {
   updateOne(this: AccessTokenRepository, accessToken: FromRepository<AccessToken>): Promise<void>;
 
   deleteOneById(this: AccessTokenRepository, id: AccessTokenId): Promise<void>;
+
+  deleteMany(
+    this: AccessTokenRepository,
+    params: { readonly filters: Filters<AccessToken> },
+  ): Promise<void>;
 }
 //#endregion
 
@@ -228,7 +238,7 @@ export const extendExpirationDate = async (
  * 指定されたIDのアクセストークンを無効化する。
  * @throws アクセストークンが見つからない場合、アクセストークンが有効でない場合、アクセストークンが自分自身以外のユーザのものである場合は、{@linkcode Exception}（`accessToken.notExists`）を投げる。
  */
-export const manuallyExpire = async (
+export const revoke = async (
   params: { readonly id: AccessTokenId } & AccessTokenServiceDependencies,
 ): Promise<void> => {
   const { myUserAccount } = await params.verifyAccessToken({

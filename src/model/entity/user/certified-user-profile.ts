@@ -167,8 +167,8 @@ export const CertifiedUserProfileReducers = {
 export interface CertifiedUserProfileRepository {
   getOneByCertifiedUserId<TId extends UserId>(
     this: CertifiedUserProfileRepository,
-    id: TId,
-  ): Promise<FromRepository<CertifiedUserProfile & { readonly id: TId }> | undefined>;
+    certifiedUserId: TId,
+  ): Promise<FromRepository<CertifiedUserProfile & { readonly certifiedUserId: TId }> | undefined>;
 
   createOne(
     this: CertifiedUserProfileRepository,
@@ -180,7 +180,7 @@ export interface CertifiedUserProfileRepository {
     certifiedUserProfile: FromRepository<CertifiedUserProfile>,
   ): Promise<void>;
 
-  deleteOneById(this: CertifiedUserProfileRepository, id: UserId): Promise<void>;
+  deleteOneById(this: CertifiedUserProfileRepository, certifiedUserId: UserId): Promise<void>;
 }
 //#endregion
 
@@ -420,7 +420,7 @@ export const completeUserCertification = async (
     readonly id: UserCertificationRequestId;
     readonly enteredVerificationCode: EmailVerificationChallengeVerificationCode;
   } & CertifiedUserProfileServiceDependencies,
-) => {
+): Promise<void> => {
   const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
@@ -471,7 +471,7 @@ export const completeUserCertification = async (
  */
 export const cancelUserCertification = async (
   params: { readonly id: UserCertificationRequestId } & CertifiedUserProfileServiceDependencies,
-) => {
+): Promise<void> => {
   const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
@@ -494,7 +494,7 @@ export const cancelUserCertification = async (
  */
 export const deleteMyCertifiedUserProfile = async (
   params: CertifiedUserProfileServiceDependencies,
-) => {
+): Promise<void> => {
   const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });

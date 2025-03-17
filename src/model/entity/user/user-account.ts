@@ -25,6 +25,8 @@ import { type Id, generateId } from '../../lib/random-values/id.ts';
 import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
 import type { PickEssential, PreApplied } from '../../lib/type-utils.ts';
 import type { EmailAddress } from '../../values.ts';
+import type { AccessTokenRepository } from './access-token.ts';
+import type { CertifiedUserProfileRepository } from './certified-user-profile.ts';
 import {
   type RequestWithEmailVerificationChallenge,
   RequestWithEmailVerificationChallengeReducers,
@@ -260,6 +262,8 @@ export interface UserAccountServiceDependencies {
   >;
   readonly userAccountRepository: UserAccountRepository;
   readonly userAccountEmailAddressUpdateRequestReposiory: UserAccountEmailAddressUpdateRequestRepository;
+  readonly certifiedUserProfileRepository: CertifiedUserProfileRepository;
+  readonly accessTokenRepository: AccessTokenRepository;
   readonly contextRepository: ContextRepository<
     UserAccountConfigurationMap & SystemConfigurationMap
   >;
@@ -425,8 +429,10 @@ export const deleteMyUserAccount = async (
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
 
-  // TODO: 認証解除、グループを抜けているかどうかチェック、などの処理を追加する
+  // TODO: アクセストークン削除、学生認証解除、グループを抜けているかどうかチェック、などの処理を追加する
 
+  await params.certifiedUserProfileRepository.deleteOneById(myUserAccount.id);
+  await params.accessTokenRepository.deleteMany({ filters: { logInUserId: myUserAccount.id } });
   await params.userAccountRepository.deleteOneById(myUserAccount.id);
 };
 //#endregion
