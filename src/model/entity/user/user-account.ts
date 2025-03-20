@@ -25,6 +25,9 @@ import { type Id, generateId } from '../../lib/random-values/id.ts';
 import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
 import type { PickEssential, PreApplied } from '../../lib/type-utils.ts';
 import type { EmailAddress } from '../../values.ts';
+import type { AccessTokenRepository } from './access-token.ts';
+import type { CertifiedUserProfileRepository } from './certified-user-profile.ts';
+import type { MembershipRepository } from './membership.ts';
 import {
   type RequestWithEmailVerificationChallenge,
   RequestWithEmailVerificationChallengeReducers,
@@ -101,7 +104,7 @@ export const UserAccountReducers = {
 
   /**
    * 指定されたユーザアカウントのEメールアドレスを、指定されたEメールアドレスに更新したものを返す。
-   * @param self Eメールアドレスを更新するユーザアカウント
+   * @param self Eメールアドレスを更新するユーザアカウントを指定する。
    */
   toEmailAddressUpdated: <
     S extends UserAccount,
@@ -138,15 +141,9 @@ export interface UserAccountRepository {
     },
   ): Promise<readonly FromRepository<UserAccount>[] | readonly []>;
 
-  createOne(
-    this: UserAccountRepository,
-    userAccountOrUserAccountUpdateRequested: UserAccount,
-  ): Promise<void>;
+  createOne(this: UserAccountRepository, userAccount: UserAccount): Promise<void>;
 
-  updateOne(
-    this: UserAccountRepository,
-    userAccountOrUserAccountUpdateRequested: FromRepository<UserAccount>,
-  ): Promise<void>;
+  updateOne(this: UserAccountRepository, userAccount: FromRepository<UserAccount>): Promise<void>;
 
   deleteOneById(this: UserAccountRepository, id: UserId): Promise<void>;
 }
@@ -260,6 +257,9 @@ export interface UserAccountServiceDependencies {
   >;
   readonly userAccountRepository: UserAccountRepository;
   readonly userAccountEmailAddressUpdateRequestReposiory: UserAccountEmailAddressUpdateRequestRepository;
+  readonly accessTokenRepository: AccessTokenRepository;
+  readonly certifiedUserProfileRepository: CertifiedUserProfileRepository;
+  readonly membershipRepository: MembershipRepository;
   readonly contextRepository: ContextRepository<
     UserAccountConfigurationMap & SystemConfigurationMap
   >;
@@ -417,6 +417,7 @@ export const cancelEmailAddressUpdate = async (
 
 /**
  * 自分自身のユーザアカウントを削除する。
+ * @throws グループに1つ以上所属している場合は、{@linkcode Exception}（`userCertification.notLeftAllGroupsYet`）を投げる。
  */
 export const deleteMyUserAccount = async (
   params: UserAccountServiceDependencies,
@@ -425,8 +426,15 @@ export const deleteMyUserAccount = async (
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
 
-  // TODO: 認証解除、グループを抜けているかどうかチェック、などの処理を追加する
+  const membershipCount = await params.membershipRepository.count({
+    filters: { userId: myUserAccount.id },
+  });
+  if (membershipCount > 0) {
+    throw Exception.create({ exceptionName: 'userCertification.notLeftAllGroupsYet' });
+  }
 
+  await params.certifiedUserProfileRepository.deleteOneById(myUserAccount.id);
+  await params.accessTokenRepository.deleteMany({ filters: { logInUserId: myUserAccount.id } });
   await params.userAccountRepository.deleteOneById(myUserAccount.id);
 };
 //#endregion

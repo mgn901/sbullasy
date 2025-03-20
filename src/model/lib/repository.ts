@@ -10,24 +10,20 @@ export const repositorySymbol = {
 export type Filters<T> =
   | OmitByValue<
       {
-        readonly [K in keyof FieldsOf<T>]?: T[K] extends boolean
+        readonly [K in keyof FieldsOf<T>]?: NonNullable<T[K]> extends boolean
           ? T[K] | undefined
-          : T[K] extends number | Date
-            ?
-                | T[K]
-                | { readonly from?: T[K] | undefined; readonly until?: T[K] | undefined }
-                | undefined
-            : T[K] extends string
+          : NonNullable<T[K]> extends number | Date
+            ? T[K] | { readonly from?: T[K]; readonly until?: T[K] }
+            : NonNullable<T[K]> extends string
               ?
                   | T[K]
                   | {
-                      readonly from?: T[K] | undefined;
-                      readonly until?: T[K] | undefined;
-                      readonly startsWith?: string | undefined;
-                      readonly contains?: string | undefined;
-                      readonly endsWith?: string | undefined;
+                      readonly from?: T[K];
+                      readonly until?: T[K];
+                      readonly startsWith?: string;
+                      readonly contains?: string;
+                      readonly endsWith?: string;
                     }
-                  | undefined
               : never;
       },
       never

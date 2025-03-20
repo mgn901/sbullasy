@@ -7,13 +7,23 @@ type ExceptionName =
   | 'userCertification.alreadyCertified'
   | 'userCertification.emailAddressRejected'
   | 'userCertification.verificationCodeIncorrect'
+  | 'userCertification.notLeftAllGroupsYet'
   | 'accessToken.notExists'
+  | 'group.notExists'
+  | 'group.deletingInstanceAdmin'
+  | 'groupInvitation.notExists'
+  | 'groupInvitation.alreadyExists'
+  | 'groupInvitation.invitationCodeIncorrect'
+  | 'groupMember.deletingOnlyOneAdmin'
   | 'authentication.notExists'
   | 'authentication.verificationCodeIncorrect'
   | 'authentication.tooManyRequests'
   | 'emailVerification.notExists'
   | 'accessControl.notAuthorized'
-  | 'accessControl.notCertified';
+  | 'accessControl.notCertified'
+  | 'accessControl.notGroupMember'
+  | 'accessControl.notGroupAdmin'
+  | 'accessControl.notInstanceAdmin';
 
 /** アプリケーションの例外を表す。 */
 export class Exception<TExceptionName extends ExceptionName> extends Error {

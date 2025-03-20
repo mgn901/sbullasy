@@ -6,11 +6,6 @@ export type FieldsOf<T> = OmitByValue<T, ((...args: never[]) => unknown) | symbo
 /** `U`から`T`にはないフィールドを取り除いた型を得る。 */
 export type PickEssential<T, K> = Pick<T, Extract<keyof T, K>>;
 
-// export type OmitExtra<T, P> = Omit<P, Exclude<keyof P, keyof T>>;
-
-/** `T`のインスタンスで、各フィールドの値の型が、`U`の各フィールドの値の型と同じである型を得る。 */
-export type TypedInstance<T, U> = T & PickEssential<U, keyof FieldsOf<T>>;
-
 /** 2つの引数オブジェクトを組み合わせる。 */
 export const mergeParams = <OriginalParams, TPreAppliedParams = Partial<OriginalParams>>(params: {
   readonly params: Omit<OriginalParams, keyof TPreAppliedParams>;

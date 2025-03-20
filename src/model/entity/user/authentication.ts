@@ -219,7 +219,7 @@ export const AuthenticationAttemptReducers = {
 
   /**
    * 指定された認証試行を完了にする。
-   * @param self 完了にする認証試行
+   * @param self 完了にする認証試行を指定する。
    */
   toCompleted: <S extends AuthenticationAttempt & { readonly status: 'attempted' }>(
     self: S,
@@ -227,7 +227,7 @@ export const AuthenticationAttemptReducers = {
 
   /**
    * 指定された認証試行を中止にする。
-   * @param self 中止にする認証試行
+   * @param self 中止にする認証試行を指定する。
    */
   toCanceled: <S extends AuthenticationAttempt & { readonly status: 'attempted' }>(
     self: S,

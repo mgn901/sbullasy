@@ -9,7 +9,7 @@ export type RequestWithEmailVerificationChallenge = {
 export const RequestWithEmailVerificationChallengeReducers = {
   /**
    * 指定されたリクエストを完了にして返す。
-   * @param self 完了にするリクエスト
+   * @param self 完了にするリクエストを指定する。
    */
   toCompleted: <S extends RequestWithEmailVerificationChallenge & { readonly status: 'requested' }>(
     self: S,
@@ -17,7 +17,7 @@ export const RequestWithEmailVerificationChallengeReducers = {
 
   /**
    * 指定されたリクエストを中止にして返す。
-   * @param self 中止にするリクエスト
+   * @param self 中止にするリクエストを指定する。
    */
   toCanceled: <S extends RequestWithEmailVerificationChallenge & { readonly status: 'requested' }>(
     self: S,

@@ -25,6 +25,7 @@ import { type Id, generateId } from '../../lib/random-values/id.ts';
 import type { FromRepository } from '../../lib/repository.ts';
 import type { PreApplied } from '../../lib/type-utils.ts';
 import type { DisplayName, EmailAddress, Name } from '../../values.ts';
+import type { MembershipRepository } from './membership.ts';
 import {
   type RequestWithEmailVerificationChallenge,
   RequestWithEmailVerificationChallengeReducers,
@@ -167,8 +168,8 @@ export const CertifiedUserProfileReducers = {
 export interface CertifiedUserProfileRepository {
   getOneByCertifiedUserId<TId extends UserId>(
     this: CertifiedUserProfileRepository,
-    id: TId,
-  ): Promise<FromRepository<CertifiedUserProfile & { readonly id: TId }> | undefined>;
+    certifiedUserId: TId,
+  ): Promise<FromRepository<CertifiedUserProfile & { readonly certifiedUserId: TId }> | undefined>;
 
   createOne(
     this: CertifiedUserProfileRepository,
@@ -180,7 +181,7 @@ export interface CertifiedUserProfileRepository {
     certifiedUserProfile: FromRepository<CertifiedUserProfile>,
   ): Promise<void>;
 
-  deleteOneById(this: CertifiedUserProfileRepository, id: UserId): Promise<void>;
+  deleteOneById(this: CertifiedUserProfileRepository, certifiedUserId: UserId): Promise<void>;
 }
 //#endregion
 
@@ -281,12 +282,13 @@ export interface CertifiedUserProfileServiceDependencies {
     typeof answer,
     EmailVerificationServiceDependencies
   >;
+  readonly certifiedUserProfileRepository: CertifiedUserProfileRepository;
+  readonly userCertificationRequestRepository: UserCertificationRequestRepository;
+  readonly membershipRepository: MembershipRepository;
   readonly contextRepository: ContextRepository<
     CertifiedUserProfileConfigurationMap & SystemConfigurationMap
   >;
   readonly clientContextRepository: ContextRepository<ClientContextMap & LogInUserClientContextMap>;
-  readonly certifiedUserProfileRepository: CertifiedUserProfileRepository;
-  readonly userCertificationRequestRepository: UserCertificationRequestRepository;
 }
 
 /**
@@ -420,7 +422,7 @@ export const completeUserCertification = async (
     readonly id: UserCertificationRequestId;
     readonly enteredVerificationCode: EmailVerificationChallengeVerificationCode;
   } & CertifiedUserProfileServiceDependencies,
-) => {
+): Promise<void> => {
   const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
@@ -471,7 +473,7 @@ export const completeUserCertification = async (
  */
 export const cancelUserCertification = async (
   params: { readonly id: UserCertificationRequestId } & CertifiedUserProfileServiceDependencies,
-) => {
+): Promise<void> => {
   const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
@@ -491,13 +493,21 @@ export const cancelUserCertification = async (
 
 /**
  * 自分の認証済みユーザプロフィールを削除する。
+ * @throws グループに1つ以上所属している場合は、{@linkcode Exception}（`userCertification.notLeftAllGroupsYet`）を投げる。
  */
 export const deleteMyCertifiedUserProfile = async (
   params: CertifiedUserProfileServiceDependencies,
-) => {
+): Promise<void> => {
   const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
+
+  const membershipCount = await params.membershipRepository.count({
+    filters: { userId: myUserAccount.id },
+  });
+  if (membershipCount > 0) {
+    throw Exception.create({ exceptionName: 'userCertification.notLeftAllGroupsYet' });
+  }
 
   await params.certifiedUserProfileRepository.deleteOneById(myUserAccount.id);
 };
