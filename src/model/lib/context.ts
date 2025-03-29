@@ -1,6 +1,6 @@
-import type { LanguageCode } from 'iso-639-1';
 import type { OmitIndexSignature } from '../../utils/type-utils.ts';
 import type { AccessTokenSecret } from '../entity/user/access-token.ts';
+import type { LanguageCode } from './i18n.ts';
 
 /** アプリケーションの設定や状態を表す辞書。 */
 export interface ContextMap {

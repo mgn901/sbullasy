@@ -2,6 +2,8 @@ import type { LanguageCode } from 'iso-639-1';
 import { intersect } from '../../utils/set-operations/intersect.ts';
 import type { I18nMap } from './context.ts';
 
+export type { LanguageCode };
+
 export const selectLanguage = (params: {
   readonly accepted: readonly LanguageCode[];
   readonly available: readonly LanguageCode[];
