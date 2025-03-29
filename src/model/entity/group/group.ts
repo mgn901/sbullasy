@@ -22,6 +22,7 @@ import {
   type GroupMemberRepository,
   MemberReducers,
 } from './member.ts';
+import type { PermissionRepository } from './permission.ts';
 import { type GroupId, groupTypeSymbol } from './values.ts';
 
 //#region Group and GroupRepository
@@ -73,6 +74,17 @@ export const GroupReducers = {
       createdAt: new Date(),
       roleInInstance: 'admin',
     }) as const,
+
+  update: <
+    S extends Group,
+    P extends { readonly name: TName; readonly displayName: TDisplayName },
+    TName extends Name,
+    TDisplayName extends DisplayName,
+  >(
+    self: S,
+    params: P,
+  ): S & Pick<P, 'name' | 'displayName'> =>
+    ({ ...self, name: params.name, displayName: params.displayName }) as const,
 };
 
 /**
@@ -116,14 +128,29 @@ export interface GroupServiceDependencies {
   readonly groupRepository: GroupRepository;
   readonly groupInvitationRepository: GroupInvitationRepository;
   readonly groupMemberRepository: GroupMemberRepository;
+  readonly permissionRepository: PermissionRepository;
   readonly itemRepository: ItemRepository;
   readonly clientContextRepository: ContextRepository<ClientContextMap & LogInUserClientContextMap>;
 }
 
 /**
+ * グループの情報を取得する。
+ */
+export const getOne = async (
+  params: { readonly groupId: GroupId } & GroupServiceDependencies,
+): Promise<{ readonly group: Group }> => {
+  const group = await params.groupRepository.getOneById(params.groupId);
+  if (group === undefined) {
+    throw Exception.create({ exceptionName: 'group.notExists' });
+  }
+
+  return { group };
+};
+
+/**
  * グループの一覧を取得する。
  */
-export const getGroups = async (
+export const getMany = async (
   params: {
     readonly filters?: Filters<Group>;
     readonly orderBy: OrderBy<Group>;
@@ -175,9 +202,37 @@ export const create = async <TName extends Name, TDisplayName extends DisplayNam
 };
 
 /**
+ * グループの情報を更新する。
+ * - この操作を行おうとするユーザは、グループの管理者である必要がある。
+ */
+export const update = async (
+  params: {
+    readonly groupId: GroupId;
+    readonly name: Name;
+    readonly displayName: DisplayName;
+  } & GroupServiceDependencies,
+): Promise<void> => {
+  const { myUserAccount } = await params.verifyAccessToken({
+    accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
+  });
+  await params.verifyGroupAdmin({ groupId: params.groupId, userId: myUserAccount.id });
+
+  const group = await params.groupRepository.getOneById(params.groupId);
+  if (group === undefined) {
+    throw Exception.create({ exceptionName: 'group.notExists' });
+  }
+
+  const updatedGroup = GroupReducers.update(group, {
+    name: params.name,
+    displayName: params.displayName,
+  });
+  await params.groupRepository.updateOne(updatedGroup);
+};
+
+/**
  * 指定されたグループを削除する。
  * - この操作を行おうとするユーザは、グループの管理者である必要がある。
- * - グループが作成したアイテムも同時に削除される。
+ * - グループが作成したアイテム、グループに付与されている権限も同時に削除される。
  */
 export const deleteGroup = async (
   params: { readonly groupId: GroupId } & GroupServiceDependencies,
@@ -192,8 +247,10 @@ export const deleteGroup = async (
     throw Exception.create({ exceptionName: 'group.deletingInstanceAdmin' });
   }
 
-  // TODO: アイテムの削除
   await params.itemRepository.deleteMany({ filters: { ownedBy: params.groupId } });
+  await params.permissionRepository.deleteMany({
+    filters: { grantedTo: { groupId: params.groupId } },
+  });
   await params.groupInvitationRepository.deleteOne(params.groupId);
   await params.groupMemberRepository.deleteMany({ filters: { groupId: params.groupId } });
   await params.groupRepository.deleteOneById(params.groupId);
