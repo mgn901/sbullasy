@@ -14,6 +14,7 @@ export type ItemType = {
   readonly [itemTypeTypeSymbol]: typeof itemTypeTypeSymbol;
   readonly name: ItemTypeName;
   readonly displayNameI18nMap: I18nMap;
+  readonly baseType: 'item' | 'scheduledEvent';
   readonly schema: ItemSchema;
 };
 
