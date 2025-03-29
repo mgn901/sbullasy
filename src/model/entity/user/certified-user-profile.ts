@@ -297,7 +297,7 @@ export interface CertifiedUserProfileServiceDependencies {
  */
 export const getMyCertifiedUserProfile = async (
   params: CertifiedUserProfileServiceDependencies,
-): Promise<CertifiedUserProfile> => {
+): Promise<{ readonly certifiedUserProfile: CertifiedUserProfile }> => {
   const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
@@ -308,7 +308,7 @@ export const getMyCertifiedUserProfile = async (
     throw Exception.create({ exceptionName: 'certifiedUserProfile.notExists' });
   }
 
-  return certifiedUserProfile;
+  return { certifiedUserProfile };
 };
 
 /**

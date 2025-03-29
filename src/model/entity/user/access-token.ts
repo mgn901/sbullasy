@@ -193,25 +193,27 @@ export interface AccessTokenServiceDependencies {
 /**
  * 自分自身のユーザアカウントに関連するアクセストークンを取得する。
  */
-export const getAccessTokens = async (
+export const getMany = async (
   params: {
     readonly filters?: Filters<Pick<AccessToken, 'loggedInAt' | 'lastUsedAt' | 'expiredAt'>>;
     readonly orderBy: OrderBy<Pick<AccessToken, 'loggedInAt' | 'lastUsedAt' | 'expiredAt'>>;
     readonly offset?: number | undefined;
     readonly limit?: number | undefined;
   } & AccessTokenServiceDependencies,
-): Promise<readonly AccessToken[] | readonly []> => {
+): Promise<{ readonly accessTokens: readonly AccessToken[] | readonly [] }> => {
   const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
 
   // TODO: デフォルトの制限
-  return params.accessTokenRepository.getMany({
+  const accessTokens = await params.accessTokenRepository.getMany({
     filters: { ...params.filters, logInUserId: myUserAccount.id },
     orderBy: params.orderBy,
     offset: params.offset,
     limit: params.limit,
   });
+
+  return { accessTokens };
 };
 
 /**
