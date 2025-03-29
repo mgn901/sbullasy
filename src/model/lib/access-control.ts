@@ -1,5 +1,7 @@
 import { type GroupMemberRepository, type Member, MemberReducers } from '../entity/group/member.ts';
+import type { PermissionRepository, PermissionType } from '../entity/group/permission.ts';
 import type { GroupId } from '../entity/group/values.ts';
+import type { ItemTypeName } from '../entity/item/item-type.ts';
 import {
   type AccessToken,
   AccessTokenReducers,
@@ -23,6 +25,7 @@ export interface AccessControlServiceDependencies {
   readonly certifiedUserProfileRepository: CertifiedUserProfileRepository;
   readonly groupMemberRepository: GroupMemberRepository;
   readonly membershipRepository: MembershipRepository;
+  readonly permissionRepository: PermissionRepository;
 }
 
 /** 指定されたシークレットに対応するアクセストークンが有効であるかを検証し、アクセストークンに対応するユーザアカウントを返す。 */
@@ -128,5 +131,29 @@ export const verifyInstanceAdmin = async (
 
   if (groups.length === 0) {
     throw Exception.create({ exceptionName: 'accessControl.notInstanceAdmin' });
+  }
+};
+
+export const verifyItemOperationPermission = async (
+  params: {
+    readonly groupId: GroupId;
+    readonly itemTypeName: ItemTypeName;
+    readonly permissionType: PermissionType;
+  } & AccessControlServiceDependencies,
+): Promise<void> => {
+  const permission = await params.permissionRepository.getOne({
+    grantedTo: { groupId: params.groupId },
+    itemTypeName: params.itemTypeName,
+  });
+  const permissionGrantedToAllGroups = await params.permissionRepository.getOne({
+    grantedTo: { keyword: 'allGroups' },
+    itemTypeName: params.itemTypeName,
+  });
+
+  if (
+    permission?.permissionType !== params.permissionType &&
+    permissionGrantedToAllGroups?.permissionType !== params.permissionType
+  ) {
+    throw Exception.create({ exceptionName: 'accessControl.notPermitted' });
   }
 };
