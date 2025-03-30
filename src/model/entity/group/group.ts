@@ -15,6 +15,8 @@ import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
 import type { PreApplied } from '../../lib/type-utils.ts';
 import type { DisplayName, Name } from '../../values.ts';
 import type { ItemRepository } from '../item/item.ts';
+import type { BadgeType } from './badge-type.ts';
+import type { BadgeRepository } from './badge.ts';
 import {
   type GroupInvitation,
   GroupInvitationReducers,
@@ -153,6 +155,7 @@ export interface GroupServiceDependencies {
   readonly groupInvitationRepository: GroupInvitationRepository;
   readonly groupMemberRepository: GroupMemberRepository;
   readonly permissionRepository: PermissionRepository;
+  readonly badgeRepository: BadgeRepository;
   readonly itemRepository: ItemRepository;
   readonly clientContextRepository: ContextRepository<ClientContextMap & LogInUserClientContextMap>;
 }
@@ -265,7 +268,7 @@ export const updateOne = async (
 /**
  * 指定されたグループを削除する。
  * - この操作を行おうとするユーザは、グループの管理者である必要がある。
- * - グループが作成したアイテム、グループに付与されている権限も同時に削除される。
+ * - グループが作成したアイテム、グループに付与されているバッジ、グループに付与されている権限も同時に削除される。
  */
 export const deleteOne = async (
   params: { readonly groupId: GroupId } & GroupServiceDependencies,
@@ -281,6 +284,7 @@ export const deleteOne = async (
   }
 
   await params.itemRepository.deleteMany({ filters: { ownedBy: params.groupId } });
+  await params.badgeRepository.deleteMany({ filters: { groupId: params.groupId } });
   await params.permissionRepository.deleteMany({
     filters: { grantedTo: { groupId: params.groupId } },
   });
