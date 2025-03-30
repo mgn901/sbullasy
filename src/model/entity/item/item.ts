@@ -23,23 +23,21 @@ import type { ItemTypeName } from './item-type.ts';
 import { validateProperties } from './schema.ts';
 
 //#region Item
-const itemTypeSymbol = Symbol('item.type');
-const itemWithDetailedLinksTypeSymbol = Symbol('itemWithDetailedLinks.type');
-export const itemSymbol = {
-  type: itemTypeSymbol,
-  withDetailedLinksType: itemWithDetailedLinksTypeSymbol,
-} as const;
+export const itemTypeSymbol = Symbol('item.type');
+export const itemWithDetailedLinksTypeSymbol = Symbol('itemWithDetailedLinks.type');
 export type ItemId = NominalPrimitive<Id, typeof itemTypeSymbol>;
 export type ItemLinkSummary = Pick<Item, 'typeName' | 'id'>;
 export type ItemLinkDetailed = Pick<
   Item,
   'typeName' | 'id' | 'lang' | 'name' | 'title' | 'titleForUrl' | 'ownedBy'
 >;
-
 export type ItemProperty = {
   readonly rawValue: string | number | boolean | string[] | number[] | boolean[];
 };
 
+/**
+ * アイテムを表す。
+ */
 export type Item = {
   readonly [itemTypeSymbol]: typeof itemTypeSymbol;
   readonly id: ItemId;
@@ -68,6 +66,9 @@ export type WithDetailedLinks<I extends Item> = I & {
   readonly ownedBy: Group;
 };
 
+/**
+ * {@linkcode Item}の状態を変更するための関数を提供する。
+ */
 export const ItemReducers = {
   create: <
     P extends {
@@ -195,6 +196,9 @@ export const ItemReducers = {
   },
 };
 
+/**
+ * {@linkcode Item}を永続化するためのリポジトリ。
+ */
 export interface ItemRepository {
   getOneById<
     P extends { readonly typeName: ItemTypeName; readonly id: ItemId; readonly lang: LanguageCode },
@@ -496,7 +500,9 @@ export const getManyBase = async <
  * - 作成しようとしているアイテムの所有グループは、その種類のアイテムを作成することが許可されている必要がある。
  * @throws アイテムのプロパティがスキーマに従っていない場合は、{@linkcode Exception}（`item.propertiesInvalid`）を投げる。
  */
-export const create = async <TTypeName extends (typeof sbullasyDefaultItemTypes)[string]['name']>(
+export const createOne = async <
+  TTypeName extends (typeof sbullasyDefaultItemTypes)[string]['name'],
+>(
   params: {
     readonly typeName: TTypeName;
     readonly lang: LanguageCode;
@@ -511,7 +517,7 @@ export const create = async <TTypeName extends (typeof sbullasyDefaultItemTypes)
     readonly publishedAt: Date | undefined;
   } & ItemServiceDependencies,
 ): Promise<{ readonly item: Item }> => {
-  return createBase({
+  return createOneBase({
     ...params,
     create: () => ItemReducers.create(params),
     persist: async (item) => {
@@ -520,7 +526,7 @@ export const create = async <TTypeName extends (typeof sbullasyDefaultItemTypes)
   });
 };
 
-export const createBase = async <T extends Item>(
+export const createOneBase = async <T extends Item>(
   params: Pick<T, 'typeName' | 'properties' | 'ownedBy'> & {
     readonly create: () => T;
     readonly persist: (item: T) => Promise<void>;
@@ -638,14 +644,16 @@ export const createTranslatedBase = async <T extends Item>(
  * @throws アイテムが見つからない場合、または、所有グループに所属していないユーザがアイテムを更新しようとしている場合は、{@linkcode Exception}（`item.notExists`）を投げる。
  * @throws アイテムのプロパティがスキーマに従っていない場合は、{@linkcode Exception}（`item.propertiesInvalid`）を投げる。
  */
-export const update = async <TTypeName extends (typeof sbullasyDefaultItemTypes)[string]['name']>(
+export const updateOne = async <
+  TTypeName extends (typeof sbullasyDefaultItemTypes)[string]['name'],
+>(
   params: { readonly typeName: TTypeName } & Pick<
     Item,
     'id' | 'lang' | 'name' | 'title' | 'titleForUrl' | 'properties' | 'publishedAt'
   > &
     ItemServiceDependencies,
 ): Promise<void> => {
-  return updateBase({
+  return updateOneBase({
     ...params,
     getFromRepository: (query) => params.itemRepository.getOneById(query),
     update: (oldItem) => ItemReducers.update(oldItem, params),
@@ -655,7 +663,7 @@ export const update = async <TTypeName extends (typeof sbullasyDefaultItemTypes)
   });
 };
 
-export const updateBase = async <O extends FromRepository<Item>, T extends FromRepository<Item>>(
+export const updateOneBase = async <O extends FromRepository<Item>, T extends FromRepository<Item>>(
   params: Pick<T, 'typeName' | 'id' | 'lang' | 'properties'> & {
     readonly getFromRepository: (query: {
       readonly typeName: ItemTypeName;
@@ -715,7 +723,7 @@ export const updateBase = async <O extends FromRepository<Item>, T extends FromR
  * アイテムを削除する。
  * - この操作を行うユーザは、削除しようとしているアイテムの所有グループに所属している必要がある。
  */
-export const deleteItem = async <
+export const deleteOne = async <
   TTypeName extends (typeof sbullasyDefaultItemTypes)[string]['name'],
 >(
   params: {

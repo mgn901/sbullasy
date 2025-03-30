@@ -73,7 +73,7 @@ Verification code: \${emailVerification.verificationCode}
 //#endregion
 
 //#region UserAccount and UserAccountRepository
-const userAccountTypeSymbol = Symbol('userAccount.type');
+export const userAccountTypeSymbol = Symbol('userAccount.type');
 
 /**
  * ユーザアカウントを表す。
@@ -141,6 +141,11 @@ export interface UserAccountRepository {
     },
   ): Promise<readonly FromRepository<UserAccount>[] | readonly []>;
 
+  count(
+    this: UserAccountRepository,
+    params: { readonly filters?: Filters<UserAccount> },
+  ): Promise<number>;
+
   createOne(this: UserAccountRepository, userAccount: UserAccount): Promise<void>;
 
   updateOne(this: UserAccountRepository, userAccount: FromRepository<UserAccount>): Promise<void>;
@@ -150,7 +155,7 @@ export interface UserAccountRepository {
 //#endregion
 
 //#region UserAccountEmailAddressUpdateRequest and UserAccountEmailAddressUpdateRequestRepository
-const userAccountEmailAddressUpdateRequestTypeSymbol = Symbol(
+export const userAccountEmailAddressUpdateRequestTypeSymbol = Symbol(
   'userAccountEmailAddressUpdateRequest.type',
 );
 

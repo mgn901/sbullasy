@@ -97,8 +97,8 @@ export interface GroupMemberRepository {
 //#endregion
 
 //#region GroupInvitation
-const groupInvitationTypeSymbol = Symbol('groupInvitation.type');
-const groupInvitationInvitationCodeTypeSymbol = Symbol('groupInvitation.invitationCode');
+export const groupInvitationTypeSymbol = Symbol('groupInvitation.type');
+export const groupInvitationInvitationCodeTypeSymbol = Symbol('groupInvitation.invitationCode');
 export type GroupInvitationInvitationCode = NominalPrimitive<
   ShortSecret,
   typeof groupInvitationTypeSymbol
@@ -165,7 +165,7 @@ export interface GroupInvitationRepository {
     invitation: FromRepository<GroupInvitation>,
   ): Promise<void>;
 
-  deleteOne(this: GroupInvitationRepository, groupId: GroupId): Promise<void>;
+  deleteOneById(this: GroupInvitationRepository, groupId: GroupId): Promise<void>;
 }
 //#endregion
 
@@ -253,7 +253,7 @@ export const deleteInvitation = async (
   await params.verifyCertifiedUser({ userId: userAccount.id });
   await params.verifyGroupAdmin({ groupId: params.groupId, userId: userAccount.id });
 
-  await params.groupInvitationRepository.deleteOne(params.groupId);
+  await params.groupInvitationRepository.deleteOneById(params.groupId);
 };
 
 /**

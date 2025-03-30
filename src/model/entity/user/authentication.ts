@@ -29,7 +29,7 @@ import {
   AccessTokenReducers,
   type AccessTokenRepository,
   type AccessTokenSecret,
-  accessTokenSymbol,
+  accessTokenSecretSymbol,
 } from './access-token.ts';
 import {
   type UserAccount,
@@ -109,9 +109,11 @@ Verification code: \${emailVerification.verificationCode}
 //#endregion
 
 //#region UserAuthenticationAttempt and UserAuthenticationAttemptRepository
-const authenticationAttemptTypeSymbol = Symbol('authenticationAttempt.type');
-const userAccountRegistrationAttemptTypeSymbol = Symbol('userAccountRegistrationAttempt.type');
-const logInAttemptTypeSymbol = Symbol('logInAttempt.type');
+export const authenticationAttemptTypeSymbol = Symbol('authenticationAttempt.type');
+export const userAccountRegistrationAttemptTypeSymbol = Symbol(
+  'userAccountRegistrationAttempt.type',
+);
+export const logInAttemptTypeSymbol = Symbol('logInAttempt.type');
 
 export type AuthenticationAttemptId = NominalPrimitive<Id, typeof authenticationAttemptTypeSymbol>;
 
@@ -265,7 +267,7 @@ export interface AuthenticationAttemptRepository {
   >;
 
   getMany(
-    this: unknown,
+    this: AuthenticationAttemptRepository,
     params: {
       readonly filters?: Filters<AuthenticationAttempt>;
       readonly orderBy: OrderBy<AuthenticationAttempt>;
@@ -275,7 +277,7 @@ export interface AuthenticationAttemptRepository {
   ): Promise<readonly FromRepository<AuthenticationAttempt>[] | readonly []>;
 
   count(
-    this: unknown,
+    this: AuthenticationAttemptRepository,
     params: { readonly filters?: Filters<AuthenticationAttempt> },
   ): Promise<number>;
 
@@ -389,7 +391,7 @@ export const completeLogInOrRegistrationWithEmailVerification = async (
     readonly enteredVerificationCode: EmailVerificationChallengeVerificationCode;
   } & UserAuthenticationServiceDependencies,
 ): Promise<{
-  readonly [accessTokenSymbol.secret]: AccessTokenSecret;
+  readonly [accessTokenSecretSymbol]: AccessTokenSecret;
   readonly expiredAt: Date;
 }> => {
   const attempt = await params.authenticationAttemptRepository.getOneById(params.id);
@@ -489,7 +491,7 @@ const completeLogInWithEmailVerification = async (
     readonly enteredVerificationCode: EmailVerificationChallengeVerificationCode;
   } & UserAuthenticationServiceDependencies,
 ): Promise<{
-  readonly [accessTokenSymbol.secret]: AccessTokenSecret;
+  readonly [accessTokenSecretSymbol]: AccessTokenSecret;
   readonly expiredAt: Date;
 }> => {
   const { isCorrect } = await params.answerEmailVerificationChallenge({
@@ -512,7 +514,7 @@ const completeLogInWithEmailVerification = async (
   await params.authenticationAttemptRepository.updateOne(attemptCompleted);
 
   return {
-    [accessTokenSymbol.secret]: accessToken[accessTokenSymbol.secret],
+    [accessTokenSecretSymbol]: accessToken[accessTokenSecretSymbol],
     expiredAt: accessToken.expiredAt,
   };
 };
@@ -580,7 +582,7 @@ const completeRegistrationWithEmailVerification = async (
     readonly enteredVerificationCode: EmailVerificationChallengeVerificationCode;
   } & UserAuthenticationServiceDependencies,
 ): Promise<{
-  readonly [accessTokenSymbol.secret]: AccessTokenSecret;
+  readonly [accessTokenSecretSymbol]: AccessTokenSecret;
   readonly expiredAt: Date;
 }> => {
   const { isCorrect } = await params.answerEmailVerificationChallenge({
@@ -606,7 +608,7 @@ const completeRegistrationWithEmailVerification = async (
   await params.authenticationAttemptRepository.updateOne(attemptCompleted);
 
   return {
-    [accessTokenSymbol.secret]: accessToken[accessTokenSymbol.secret],
+    [accessTokenSecretSymbol]: accessToken[accessTokenSecretSymbol],
     expiredAt: accessToken.expiredAt,
   };
 };

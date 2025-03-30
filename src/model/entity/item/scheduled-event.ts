@@ -23,16 +23,16 @@ import {
   type ItemLinkSummary,
   type ItemProperty,
   type WithDetailedLinks,
-  createBase,
+  createOneBase,
   createTranslatedBase,
   getManyBase,
   getOneBase,
-  itemSymbol,
-  updateBase,
+  itemTypeSymbol,
+  updateOneBase,
 } from './item.ts';
 
 //#region ScheduledEvent and ScheduledEventRepository
-const scheduledEventTypeSymbol = Symbol('scheduledEvent.type');
+export const scheduledEventTypeSymbol = Symbol('scheduledEvent.type');
 export type DateList = readonly { readonly startedAt: Date; readonly endedAt: Date }[];
 
 export type ScheduledEvent = Item & {
@@ -73,7 +73,7 @@ export const ScheduledEventReducers = {
     > => {
     const now = new Date();
     return {
-      [itemSymbol.type]: itemSymbol.type,
+      [itemTypeSymbol]: itemTypeSymbol,
       [scheduledEventTypeSymbol]: scheduledEventTypeSymbol,
       id: generateId() as ItemId,
       typeName: params.typeName,
@@ -124,7 +124,7 @@ export const ScheduledEventReducers = {
     > => {
     const now = new Date();
     return {
-      [itemSymbol.type]: itemSymbol.type,
+      [itemTypeSymbol]: itemTypeSymbol,
       [scheduledEventTypeSymbol]: scheduledEventTypeSymbol,
       id: params.id,
       typeName: params.typeName,
@@ -438,7 +438,9 @@ export const getMany = async (
  * - 作成しようとしているアイテムの所有グループは、その種類のアイテムを作成することが許可されている必要がある。
  * @throws アイテムのプロパティがスキーマに従っていない場合は、{@linkcode Exception}（`item.propertiesInvalid`）を投げる。
  */
-export const create = async <TTypeName extends (typeof sbullasyDefaultItemTypes)[string]['name']>(
+export const createOne = async <
+  TTypeName extends (typeof sbullasyDefaultItemTypes)[string]['name'],
+>(
   params: {
     readonly typeName: TTypeName;
     readonly lang: LanguageCode;
@@ -454,7 +456,7 @@ export const create = async <TTypeName extends (typeof sbullasyDefaultItemTypes)
     readonly publishedAt: Date | undefined;
   } & ScheduledEventServiceDependencies,
 ): Promise<{ readonly scheduledEvent: ScheduledEvent }> => {
-  const { item: scheduledEvent } = await createBase({
+  const { item: scheduledEvent } = await createOneBase({
     ...params,
     create: () => ScheduledEventReducers.create(params),
     persist: async (scheduledEvent) => {
@@ -505,14 +507,16 @@ export const createTranslated = async <
  * @throws アイテムが見つからない場合、または、所有グループに所属していないユーザがアイテムを更新しようとしている場合は、{@linkcode Exception}（`item.notExists`）を投げる。
  * @throws アイテムのプロパティがスキーマに従っていない場合は、{@linkcode Exception}（`item.propertiesInvalid`）を投げる。
  */
-export const update = async <TTypeName extends (typeof sbullasyDefaultItemTypes)[string]['name']>(
+export const updateOne = async <
+  TTypeName extends (typeof sbullasyDefaultItemTypes)[string]['name'],
+>(
   params: { readonly typeName: TTypeName } & Pick<
     ScheduledEvent,
     'id' | 'lang' | 'name' | 'title' | 'titleForUrl' | 'properties' | 'dateList' | 'publishedAt'
   > &
     ScheduledEventServiceDependencies,
 ): Promise<void> => {
-  return updateBase({
+  return updateOneBase({
     ...params,
     getFromRepository: (query) => params.scheduledEventRepository.getOneById(query),
     update: (oldItem) => ScheduledEventReducers.update(oldItem, params),

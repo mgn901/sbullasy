@@ -14,7 +14,7 @@ import type { CertifiedUserProfile } from '../user/certified-user-profile.ts';
 import type { Member } from './member.ts';
 import type { GroupId } from './values.ts';
 
-const memberProfileTypeSymbol = Symbol('memberProfile.type');
+export const memberProfileTypeSymbol = Symbol('memberProfile.type');
 
 export type MemberProfile = {
   readonly [memberProfileTypeSymbol]: typeof memberProfileTypeSymbol;

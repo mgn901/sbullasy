@@ -18,6 +18,7 @@ type ExceptionName =
   | 'groupInvitation.alreadyExists'
   | 'groupInvitation.invitationCodeIncorrect'
   | 'groupMember.deletingOnlyOneAdmin'
+  | 'badgeType.notExists'
   | 'item.notExists'
   | 'item.propertiesInvalid'
   | 'permission.notExists'

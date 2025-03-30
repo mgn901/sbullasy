@@ -1,4 +1,4 @@
-import { type ItemType, type ItemTypeName, itemTypeSymbol } from './item-type.ts';
+import { type ItemType, type ItemTypeName, itemTypeTypeSymbol } from './item-type.ts';
 
 export const itemTypeNames = {
   subject: 'subject' as ItemTypeName,
@@ -13,7 +13,7 @@ export const itemTypeNames = {
 export const sbullasyDefaultItemTypes = {
   /** 科目 */
   [itemTypeNames.subject]: {
-    [itemTypeSymbol.type]: itemTypeSymbol.type,
+    [itemTypeTypeSymbol]: itemTypeTypeSymbol,
     name: 'subject' as ItemTypeName,
     baseType: 'item',
     displayNameI18nMap: {
@@ -51,7 +51,7 @@ export const sbullasyDefaultItemTypes = {
   },
 
   [itemTypeNames.classHour]: {
-    [itemTypeSymbol.type]: itemTypeSymbol.type,
+    [itemTypeTypeSymbol]: itemTypeTypeSymbol,
     name: 'class-hour' as ItemTypeName,
     displayNameI18nMap: {
       ja: '年度、学期、曜日、時限',
@@ -68,7 +68,7 @@ export const sbullasyDefaultItemTypes = {
   },
 
   [itemTypeNames.teacher]: {
-    [itemTypeSymbol.type]: itemTypeSymbol.type,
+    [itemTypeTypeSymbol]: itemTypeTypeSymbol,
     name: 'teacher' as ItemTypeName,
     displayNameI18nMap: {
       ja: '授業担当教員',
@@ -81,7 +81,7 @@ export const sbullasyDefaultItemTypes = {
   },
 
   [itemTypeNames.course]: {
-    [itemTypeSymbol.type]: itemTypeSymbol.type,
+    [itemTypeTypeSymbol]: itemTypeTypeSymbol,
     name: 'course' as ItemTypeName,
     displayNameI18nMap: {
       ja: '履修区分',
@@ -95,7 +95,7 @@ export const sbullasyDefaultItemTypes = {
 
   /** 場所 */
   [itemTypeNames.place]: {
-    [itemTypeSymbol.type]: itemTypeSymbol.type,
+    [itemTypeTypeSymbol]: itemTypeTypeSymbol,
     name: 'place' as ItemTypeName,
     displayNameI18nMap: {
       ja: '場所',
@@ -111,7 +111,7 @@ export const sbullasyDefaultItemTypes = {
   },
 
   [itemTypeNames.event]: {
-    [itemTypeSymbol.type]: itemTypeSymbol.type,
+    [itemTypeTypeSymbol]: itemTypeTypeSymbol,
     name: 'event' as ItemTypeName,
     displayNameI18nMap: {
       ja: 'イベント',
@@ -124,7 +124,7 @@ export const sbullasyDefaultItemTypes = {
   },
 
   [itemTypeNames.post]: {
-    [itemTypeSymbol.type]: itemTypeSymbol.type,
+    [itemTypeTypeSymbol]: itemTypeTypeSymbol,
     name: 'post' as ItemTypeName,
     displayNameI18nMap: {
       ja: '投稿',

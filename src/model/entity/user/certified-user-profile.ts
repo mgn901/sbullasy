@@ -186,7 +186,7 @@ export interface CertifiedUserProfileRepository {
 //#endregion
 
 //#region UserCertificationRequest
-const userCertificationRequestTypeSymbol = Symbol('userCertificationRequest.type');
+export const userCertificationRequestTypeSymbol = Symbol('userCertificationRequest.type');
 
 export type UserCertificationRequestId = NominalPrimitive<
   Id,

@@ -27,15 +27,10 @@ const accessTokenConfigurationMap = {
 //#endregion
 
 //#region AccessToken and AccessTokenRepository
-const accessTokenTypeSymbol = Symbol('accessToken.type');
-const accessTokenSecretSymbol = Symbol('accessToken.secret');
+export const accessTokenTypeSymbol = Symbol('accessToken.type');
+export const accessTokenSecretSymbol = Symbol('accessToken.secret');
 export type AccessTokenId = NominalPrimitive<Id, typeof accessTokenTypeSymbol>;
 export type AccessTokenSecret = NominalPrimitive<LongSecret, typeof accessTokenTypeSymbol>;
-
-export const accessTokenSymbol = {
-  type: accessTokenTypeSymbol,
-  secret: accessTokenSecretSymbol,
-} as const;
 
 /**
  * アクセストークンを表す。

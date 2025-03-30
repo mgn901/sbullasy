@@ -2,11 +2,7 @@ import type { NominalPrimitive } from '../../../utils/type-utils.ts';
 import type { I18nMap } from '../../lib/context.ts';
 import type { Name } from '../../values.ts';
 
-const itemTypeTypeSymbol = Symbol('itemType.type');
-
-export const itemTypeSymbol = {
-  type: itemTypeTypeSymbol,
-} as const;
+export const itemTypeTypeSymbol = Symbol('itemType.type');
 
 export type ItemTypeName = NominalPrimitive<Name, typeof itemTypeTypeSymbol>;
 

@@ -39,6 +39,13 @@ export type Group = {
   readonly roleInInstance: 'admin' | 'normal';
 };
 
+export const groupProfileTypeSymbol = Symbol('groupProfile.type');
+
+export type GroupProfile = Group & {
+  readonly [groupProfileTypeSymbol]: typeof groupProfileTypeSymbol;
+  readonly badges: readonly BadgeType[];
+};
+
 /**
  * {@linkcode Group}の状態を変更するための関数を提供する。
  */
@@ -96,6 +103,11 @@ export interface GroupRepository {
     id: TId,
   ): Promise<FromRepository<Group & { readonly id: TId }> | undefined>;
 
+  getDetailedOneById<TId extends GroupId>(
+    this: GroupRepository,
+    id: TId,
+  ): Promise<FromRepository<GroupProfile & { readonly id: TId }> | undefined>;
+
   getMany(
     this: GroupRepository,
     params: {
@@ -105,6 +117,18 @@ export interface GroupRepository {
       readonly limit?: number | undefined;
     },
   ): Promise<readonly FromRepository<Group>[] | readonly []>;
+
+  getDetailedMany(
+    this: GroupRepository,
+    params: {
+      readonly filters?: Filters<Group>;
+      readonly orderBy: OrderBy<Group>;
+      readonly offset?: number | undefined;
+      readonly limit?: number | undefined;
+    },
+  ): Promise<readonly FromRepository<GroupProfile>[] | readonly []>;
+
+  count(this: GroupRepository, params: { readonly filters?: Filters<Group> }): Promise<number>;
 
   createOne(this: GroupRepository, group: Group): Promise<void>;
 
@@ -138,8 +162,8 @@ export interface GroupServiceDependencies {
  */
 export const getOne = async (
   params: { readonly groupId: GroupId } & GroupServiceDependencies,
-): Promise<{ readonly group: Group }> => {
-  const group = await params.groupRepository.getOneById(params.groupId);
+): Promise<{ readonly group: GroupProfile }> => {
+  const group = await params.groupRepository.getDetailedOneById(params.groupId);
   if (group === undefined) {
     throw Exception.create({ exceptionName: 'group.notExists' });
   }
@@ -156,14 +180,23 @@ export const getMany = async (
     readonly orderBy: OrderBy<Group>;
     readonly offset?: number;
     readonly limit?: number;
+    readonly detailed?: boolean | undefined;
   } & GroupServiceDependencies,
 ): Promise<{ readonly groups: readonly Group[] | readonly [] }> => {
-  const groups = await params.groupRepository.getMany({
-    filters: params.filters,
-    orderBy: params.orderBy,
-    offset: params.offset,
-    limit: params.limit,
-  });
+  const groups =
+    params.detailed === true
+      ? await params.groupRepository.getDetailedMany({
+          filters: params.filters,
+          orderBy: params.orderBy,
+          offset: params.offset,
+          limit: params.limit,
+        })
+      : await params.groupRepository.getMany({
+          filters: params.filters,
+          orderBy: params.orderBy,
+          offset: params.offset,
+          limit: params.limit,
+        });
 
   return { groups };
 };
@@ -172,7 +205,7 @@ export const getMany = async (
  * 新しいグループを作成する。
  * - この操作を行おうとするユーザは、有効な認証済みユーザプロフィールを持っている必要がある。
  */
-export const create = async <TName extends Name, TDisplayName extends DisplayName>(
+export const createOne = async <TName extends Name, TDisplayName extends DisplayName>(
   params: { readonly name: TName; readonly displayName: TDisplayName } & GroupServiceDependencies,
 ): Promise<{
   readonly group: Group & {
@@ -205,7 +238,7 @@ export const create = async <TName extends Name, TDisplayName extends DisplayNam
  * グループの情報を更新する。
  * - この操作を行おうとするユーザは、グループの管理者である必要がある。
  */
-export const update = async (
+export const updateOne = async (
   params: {
     readonly groupId: GroupId;
     readonly name: Name;
@@ -234,7 +267,7 @@ export const update = async (
  * - この操作を行おうとするユーザは、グループの管理者である必要がある。
  * - グループが作成したアイテム、グループに付与されている権限も同時に削除される。
  */
-export const deleteGroup = async (
+export const deleteOne = async (
   params: { readonly groupId: GroupId } & GroupServiceDependencies,
 ): Promise<void> => {
   const { myUserAccount } = await params.verifyAccessToken({
@@ -251,7 +284,7 @@ export const deleteGroup = async (
   await params.permissionRepository.deleteMany({
     filters: { grantedTo: { groupId: params.groupId } },
   });
-  await params.groupInvitationRepository.deleteOne(params.groupId);
+  await params.groupInvitationRepository.deleteOneById(params.groupId);
   await params.groupMemberRepository.deleteMany({ filters: { groupId: params.groupId } });
   await params.groupRepository.deleteOneById(params.groupId);
 };

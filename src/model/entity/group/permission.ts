@@ -70,10 +70,7 @@ export const PermissionReducers = {
 export interface PermissionRepository {
   getOne<TGrantedTo extends PermissionGrantee, TItemTypeName extends ItemTypeName>(
     this: PermissionRepository,
-    params: {
-      readonly grantedTo: TGrantedTo;
-      readonly itemTypeName: TItemTypeName;
-    },
+    params: { readonly grantedTo: TGrantedTo; readonly itemTypeName: TItemTypeName },
   ): Promise<
     | FromRepository<
         Permission & { readonly grantedTo: TGrantedTo; readonly itemTypeName: TItemTypeName }
@@ -108,10 +105,7 @@ export interface PermissionRepository {
 
   deleteOne(
     this: PermissionRepository,
-    params: {
-      readonly grantedTo: PermissionGrantee;
-      readonly itemTypeName: ItemTypeName;
-    },
+    params: { readonly grantedTo: PermissionGrantee; readonly itemTypeName: ItemTypeName },
   ): Promise<void>;
 
   deleteMany(
@@ -181,7 +175,7 @@ export const grant = async (
  * - この操作を行おうとするユーザは、インスタンス管理グループに所属している必要がある。
  * @throws そのグループに対してそのアイテムの種類についての許可が付与されていない場合、{@linkcode Exception}（`permission.notExists`）を投げる。
  */
-export const update = async (
+export const updateOne = async (
   params: {
     readonly grantedTo: PermissionGrantee;
     readonly itemTypeName: ItemTypeName;
