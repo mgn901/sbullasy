@@ -38,6 +38,7 @@ export type Group = {
   readonly id: GroupId;
   readonly name: Name;
   readonly displayName: DisplayName;
+  readonly iconFileId: FileId | undefined;
   readonly createdAt: Date;
   readonly roleInInstance: 'admin' | 'normal';
 };
@@ -65,6 +66,7 @@ export const GroupReducers = {
       id: generateId() as GroupId,
       name: params.name,
       displayName: params.displayName,
+      iconFileId: undefined,
       createdAt: new Date(),
       roleInInstance: 'normal',
     }) as const,
@@ -81,20 +83,31 @@ export const GroupReducers = {
       id: generateId() as GroupId,
       name: params.name,
       displayName: params.displayName,
+      iconFileId: undefined,
       createdAt: new Date(),
       roleInInstance: 'admin',
     }) as const,
 
   update: <
     S extends Group,
-    P extends { readonly name: TName; readonly displayName: TDisplayName },
+    P extends {
+      readonly name: TName;
+      readonly displayName: TDisplayName;
+      readonly iconFileId: TIconFileId;
+    },
     TName extends Name,
     TDisplayName extends DisplayName,
+    TIconFileId extends FileId | undefined,
   >(
     self: S,
     params: P,
   ): S & Pick<P, 'name' | 'displayName'> =>
-    ({ ...self, name: params.name, displayName: params.displayName }) as const,
+    ({
+      ...self,
+      name: params.name,
+      displayName: params.displayName,
+      iconFileId: params.iconFileId,
+    }) as const,
 };
 
 /**
@@ -158,6 +171,7 @@ export interface GroupServiceDependencies {
   readonly permissionRepository: PermissionRepository;
   readonly badgeRepository: BadgeRepository;
   readonly itemRepository: ItemRepository;
+  readonly fileRepository: FileRepository;
   readonly clientContextRepository: ContextRepository<ClientContextMap & LogInUserClientContextMap>;
 }
 
@@ -247,6 +261,7 @@ export const updateOne = async (
     readonly groupId: GroupId;
     readonly name: Name;
     readonly displayName: DisplayName;
+    readonly iconFileId: FileId | undefined;
   } & GroupServiceDependencies,
 ): Promise<void> => {
   const { myUserAccount } = await params.verifyAccessToken({
@@ -262,6 +277,7 @@ export const updateOne = async (
   const updatedGroup = GroupReducers.update(group, {
     name: params.name,
     displayName: params.displayName,
+    iconFileId: params.iconFileId,
   });
   await params.groupRepository.updateOne(updatedGroup);
 };

@@ -9,7 +9,7 @@ import type {
 } from '../../lib/context.ts';
 import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
 import type { PreApplied } from '../../lib/type-utils.ts';
-import type { Group } from '../group/group.ts';
+import type { GroupProfile } from '../group/group.ts';
 import type { Member } from '../group/member.ts';
 import type { GroupId } from '../group/values.ts';
 import type { UserId } from './values.ts';
@@ -19,7 +19,7 @@ const membershipTypeSymbol = Symbol('membership.type');
 export type Membership = {
   readonly [membershipTypeSymbol]: typeof membershipTypeSymbol;
   readonly groupId: GroupId;
-} & Pick<Group, 'name' | 'displayName' | 'roleInInstance'> &
+} & Pick<GroupProfile, 'name' | 'displayName' | 'iconFileId' | 'roleInInstance' | 'badges'> &
   Pick<Member, 'groupId' | 'joinedAt' | 'roleInGroup'>;
 
 export interface MembershipRepository {
@@ -49,7 +49,7 @@ export interface MembershipServiceDependencies {
 }
 
 /**
- * 指定されたユーザが所属するグループの一覧を取得する。
+ * 自分が所属するグループの一覧を取得する。
  */
 export const getMyMemberships = async (
   params: {
