@@ -1,11 +1,11 @@
-import Ajv from 'ajv';
-import type { FromSchema, JSONSchema } from 'json-schema-to-ts';
+import { Ajv, type JSONSchemaType } from 'ajv';
+import type { FromSchema } from 'json-schema-to-ts';
 
-export type TJSONSchema = JSONSchema;
+export type JSONSchema<T> = JSONSchemaType<T>;
 
-export const validateByJsonSchema = (
+export const validateByJsonSchema = <T>(
   value: unknown,
-  schema: TJSONSchema,
+  schema: JSONSchema<T>,
 ): value is FromSchema<typeof schema> => {
   const ajv = new Ajv();
   const validate = ajv.compile(schema);
