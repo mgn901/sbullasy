@@ -128,7 +128,7 @@ export interface BadgeTypeServiceDependencies {
  * バッジの種類を作成する。
  * - この操作を行おうとしているユーザは、インスタンスの管理グループに所属している必要がある。
  */
-export const create = async (
+export const createOne = async (
   params: {
     readonly name: BadgeTypeName;
     readonly displayNameI18nMap: I18nMap;
