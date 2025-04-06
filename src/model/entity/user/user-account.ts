@@ -25,6 +25,7 @@ import { type Id, generateId } from '../../lib/random-values/id.ts';
 import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
 import type { PickEssential, PreApplied } from '../../lib/type-utils.ts';
 import type { EmailAddress } from '../../values.ts';
+import type { BookmarkRepository } from '../bookmark/bookmark.ts';
 import type { AccessTokenRepository } from './access-token.ts';
 import type { CertifiedUserProfileRepository } from './certified-user-profile.ts';
 import type { MembershipRepository } from './membership.ts';
@@ -263,6 +264,7 @@ export interface UserAccountServiceDependencies {
   readonly userAccountRepository: UserAccountRepository;
   readonly userAccountEmailAddressUpdateRequestReposiory: UserAccountEmailAddressUpdateRequestRepository;
   readonly accessTokenRepository: AccessTokenRepository;
+  readonly bookmarkRepository: BookmarkRepository;
   readonly certifiedUserProfileRepository: CertifiedUserProfileRepository;
   readonly membershipRepository: MembershipRepository;
   readonly contextRepository: ContextRepository<
@@ -422,6 +424,7 @@ export const cancelEmailAddressUpdate = async (
 
 /**
  * 自分自身のユーザアカウントを削除する。
+ * - 自分のブックマークも削除する。
  * @throws グループに1つ以上所属している場合は、{@linkcode Exception}（`userCertification.notLeftAllGroupsYet`）を投げる。
  */
 export const deleteMyUserAccount = async (
@@ -439,6 +442,7 @@ export const deleteMyUserAccount = async (
   }
 
   await params.certifiedUserProfileRepository.deleteOneById(myUserAccount.id);
+  await params.bookmarkRepository.deleteMany({ filters: { bookmarkedBy: myUserAccount.id } });
   await params.accessTokenRepository.deleteMany({ filters: { logInUserId: myUserAccount.id } });
   await params.userAccountRepository.deleteOneById(myUserAccount.id);
 };
