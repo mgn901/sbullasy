@@ -1,8 +1,8 @@
 import type { Filters, FromRepository, OrderBy } from '../model/lib/repository.ts';
 import type { Client } from './asyncify-events/Client.ts';
 import {
-  type TimeWindowRateLimitationRule,
   calculateNextExecutionDate,
+  type TimeWindowRateLimitationRule,
 } from './time-window-rate-limitation.ts';
 import type { TypedEventTarget } from './typed-event-target.ts';
 
@@ -25,7 +25,9 @@ export const ExecutionReducers = {
     TId,
     TFunc extends (this: unknown, ...args: never[]) => TReturned,
     TReturned,
-  >(params: { readonly generateId: () => TId }): ((
+  >(params: {
+    readonly generateId: () => TId;
+  }): ((
     params: Pick<Execution<TId, TFunc, TReturned>, 'args' | 'executedAt'>,
   ) => Execution<TId, TFunc, TReturned>) => {
     const { generateId } = params;
@@ -289,7 +291,6 @@ const sleep = (params: {
   const endDate = new Date(Date.now() + Math.max(timeoutMs, 0));
 
   return new Promise((resolve, reject) => {
-    // biome-ignore lint/style/useConst: `timeoutId`の代入よりも先に`onAbort`などで参照するため
     let periodicResetInterval: number | NodeJS.Timeout;
     let endDateTimeout: number | NodeJS.Timeout;
 

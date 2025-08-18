@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, jest, test } from '@jest/globals';
-import { type Id, generateId } from '../model/lib/random-values/id.ts';
+import { generateId, type Id } from '../model/lib/random-values/id.ts';
 import {
   type Filters,
   type FromRepository,
@@ -162,7 +162,7 @@ describe('ExecutionQueueWithTimeWindowRateLimitation', () => {
 
     test('Enqueued executions are executed on time', async () => {
       await jest.advanceTimersByTimeAsync(100000);
-      [...expectedExecutionDateMap.entries()].map(([id, expectedExecutionDate]) => {
+      [...expectedExecutionDateMap.entries()].forEach(([id, expectedExecutionDate]) => {
         const actualExecutedDate = actualExecutionDateMap.get(id);
         expect(actualExecutedDate?.getTime()).toBeDefined();
         if (actualExecutedDate?.getTime() === undefined) {

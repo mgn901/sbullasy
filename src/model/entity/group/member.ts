@@ -12,7 +12,7 @@ import type {
   LogInUserClientContextMap,
 } from '../../lib/context.ts';
 import { Exception } from '../../lib/exception.ts';
-import { type ShortSecret, generateShortSecret } from '../../lib/random-values/short-secret.ts';
+import { generateShortSecret, type ShortSecret } from '../../lib/random-values/short-secret.ts';
 import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
 import type { PreApplied } from '../../lib/type-utils.ts';
 import type { UserId } from '../user/values.ts';

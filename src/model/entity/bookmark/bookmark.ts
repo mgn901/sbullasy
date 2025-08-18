@@ -9,8 +9,8 @@ import type {
 } from '../../lib/context.ts';
 import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
 import type { PreApplied } from '../../lib/type-utils.ts';
-import type { ItemTypeName } from '../item/item-type.ts';
 import type { Item, ItemId, WithDetailedLinks } from '../item/item.ts';
+import type { ItemTypeName } from '../item/item-type.ts';
 import type { UserId } from '../user/values.ts';
 
 //#region Bookmark and BookmarkRepository

@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "prepare": "husky",
-    "format": "biome check --write --config-path=./ .",
-    "lint": "tsc --noEmit && biome check --config-path=./ .",
+    "format": "biome check --write .",
+    "lint": "tsc --noEmit && biome check .",
     "test": "jest --passWithNoTests",
     "prod:build": "cross-env NODE_ENV=production tsx ./scripts/prodBuild.ts",
     "dev:start": "cross-env NODE_ENV=development tsx ./scripts/devStart.ts"

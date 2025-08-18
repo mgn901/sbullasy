@@ -1,6 +1,6 @@
 import {
-  type TimeWindowRateLimitationRule,
   calculateNextExecutionDate,
+  type TimeWindowRateLimitationRule,
 } from '../../../utils/time-window-rate-limitation.ts';
 import type { NominalPrimitive } from '../../../utils/type-utils.ts';
 import type {
@@ -11,16 +11,16 @@ import type {
   SystemConfigurationMap,
 } from '../../lib/context.ts';
 import type {
+  answer,
+  cancel,
   EmailVerificationChallengeId,
   EmailVerificationChallengeVerificationCode,
   EmailVerificationServiceDependencies,
-  answer,
-  cancel,
   send,
 } from '../../lib/email-verification.ts';
 import { Exception } from '../../lib/exception.ts';
 import { localize } from '../../lib/i18n.ts';
-import { type Id, generateId } from '../../lib/random-values/id.ts';
+import { generateId, type Id } from '../../lib/random-values/id.ts';
 import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
 import type { PreApplied } from '../../lib/type-utils.ts';
 import type { EmailAddress } from '../../values.ts';

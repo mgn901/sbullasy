@@ -12,7 +12,7 @@ import type {
 } from '../../lib/context.ts';
 import { Exception } from '../../lib/exception.ts';
 import type { LanguageCode } from '../../lib/i18n.ts';
-import { type Id, generateId, isId } from '../../lib/random-values/id.ts';
+import { generateId, type Id, isId } from '../../lib/random-values/id.ts';
 import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
 import type { PreApplied } from '../../lib/type-utils.ts';
 import type { Name, Title, TitleForUrl } from '../../values.ts';
