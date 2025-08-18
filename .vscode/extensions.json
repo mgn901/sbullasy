@@ -1,7 +1,7 @@
 {
   "recommendations": [
     "biomejs.biome",
-    "ms-azuretools.vscode-docker",
+    "ms-azuretools.vscode-containers",
     "orta.vscode-jest",
     "esbenp.prettier-vscode",
     "prisma.prisma",
