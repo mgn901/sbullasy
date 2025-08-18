@@ -16,8 +16,8 @@ import type { PreApplied } from '../../lib/type-utils.ts';
 import type { DisplayName, Name } from '../../values.ts';
 import type { FileId, FileRepository } from '../file/file.ts';
 import type { ItemRepository } from '../item/item.ts';
-import type { BadgeType } from './badge-type.ts';
 import type { BadgeRepository } from './badge.ts';
+import type { BadgeType } from './badge-type.ts';
 import {
   type GroupInvitation,
   GroupInvitationReducers,

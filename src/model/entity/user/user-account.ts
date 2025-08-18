@@ -12,16 +12,16 @@ import type {
   SystemConfigurationMap,
 } from '../../lib/context.ts';
 import type {
+  answer,
+  cancel,
   EmailVerificationChallengeId,
   EmailVerificationChallengeVerificationCode,
   EmailVerificationServiceDependencies,
-  answer,
-  cancel,
   send,
 } from '../../lib/email-verification.ts';
 import { Exception } from '../../lib/exception.ts';
 import { localize } from '../../lib/i18n.ts';
-import { type Id, generateId } from '../../lib/random-values/id.ts';
+import { generateId, type Id } from '../../lib/random-values/id.ts';
 import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
 import type { PickEssential, PreApplied } from '../../lib/type-utils.ts';
 import type { EmailAddress } from '../../values.ts';

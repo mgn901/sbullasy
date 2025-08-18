@@ -11,7 +11,7 @@ export const renderTemplate = (params: {
 }): string => {
   const { template, values } = params;
 
-  const placeHolderRegexp = /(?<!\\)\${([a-zA-Z_][a-zA-Z0-9_.\-]+[a-zA-Z0-9_\-])}/g;
+  const placeHolderRegexp = /(?<!\\)\${([a-zA-Z_][a-zA-Z0-9_.-]+[a-zA-Z0-9_-])}/g;
   const placeHolders = [...template.matchAll(placeHolderRegexp)].map((match) => match[0]);
 
   return placeHolders.reduce<string>((prev, placeHolder) => {

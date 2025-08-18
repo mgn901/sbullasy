@@ -2,8 +2,8 @@ import type { ExecutionQueue } from '../../utils/execution-queue.ts';
 import type { ArrowFunction, NominalPrimitive } from '../../utils/type-utils.ts';
 import type { EmailAddress } from '../values.ts';
 import { Exception } from './exception.ts';
-import { type Id, generateId } from './random-values/id.ts';
-import { type ShortSecret, generateShortSecret } from './random-values/short-secret.ts';
+import { generateId, type Id } from './random-values/id.ts';
+import { generateShortSecret, type ShortSecret } from './random-values/short-secret.ts';
 import type { Filters, FromRepository } from './repository.ts';
 import { renderTemplate } from './template.ts';
 

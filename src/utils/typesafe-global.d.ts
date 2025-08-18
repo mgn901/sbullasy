@@ -1,4 +1,4 @@
-import type { ExcludeFromTuple, OmitIndexSignature } from './type-utils.ts';
+import type { ExcludeFromTuple } from './type-utils.ts';
 
 type Entries<T> = (keyof T extends infer U ? (U extends keyof T ? [U, T[U]] : never) : never)[];
 

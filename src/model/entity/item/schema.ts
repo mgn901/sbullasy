@@ -1,8 +1,8 @@
 import { intersect } from '../../../utils/set-operations/intersect.ts';
 import { isId } from '../../lib/random-values/id.ts';
 import { isName } from '../../values.ts';
-import type { ItemSchema } from './item-type.ts';
 import type { ItemLinkDetailed, ItemLinkSummary } from './item.ts';
+import type { ItemSchema } from './item-type.ts';
 
 export type PropertiesTypeFromItemSchema<S extends ItemSchema> = {
   readonly [K in keyof S]: S[K] extends `link:${string}`
@@ -120,6 +120,7 @@ export const validateProperties = <S extends ItemSchema>(
       if (schema[key] === 'std:boolean') {
         return typeof record[key] === 'boolean';
       }
+      return false;
     })
   );
 };
