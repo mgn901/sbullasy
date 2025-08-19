@@ -1,8 +1,10 @@
-import type { NominalPrimitive } from '../../../utils/type-utils.ts';
+import type { NominalPrimitive } from '@mgn901/mgn901-utils-ts/nominal-primitive.type';
+import type { PreApplied } from '@mgn901/mgn901-utils-ts/pre-apply';
+import type { Filters, FromRepository, OrderBy } from '@mgn901/mgn901-utils-ts/repository-utils';
 import type {
   AccessControlServiceDependencies,
-  verifyAccessToken,
-  verifyInstanceAdmin,
+  PreAppliedVerifyAccessToken,
+  PreAppliedVerifyInstanceAdmin,
 } from '../../lib/access-control.ts';
 import type {
   ClientContextMap,
@@ -11,8 +13,6 @@ import type {
   LogInUserClientContextMap,
 } from '../../lib/context.ts';
 import { Exception } from '../../lib/exception.ts';
-import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
-import type { PreApplied } from '../../lib/type-utils.ts';
 import type { Name } from '../../values.ts';
 
 //#region BadgeType and BadgeTypeRepository
@@ -113,11 +113,11 @@ export interface BadgeTypeRepository {
 //#region BadgeTypeService
 export interface BadgeTypeServiceDependencies {
   readonly verifyAccessToken: PreApplied<
-    typeof verifyAccessToken,
+    PreAppliedVerifyAccessToken,
     AccessControlServiceDependencies
   >;
   readonly verifyInstanceAdmin: PreApplied<
-    typeof verifyInstanceAdmin,
+    PreAppliedVerifyInstanceAdmin,
     AccessControlServiceDependencies
   >;
   readonly badgeTypeRepository: BadgeTypeRepository;

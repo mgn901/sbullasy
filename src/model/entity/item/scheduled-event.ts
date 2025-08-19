@@ -1,8 +1,10 @@
+import type { PreApplied } from '@mgn901/mgn901-utils-ts/pre-apply';
+import type { Filters, FromRepository, OrderBy } from '@mgn901/mgn901-utils-ts/repository-utils';
 import type {
   AccessControlServiceDependencies,
-  verifyAccessToken,
-  verifyGroupMember,
-  verifyItemOperationPermission,
+  PreAppliedVerifyAccessToken,
+  PreAppliedVerifyGroupMember,
+  PreAppliedVerifyItemOperationPermission,
 } from '../../lib/access-control.ts';
 import type {
   ClientContextMap,
@@ -11,8 +13,6 @@ import type {
 } from '../../lib/context.ts';
 import type { LanguageCode } from '../../lib/i18n.ts';
 import { generateId } from '../../lib/random-values/id.ts';
-import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
-import type { PreApplied } from '../../lib/type-utils.ts';
 import type { Name, Title, TitleForUrl } from '../../values.ts';
 import type { GroupId } from '../group/values.ts';
 import type { sbullasyDefaultItemTypes } from './default-item-types.ts';
@@ -224,12 +224,7 @@ export interface ScheduledEventRepository {
   getMany(
     this: ScheduledEventRepository,
     params: {
-      readonly filters?:
-        | (Filters<ScheduledEvent> & {
-            readonly from?: Date | undefined;
-            readonly until?: Date | undefined;
-          })
-        | undefined;
+      readonly filters?: Filters<ScheduledEvent> | undefined;
       readonly orderBy: OrderBy<
         ScheduledEvent & { readonly startedAt: 'asc' | 'desc'; readonly endedAt: 'asc' | 'desc' }
       >;
@@ -241,12 +236,7 @@ export interface ScheduledEventRepository {
   getDetailedMany(
     this: ScheduledEventRepository,
     params: {
-      readonly filters?:
-        | (Filters<ScheduledEvent> & {
-            readonly from?: Date | undefined;
-            readonly until?: Date | undefined;
-          })
-        | undefined;
+      readonly filters?: Filters<ScheduledEvent> | undefined;
       readonly orderBy: OrderBy<
         ScheduledEvent & { readonly startedAt: 'asc' | 'desc'; readonly endedAt: 'asc' | 'desc' }
       >;
@@ -257,12 +247,7 @@ export interface ScheduledEventRepository {
 
   count(
     this: ScheduledEventRepository,
-    params: {
-      readonly filters?: Filters<ScheduledEvent> & {
-        readonly from?: Date | undefined;
-        readonly until?: Date | undefined;
-      };
-    },
+    params: { readonly filters?: Filters<ScheduledEvent> | undefined },
   ): Promise<number>;
 
   createOne(this: ScheduledEventRepository, scheduledEvent: ScheduledEvent): Promise<void>;
@@ -282,15 +267,15 @@ export interface ScheduledEventRepository {
 //#region ScheduledEventService
 export interface ScheduledEventServiceDependencies {
   readonly verifyAccessToken: PreApplied<
-    typeof verifyAccessToken,
+    PreAppliedVerifyAccessToken,
     AccessControlServiceDependencies
   >;
   readonly verifyGroupMember: PreApplied<
-    typeof verifyGroupMember,
+    PreAppliedVerifyGroupMember,
     AccessControlServiceDependencies
   >;
   readonly verifyItemOperationPermission: PreApplied<
-    typeof verifyItemOperationPermission,
+    PreAppliedVerifyItemOperationPermission,
     AccessControlServiceDependencies
   >;
   readonly scheduledEventRepository: ScheduledEventRepository;
@@ -302,7 +287,8 @@ export interface ScheduledEventServiceDependencies {
  * @throws アイテムが見つからない場合、または、下書き状態のアイテムを所有グループに所属していないユーザが取得しようとしている場合は、{@linkcode Exception}（`item.notExists`）を投げる。
  */
 export const getOneById = async <
-  TTypeName extends (typeof sbullasyDefaultItemTypes)[string]['name'],
+  TTypeName extends
+    (typeof sbullasyDefaultItemTypes)[keyof typeof sbullasyDefaultItemTypes]['name'],
   TId extends ItemId,
   TLang extends LanguageCode,
 >(
@@ -334,7 +320,8 @@ export const getOneById = async <
  * @throws アイテムが見つからない場合、または、下書き状態のアイテムを所有グループに所属していないユーザが取得しようとしている場合は、{@linkcode Exception}（`item.notExists`）を投げる。
  */
 export const getOneByName = async <
-  TTypeName extends (typeof sbullasyDefaultItemTypes)[string]['name'],
+  TTypeName extends
+    (typeof sbullasyDefaultItemTypes)[keyof typeof sbullasyDefaultItemTypes]['name'],
   TName extends Name,
   TLang extends LanguageCode,
 >(
@@ -366,7 +353,8 @@ export const getOneByName = async <
  * @throws アイテムが見つからない場合、または、下書き状態のアイテムを所有グループに所属していないユーザが取得しようとしている場合は、{@linkcode Exception}（`item.notExists`）を投げる。
  */
 export const getOneByTitleForUrl = async <
-  TTypeName extends (typeof sbullasyDefaultItemTypes)[string]['name'],
+  TTypeName extends
+    (typeof sbullasyDefaultItemTypes)[keyof typeof sbullasyDefaultItemTypes]['name'],
   TTitleForUrl extends TitleForUrl,
   TLang extends LanguageCode,
 >(
@@ -395,12 +383,7 @@ export const getOneByTitleForUrl = async <
 
 export const getMany = async (
   params: {
-    readonly filters?:
-      | (Filters<ScheduledEvent> & {
-          readonly from?: Date | undefined;
-          readonly until?: Date | undefined;
-        })
-      | undefined;
+    readonly filters?: Filters<ScheduledEvent> | undefined;
     readonly orderBy: OrderBy<
       ScheduledEvent & { readonly startedAt: 'asc' | 'desc'; readonly endedAt: 'asc' | 'desc' }
     >;
@@ -439,7 +422,8 @@ export const getMany = async (
  * @throws アイテムのプロパティがスキーマに従っていない場合は、{@linkcode Exception}（`item.propertiesInvalid`）を投げる。
  */
 export const createOne = async <
-  TTypeName extends (typeof sbullasyDefaultItemTypes)[string]['name'],
+  TTypeName extends
+    (typeof sbullasyDefaultItemTypes)[keyof typeof sbullasyDefaultItemTypes]['name'],
 >(
   params: {
     readonly typeName: TTypeName;
@@ -474,7 +458,8 @@ export const createOne = async <
  * @throws アイテムのプロパティがスキーマに従っていない場合は、{@linkcode Exception}（`item.propertiesInvalid`）を投げる。
  */
 export const createTranslated = async <
-  TTypeName extends (typeof sbullasyDefaultItemTypes)[string]['name'],
+  TTypeName extends
+    (typeof sbullasyDefaultItemTypes)[keyof typeof sbullasyDefaultItemTypes]['name'],
 >(
   params: { readonly typeName: TTypeName } & Pick<
     ScheduledEvent,
@@ -508,7 +493,8 @@ export const createTranslated = async <
  * @throws アイテムのプロパティがスキーマに従っていない場合は、{@linkcode Exception}（`item.propertiesInvalid`）を投げる。
  */
 export const updateOne = async <
-  TTypeName extends (typeof sbullasyDefaultItemTypes)[string]['name'],
+  TTypeName extends
+    (typeof sbullasyDefaultItemTypes)[keyof typeof sbullasyDefaultItemTypes]['name'],
 >(
   params: { readonly typeName: TTypeName } & Pick<
     ScheduledEvent,

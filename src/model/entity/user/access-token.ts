@@ -1,7 +1,9 @@
-import type { NominalPrimitive } from '../../../utils/type-utils.ts';
+import type { NominalPrimitive } from '@mgn901/mgn901-utils-ts/nominal-primitive.type';
+import type { PreApplied } from '@mgn901/mgn901-utils-ts/pre-apply';
+import type { Filters, FromRepository, OrderBy } from '@mgn901/mgn901-utils-ts/repository-utils';
 import type {
   AccessControlServiceDependencies,
-  verifyAccessToken,
+  PreAppliedVerifyAccessToken,
 } from '../../lib/access-control.ts';
 import type {
   ClientContextMap,
@@ -12,8 +14,6 @@ import type {
 import { Exception } from '../../lib/exception.ts';
 import { generateId, type Id } from '../../lib/random-values/id.ts';
 import { generateLongSecret, type LongSecret } from '../../lib/random-values/long-secret.ts';
-import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
-import type { PreApplied } from '../../lib/type-utils.ts';
 import type { UserId } from './values.ts';
 
 //#region AccessTokenConfigurationMap
@@ -180,7 +180,7 @@ export interface AccessTokenServiceDependencies {
   readonly contextRepository: ContextRepository<AccessTokenConfigurationMap>;
   readonly clientContextRepository: ContextRepository<ClientContextMap & LogInUserClientContextMap>;
   readonly verifyAccessToken: PreApplied<
-    typeof verifyAccessToken,
+    PreAppliedVerifyAccessToken,
     AccessControlServiceDependencies
   >;
 }

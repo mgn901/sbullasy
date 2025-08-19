@@ -1,15 +1,15 @@
+import type { PreApplied } from '@mgn901/mgn901-utils-ts/pre-apply';
+import type { Filters, FromRepository, OrderBy } from '@mgn901/mgn901-utils-ts/repository-utils';
 import type {
   AccessControlServiceDependencies,
-  verifyAccessToken,
-  verifyInstanceAdmin,
+  PreAppliedVerifyAccessToken,
+  PreAppliedVerifyInstanceAdmin,
 } from '../../lib/access-control.ts';
 import type {
   ClientContextMap,
   ContextRepository,
   LogInUserClientContextMap,
 } from '../../lib/context.ts';
-import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
-import type { PreApplied } from '../../lib/type-utils.ts';
 import type { BadgeTypeName } from './badge-type.ts';
 import type { GroupId } from './values.ts';
 
@@ -76,11 +76,11 @@ export interface BadgeRepository {
 //#region BadgeService
 export interface BadgeServiceDependencies {
   readonly verifyAccessToken: PreApplied<
-    typeof verifyAccessToken,
+    PreAppliedVerifyAccessToken,
     AccessControlServiceDependencies
   >;
   readonly verifyInstanceAdmin: PreApplied<
-    typeof verifyInstanceAdmin,
+    PreAppliedVerifyInstanceAdmin,
     AccessControlServiceDependencies
   >;
   readonly badgeRepository: BadgeRepository;

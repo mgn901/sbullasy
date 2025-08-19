@@ -41,6 +41,8 @@ export const sbullasyDefaultItemTypes = {
       courses: 'ref:course[]',
       /** 受講対象の学年 */
       grades: 'ref:grade[]',
+      /** 単位数 */
+      units: 'std:number',
       /** 教科書 */
       textbooks: 'std:string',
       /** 参考資料 */

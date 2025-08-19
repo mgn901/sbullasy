@@ -1,4 +1,4 @@
-import type { NominalPrimitive } from '../../../utils/type-utils.ts';
+import type { NominalPrimitive } from '@mgn901/mgn901-utils-ts/nominal-primitive.type';
 
 /**
  * エンティティ`E`のID文字列を表す公称プリミティブ型。

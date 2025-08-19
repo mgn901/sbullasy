@@ -1,14 +1,14 @@
+import type { PreApplied } from '@mgn901/mgn901-utils-ts/pre-apply';
+import type { Filters, FromRepository, OrderBy } from '@mgn901/mgn901-utils-ts/repository-utils';
 import type {
   AccessControlServiceDependencies,
-  verifyAccessToken,
+  PreAppliedVerifyAccessToken,
 } from '../../lib/access-control.ts';
 import type {
   ClientContextMap,
   ContextRepository,
   LogInUserClientContextMap,
 } from '../../lib/context.ts';
-import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
-import type { PreApplied } from '../../lib/type-utils.ts';
 import type { Item, ItemId, WithDetailedLinks } from '../item/item.ts';
 import type { ItemTypeName } from '../item/item-type.ts';
 import type { UserId } from '../user/values.ts';
@@ -108,7 +108,7 @@ export interface BookmarkRepository {
 //#region BookmarkService
 export interface BookmarkServiceDependencies {
   readonly verifyAccessToken: PreApplied<
-    typeof verifyAccessToken,
+    PreAppliedVerifyAccessToken,
     AccessControlServiceDependencies
   >;
   readonly bookmarkRepository: BookmarkRepository;

@@ -1,5 +1,5 @@
+import { intersect } from '@mgn901/mgn901-utils-ts/set-operations';
 import type { LanguageCode } from 'iso-639-1';
-import { intersect } from '../../utils/set-operations/intersect.ts';
 import type { I18nMap } from './context.ts';
 
 export type { LanguageCode };

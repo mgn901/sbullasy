@@ -1,8 +1,10 @@
+import type { NominalPrimitive } from '@mgn901/mgn901-utils-ts/nominal-primitive.type';
+import type { PreApplied } from '@mgn901/mgn901-utils-ts/pre-apply';
+import type { Filters, FromRepository, OrderBy } from '@mgn901/mgn901-utils-ts/repository-utils';
 import {
   calculateNextExecutionDate,
   type TimeWindowRateLimitationRule,
-} from '../../../utils/time-window-rate-limitation.ts';
-import type { NominalPrimitive } from '../../../utils/type-utils.ts';
+} from '@mgn901/mgn901-utils-ts/time-window-rate-limitation';
 import type {
   ClientContextMap,
   ContextMap,
@@ -11,18 +13,16 @@ import type {
   SystemConfigurationMap,
 } from '../../lib/context.ts';
 import type {
-  answer,
-  cancel,
   EmailVerificationChallengeId,
   EmailVerificationChallengeVerificationCode,
   EmailVerificationServiceDependencies,
-  send,
+  PreAppliedAnswer,
+  PreAppliedCancel,
+  PreAppliedSend,
 } from '../../lib/email-verification.ts';
 import { Exception } from '../../lib/exception.ts';
 import { localize } from '../../lib/i18n.ts';
 import { generateId, type Id } from '../../lib/random-values/id.ts';
-import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
-import type { PreApplied } from '../../lib/type-utils.ts';
 import type { EmailAddress } from '../../values.ts';
 import {
   type AccessTokenConfigurationMap,
@@ -298,15 +298,15 @@ export interface AuthenticationAttemptRepository {
 //#region UserAuthenticationService
 export interface UserAuthenticationServiceDependencies {
   readonly sendEmailVerificationChallenge: PreApplied<
-    typeof send,
+    PreAppliedSend,
     EmailVerificationServiceDependencies
   >;
   readonly answerEmailVerificationChallenge: PreApplied<
-    typeof answer,
+    PreAppliedAnswer,
     EmailVerificationServiceDependencies
   >;
   readonly cancelEmailVerificationChallenge: PreApplied<
-    typeof cancel,
+    PreAppliedCancel,
     EmailVerificationServiceDependencies
   >;
   readonly authenticationAttemptRepository: AuthenticationAttemptRepository;
@@ -352,7 +352,7 @@ export const requestLogInOrRegistrationWithEmailVerification = async (
         await params.authenticationAttemptRepository.getMany({
           filters: {
             emailAddress: params.emailAddress,
-            attemptedAt: { from: startOfLastTimeWindow },
+            attemptedAt: ['gte', startOfLastTimeWindow],
           },
           orderBy: { attemptedAt: 'asc' },
           limit: 1,
@@ -362,7 +362,7 @@ export const requestLogInOrRegistrationWithEmailVerification = async (
       params.authenticationAttemptRepository.count({
         filters: {
           emailAddress: params.emailAddress,
-          attemptedAt: { from: startOfLastTimeWindow },
+          attemptedAt: ['gte', startOfLastTimeWindow],
         },
       }),
   });

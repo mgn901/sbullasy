@@ -1,4 +1,4 @@
-import type { OmitIndexSignature } from '../../utils/type-utils.ts';
+import type { OmitIndexSignature } from '@mgn901/mgn901-utils-ts/utils.type';
 import type { AccessTokenSecret } from '../entity/user/access-token.ts';
 import type { LanguageCode } from './i18n.ts';
 

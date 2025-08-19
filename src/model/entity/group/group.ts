@@ -1,8 +1,10 @@
+import type { PreApplied } from '@mgn901/mgn901-utils-ts/pre-apply';
+import type { Filters, FromRepository, OrderBy } from '@mgn901/mgn901-utils-ts/repository-utils';
 import type {
   AccessControlServiceDependencies,
-  verifyAccessToken,
-  verifyCertifiedUser,
-  verifyGroupAdmin,
+  PreAppliedVerifyAccessToken,
+  PreAppliedVerifyCertifiedUser,
+  PreAppliedVerifyGroupAdmin,
 } from '../../lib/access-control.ts';
 import type {
   ClientContextMap,
@@ -11,8 +13,6 @@ import type {
 } from '../../lib/context.ts';
 import { Exception } from '../../lib/exception.ts';
 import { generateId } from '../../lib/random-values/id.ts';
-import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
-import type { PreApplied } from '../../lib/type-utils.ts';
 import type { DisplayName, Name } from '../../values.ts';
 import type { FileId, FileRepository } from '../file/file.ts';
 import type { ItemRepository } from '../item/item.ts';
@@ -157,14 +157,17 @@ export interface GroupRepository {
 //#region GroupService
 export interface GroupServiceDependencies {
   readonly verifyAccessToken: PreApplied<
-    typeof verifyAccessToken,
+    PreAppliedVerifyAccessToken,
     AccessControlServiceDependencies
   >;
   readonly verifyCertifiedUser: PreApplied<
-    typeof verifyCertifiedUser,
+    PreAppliedVerifyCertifiedUser,
     AccessControlServiceDependencies
   >;
-  readonly verifyGroupAdmin: PreApplied<typeof verifyGroupAdmin, AccessControlServiceDependencies>;
+  readonly verifyGroupAdmin: PreApplied<
+    PreAppliedVerifyGroupAdmin,
+    AccessControlServiceDependencies
+  >;
   readonly groupRepository: GroupRepository;
   readonly groupInvitationRepository: GroupInvitationRepository;
   readonly groupMemberRepository: GroupMemberRepository;

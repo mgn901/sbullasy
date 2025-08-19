@@ -1,10 +1,12 @@
-import type { NominalPrimitive } from '../../../utils/type-utils.ts';
+import type { NominalPrimitive } from '@mgn901/mgn901-utils-ts/nominal-primitive.type';
+import type { PreApplied } from '@mgn901/mgn901-utils-ts/pre-apply';
+import type { Filters, FromRepository, OrderBy } from '@mgn901/mgn901-utils-ts/repository-utils';
 import type {
   AccessControlServiceDependencies,
-  verifyAccessToken,
-  verifyCertifiedUser,
-  verifyGroupAdmin,
-  verifyGroupMember,
+  PreAppliedVerifyAccessToken,
+  PreAppliedVerifyCertifiedUser,
+  PreAppliedVerifyGroupAdmin,
+  PreAppliedVerifyGroupMember,
 } from '../../lib/access-control.ts';
 import type {
   ClientContextMap,
@@ -13,8 +15,6 @@ import type {
 } from '../../lib/context.ts';
 import { Exception } from '../../lib/exception.ts';
 import { generateShortSecret, type ShortSecret } from '../../lib/random-values/short-secret.ts';
-import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
-import type { PreApplied } from '../../lib/type-utils.ts';
 import type { UserId } from '../user/values.ts';
 import type { GroupRepository } from './group.ts';
 import type { GroupId } from './values.ts';
@@ -172,18 +172,21 @@ export interface GroupInvitationRepository {
 //#region GroupMemberService
 export interface GroupMemberServiceDependencies {
   readonly verifyAccessToken: PreApplied<
-    typeof verifyAccessToken,
+    PreAppliedVerifyAccessToken,
     AccessControlServiceDependencies
   >;
   readonly verifyCertifiedUser: PreApplied<
-    typeof verifyCertifiedUser,
+    PreAppliedVerifyCertifiedUser,
     AccessControlServiceDependencies
   >;
   readonly verifyGroupMember: PreApplied<
-    typeof verifyGroupMember,
+    PreAppliedVerifyGroupMember,
     AccessControlServiceDependencies
   >;
-  readonly verifyGroupAdmin: PreApplied<typeof verifyGroupAdmin, AccessControlServiceDependencies>;
+  readonly verifyGroupAdmin: PreApplied<
+    PreAppliedVerifyGroupAdmin,
+    AccessControlServiceDependencies
+  >;
   readonly groupRepository: GroupRepository;
   readonly groupMemberRepository: GroupMemberRepository;
   readonly groupInvitationRepository: GroupInvitationRepository;

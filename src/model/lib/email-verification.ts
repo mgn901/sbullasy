@@ -1,10 +1,10 @@
-import type { ExecutionQueue } from '../../utils/execution-queue.ts';
-import type { ArrowFunction, NominalPrimitive } from '../../utils/type-utils.ts';
+import type { Cancel, Enqueue, ExecutionId } from '@mgn901/mgn901-utils-ts/execution-queue';
+import type { NominalPrimitive } from '@mgn901/mgn901-utils-ts/nominal-primitive.type';
+import type { Filters, FromRepository } from '@mgn901/mgn901-utils-ts/repository-utils';
 import type { EmailAddress } from '../values.ts';
 import { Exception } from './exception.ts';
 import { generateId, type Id } from './random-values/id.ts';
 import { generateShortSecret, type ShortSecret } from './random-values/short-secret.ts';
-import type { Filters, FromRepository } from './repository.ts';
 import { renderTemplate } from './template.ts';
 
 //#region Email and EmailClient
@@ -30,22 +30,14 @@ export const EmailReducers = {
 };
 
 /** Eメールクライアント。 */
-export interface EmailClient {
+export type EmailClient = {
   /** 指定されたEメールを送信する。 */
-  send(this: EmailClient, email: Email): Promise<void>;
-}
+  send(this: unknown, email: Email): Promise<void>;
+};
 //#endregion
 
 //#region EmailQueue
-const emailQueueExecutionTypeSymbol = Symbol('emailQueueExecution.type');
-
-export type EmailQueueExecutionId = NominalPrimitive<Id, typeof emailQueueExecutionTypeSymbol>;
-
-export type EmailQueue = ExecutionQueue<
-  EmailQueueExecutionId,
-  ArrowFunction<EmailClient['send']>,
-  void
->;
+export type EmailQueue = { readonly enqueue: Enqueue<[email: Email]>; readonly cancel: Cancel };
 //#endregion
 
 //#region EmailVerificationChallenge and EmailVerificationChallengeRepository
@@ -93,7 +85,7 @@ export type EmailVerificationChallengeSent = EmailVerificationChallengeBase & {
   readonly status: 'sent' | 'completed' | 'canceled';
   readonly sentAt: Date;
   readonly expiredAt: Date;
-  readonly associatedExecutionId: EmailQueueExecutionId;
+  readonly associatedExecutionId: ExecutionId;
 };
 
 /** {@linkcode EmailVerificationChallenge}の状態を変更するための関数を提供する。 */
@@ -120,7 +112,7 @@ export const EmailVerificationChallengeReducers = {
       /** 確認コードの回答期限を指定する。 */
       readonly expiredAt: TNewExpiredAt;
     },
-    TAssociatedExecutionId extends EmailQueueExecutionId,
+    TAssociatedExecutionId extends ExecutionId,
     TSentAt extends Date,
     TNewExpiredAt extends Date,
   >(
@@ -250,15 +242,15 @@ export const send = async (
     values: valuesForTemplatePlaceholdersModified,
   });
 
-  const execution = await params.emailQueue.enqueue([
+  const execution = await params.emailQueue.enqueue(
     EmailReducers.create({ to: [params.emailAddress], subject: emailSubject, body: emailBody }),
-  ]);
+  );
 
   const sentAt = execution.executedAt;
   const expiredAt = new Date(sentAt.getTime() + params.expiredAfterMs);
 
   const challengeSent = EmailVerificationChallengeReducers.toSent(challenge, {
-    associatedExecutionId: execution.id,
+    associatedExecutionId: execution.executionId,
     sentAt,
     expiredAt,
   });
@@ -267,6 +259,10 @@ export const send = async (
 
   return { id: challengeSent.id, sentAt, expiredAt };
 };
+
+export type PreAppliedSend = (
+  params: Omit<Parameters<typeof send>[0], keyof EmailVerificationServiceDependencies>,
+) => ReturnType<typeof send>;
 
 /**
  * Eメールアドレス確認に回答する。
@@ -298,6 +294,10 @@ export const answer = async (
   return { isCorrect: result.isCorrect };
 };
 
+export type PreAppliedAnswer = (
+  params: Omit<Parameters<typeof answer>[0], keyof EmailVerificationServiceDependencies>,
+) => ReturnType<typeof answer>;
+
 /**
  * Eメールアドレス確認を中止する。
  */
@@ -319,3 +319,7 @@ export const cancel = async (
   await params.emailVerificationChallengeRepository.updateOne(challengeCanceled);
 };
 //#endregion
+
+export type PreAppliedCancel = (
+  params: Omit<Parameters<typeof cancel>[0], keyof EmailVerificationServiceDependencies>,
+) => ReturnType<typeof cancel>;
