@@ -1,4 +1,4 @@
-import { intersect } from '../../../utils/set-operations/intersect.ts';
+import { intersect } from '@mgn901/mgn901-utils-ts/set-operations';
 import { isId } from '../../lib/random-values/id.ts';
 import { isName } from '../../values.ts';
 import type { ItemLinkDetailed, ItemLinkSummary } from './item.ts';

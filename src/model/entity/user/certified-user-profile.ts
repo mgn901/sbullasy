@@ -1,8 +1,10 @@
-import type { NominalPrimitive } from '../../../utils/type-utils.ts';
+import type { NominalPrimitive } from '@mgn901/mgn901-utils-ts/nominal-primitive.type';
+import type { PreApplied } from '@mgn901/mgn901-utils-ts/pre-apply';
+import type { FromRepository } from '@mgn901/mgn901-utils-ts/repository-utils';
 import type {
   AccessControlServiceDependencies,
-  verifyAccessToken,
-  verifyCertifiedUser,
+  PreAppliedVerifyAccessToken,
+  PreAppliedVerifyCertifiedUser,
 } from '../../lib/access-control.ts';
 import type {
   ClientContextMap,
@@ -13,17 +15,15 @@ import type {
   SystemConfigurationMap,
 } from '../../lib/context.ts';
 import type {
-  answer,
   EmailVerificationChallengeId,
   EmailVerificationChallengeVerificationCode,
   EmailVerificationServiceDependencies,
-  send,
+  PreAppliedAnswer,
+  PreAppliedSend,
 } from '../../lib/email-verification.ts';
 import { Exception } from '../../lib/exception.ts';
 import { localize } from '../../lib/i18n.ts';
 import { generateId, type Id } from '../../lib/random-values/id.ts';
-import type { FromRepository } from '../../lib/repository.ts';
-import type { PreApplied } from '../../lib/type-utils.ts';
 import type { DisplayName, EmailAddress, Name } from '../../values.ts';
 import type { MembershipRepository } from './membership.ts';
 import {
@@ -267,19 +267,19 @@ export interface UserCertificationRequestRepository {
 //#region CertifiedUserProfileService
 export interface CertifiedUserProfileServiceDependencies {
   readonly verifyAccessToken: PreApplied<
-    typeof verifyAccessToken,
+    PreAppliedVerifyAccessToken,
     AccessControlServiceDependencies
   >;
   readonly verifyCertifiedUser: PreApplied<
-    typeof verifyCertifiedUser,
+    PreAppliedVerifyCertifiedUser,
     AccessControlServiceDependencies
   >;
   readonly sendEmailVerificationChallenge: PreApplied<
-    typeof send,
+    PreAppliedSend,
     EmailVerificationServiceDependencies
   >;
   readonly answerEmailVerificationChallenge: PreApplied<
-    typeof answer,
+    PreAppliedAnswer,
     EmailVerificationServiceDependencies
   >;
   readonly certifiedUserProfileRepository: CertifiedUserProfileRepository;

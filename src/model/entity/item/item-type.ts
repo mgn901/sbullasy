@@ -1,4 +1,4 @@
-import type { NominalPrimitive } from '../../../utils/type-utils.ts';
+import type { NominalPrimitive } from '@mgn901/mgn901-utils-ts/nominal-primitive.type';
 import type { I18nMap } from '../../lib/context.ts';
 import type { Name } from '../../values.ts';
 

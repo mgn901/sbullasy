@@ -1,9 +1,11 @@
+import type { NominalPrimitive } from '@mgn901/mgn901-utils-ts/nominal-primitive.type';
+import type { PreApplied } from '@mgn901/mgn901-utils-ts/pre-apply';
+import type { Filters, FromRepository, OrderBy } from '@mgn901/mgn901-utils-ts/repository-utils';
 import { getMimeTypeFromStream } from '../../../utils/stream.ts';
-import type { NominalPrimitive } from '../../../utils/type-utils.ts';
 import type {
   AccessControlServiceDependencies,
-  verifyAccessToken,
-  verifyGroupMember,
+  PreAppliedVerifyAccessToken,
+  PreAppliedVerifyGroupMember,
 } from '../../lib/access-control.ts';
 import type {
   ClientContextMap,
@@ -12,8 +14,6 @@ import type {
 } from '../../lib/context.ts';
 import { Exception } from '../../lib/exception.ts';
 import { generateId, type Id } from '../../lib/random-values/id.ts';
-import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
-import type { PreApplied } from '../../lib/type-utils.ts';
 import type { GroupId } from '../group/values.ts';
 
 //#region FileMetadata and FileRepository
@@ -102,11 +102,11 @@ export interface FileRepository {
 //#region FileService
 export interface FileServiceDependencies {
   readonly verifyAccessToken: PreApplied<
-    typeof verifyAccessToken,
+    PreAppliedVerifyAccessToken,
     AccessControlServiceDependencies
   >;
   readonly verifyGroupMember: PreApplied<
-    typeof verifyGroupMember,
+    PreAppliedVerifyGroupMember,
     AccessControlServiceDependencies
   >;
   readonly fileRepository: FileRepository;

@@ -1,9 +1,11 @@
-import type { NominalPrimitive } from '../../../utils/type-utils.ts';
+import type { NominalPrimitive } from '@mgn901/mgn901-utils-ts/nominal-primitive.type';
+import type { PreApplied } from '@mgn901/mgn901-utils-ts/pre-apply';
+import type { Filters, FromRepository, OrderBy } from '@mgn901/mgn901-utils-ts/repository-utils';
 import type {
   AccessControlServiceDependencies,
-  verifyAccessToken,
-  verifyGroupMember,
-  verifyItemOperationPermission,
+  PreAppliedVerifyAccessToken,
+  PreAppliedVerifyGroupMember,
+  PreAppliedVerifyItemOperationPermission,
 } from '../../lib/access-control.ts';
 import type {
   ClientContextMap,
@@ -13,8 +15,6 @@ import type {
 import { Exception } from '../../lib/exception.ts';
 import type { LanguageCode } from '../../lib/i18n.ts';
 import { generateId, type Id, isId } from '../../lib/random-values/id.ts';
-import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
-import type { PreApplied } from '../../lib/type-utils.ts';
 import type { Name, Title, TitleForUrl } from '../../values.ts';
 import type { Group } from '../group/group.ts';
 import type { GroupId } from '../group/values.ts';
@@ -242,7 +242,7 @@ export interface ItemRepository {
   getMany(
     this: ItemRepository,
     params: {
-      readonly filters?: Filters<Item>;
+      readonly filters?: Filters<Item> | undefined;
       readonly orderBy: OrderBy<Item>;
       readonly offset?: number | undefined;
       readonly limit?: number | undefined;
@@ -252,7 +252,7 @@ export interface ItemRepository {
   getDetailedMany(
     this: ItemRepository,
     params: {
-      readonly filters?: Filters<Item>;
+      readonly filters?: Filters<Item> | undefined;
       readonly orderBy: OrderBy<Item>;
       readonly offset?: number | undefined;
       readonly limit?: number | undefined;
@@ -274,15 +274,15 @@ export interface ItemRepository {
 //#region ItemService
 export interface ItemServiceDependencies {
   readonly verifyAccessToken: PreApplied<
-    typeof verifyAccessToken,
+    PreAppliedVerifyAccessToken,
     AccessControlServiceDependencies
   >;
   readonly verifyGroupMember: PreApplied<
-    typeof verifyGroupMember,
+    PreAppliedVerifyGroupMember,
     AccessControlServiceDependencies
   >;
   readonly verifyItemOperationPermission: PreApplied<
-    typeof verifyItemOperationPermission,
+    PreAppliedVerifyItemOperationPermission,
     AccessControlServiceDependencies
   >;
   readonly itemRepository: ItemRepository;
@@ -294,7 +294,8 @@ export interface ItemServiceDependencies {
  * @throws アイテムが見つからない場合、または、下書き状態のアイテムを所有グループに所属していないユーザが取得しようとしている場合は、{@linkcode Exception}（`item.notExists`）を投げる。
  */
 export const getOneById = async <
-  TTypeName extends (typeof sbullasyDefaultItemTypes)[string]['name'],
+  TTypeName extends
+    (typeof sbullasyDefaultItemTypes)[keyof typeof sbullasyDefaultItemTypes]['name'],
   TId extends ItemId,
   TLang extends LanguageCode,
 >(
@@ -322,7 +323,8 @@ export const getOneById = async <
  * @throws アイテムが見つからない場合、または、下書き状態のアイテムを所有グループに所属していないユーザが取得しようとしている場合は、{@linkcode Exception}（`item.notExists`）を投げる。
  */
 export const getOneByName = async <
-  TTypeName extends (typeof sbullasyDefaultItemTypes)[string]['name'],
+  TTypeName extends
+    (typeof sbullasyDefaultItemTypes)[keyof typeof sbullasyDefaultItemTypes]['name'],
   TName extends Name,
   TLang extends LanguageCode,
 >(
@@ -350,7 +352,8 @@ export const getOneByName = async <
  * @throws アイテムが見つからない場合、または、下書き状態のアイテムを所有グループに所属していないユーザが取得しようとしている場合は、{@linkcode Exception}（`item.notExists`）を投げる。
  */
 export const getOneByTitleForUrl = async <
-  TTypeName extends (typeof sbullasyDefaultItemTypes)[string]['name'],
+  TTypeName extends
+    (typeof sbullasyDefaultItemTypes)[keyof typeof sbullasyDefaultItemTypes]['name'],
   TTitleForUrl extends TitleForUrl,
   TLang extends LanguageCode,
 >(
@@ -415,7 +418,7 @@ export const getOneBase = async <T extends Item>(
  */
 export const getMany = async (
   params: {
-    readonly filters?: Filters<Item>;
+    readonly filters?: Filters<Item> | undefined;
     readonly orderBy: OrderBy<Item>;
     readonly offset?: number | undefined;
     readonly limit?: number | undefined;
@@ -446,9 +449,7 @@ export const getMany = async (
 export const getManyBase = async <
   T extends FromRepository<Item>,
   P extends {
-    readonly filters?:
-      | { readonly publishedAt?: Date | { readonly until?: Date | undefined } | undefined }
-      | undefined;
+    readonly filters?: Filters<Item> | undefined;
   },
 >(
   params: P & {
@@ -488,7 +489,7 @@ export const getManyBase = async <
 
   const items = await params.getFromRepository({
     ...params,
-    filters: { ...params.filters, publishedAt: { until: new Date() } },
+    filters: { publishedAt: ['lte', new Date()], ...params.filters },
   });
 
   return { items };
@@ -501,7 +502,8 @@ export const getManyBase = async <
  * @throws アイテムのプロパティがスキーマに従っていない場合は、{@linkcode Exception}（`item.propertiesInvalid`）を投げる。
  */
 export const createOne = async <
-  TTypeName extends (typeof sbullasyDefaultItemTypes)[string]['name'],
+  TTypeName extends
+    (typeof sbullasyDefaultItemTypes)[keyof typeof sbullasyDefaultItemTypes]['name'],
 >(
   params: {
     readonly typeName: TTypeName;
@@ -569,7 +571,8 @@ export const createOneBase = async <T extends Item>(
  * @throws アイテムのプロパティがスキーマに従っていない場合は、{@linkcode Exception}（`item.propertiesInvalid`）を投げる。
  */
 export const createTranslated = async <
-  TTypeName extends (typeof sbullasyDefaultItemTypes)[string]['name'],
+  TTypeName extends
+    (typeof sbullasyDefaultItemTypes)[keyof typeof sbullasyDefaultItemTypes]['name'],
 >(
   params: { readonly typeName: TTypeName } & Pick<
     Item,
@@ -645,7 +648,8 @@ export const createTranslatedBase = async <T extends Item>(
  * @throws アイテムのプロパティがスキーマに従っていない場合は、{@linkcode Exception}（`item.propertiesInvalid`）を投げる。
  */
 export const updateOne = async <
-  TTypeName extends (typeof sbullasyDefaultItemTypes)[string]['name'],
+  TTypeName extends
+    (typeof sbullasyDefaultItemTypes)[keyof typeof sbullasyDefaultItemTypes]['name'],
 >(
   params: { readonly typeName: TTypeName } & Pick<
     Item,
@@ -724,7 +728,8 @@ export const updateOneBase = async <O extends FromRepository<Item>, T extends Fr
  * - この操作を行うユーザは、削除しようとしているアイテムの所有グループに所属している必要がある。
  */
 export const deleteOne = async <
-  TTypeName extends (typeof sbullasyDefaultItemTypes)[string]['name'],
+  TTypeName extends
+    (typeof sbullasyDefaultItemTypes)[keyof typeof sbullasyDefaultItemTypes]['name'],
 >(
   params: {
     readonly typeName: TTypeName;

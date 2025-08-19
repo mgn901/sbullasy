@@ -1,7 +1,10 @@
-import type { NominalPrimitive } from '../../../utils/type-utils.ts';
+import type { NominalPrimitive } from '@mgn901/mgn901-utils-ts/nominal-primitive.type';
+import type { PreApplied } from '@mgn901/mgn901-utils-ts/pre-apply';
+import type { Filters, FromRepository, OrderBy } from '@mgn901/mgn901-utils-ts/repository-utils';
+import type { PickEssential } from '@mgn901/mgn901-utils-ts/utils.type';
 import type {
   AccessControlServiceDependencies,
-  verifyAccessToken,
+  PreAppliedVerifyAccessToken,
 } from '../../lib/access-control.ts';
 import type {
   ClientContextMap,
@@ -12,18 +15,16 @@ import type {
   SystemConfigurationMap,
 } from '../../lib/context.ts';
 import type {
-  answer,
-  cancel,
   EmailVerificationChallengeId,
   EmailVerificationChallengeVerificationCode,
   EmailVerificationServiceDependencies,
-  send,
+  PreAppliedAnswer,
+  PreAppliedCancel,
+  PreAppliedSend,
 } from '../../lib/email-verification.ts';
 import { Exception } from '../../lib/exception.ts';
 import { localize } from '../../lib/i18n.ts';
 import { generateId, type Id } from '../../lib/random-values/id.ts';
-import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
-import type { PickEssential, PreApplied } from '../../lib/type-utils.ts';
 import type { EmailAddress } from '../../values.ts';
 import type { BookmarkRepository } from '../bookmark/bookmark.ts';
 import type { AccessTokenRepository } from './access-token.ts';
@@ -94,7 +95,7 @@ export const UserAccountReducers = {
    * 新しい{@linkcode UserAccount}を作成して返す。
    */
   create: <P extends { readonly emailAddress: TEmailAddress }, TEmailAddress extends EmailAddress>(
-    params: PickEssential<P, keyof UserAccount>,
+    params: P,
   ): UserAccount & Pick<P, 'emailAddress'> =>
     ({
       [userAccountTypeSymbol]: userAccountTypeSymbol,
@@ -239,26 +240,29 @@ export interface UserAccountEmailAddressUpdateRequestRepository {
     userAccountEmailAddressUpdateRequest: FromRepository<UserAccountEmailAddressUpdateRequest>,
   ): Promise<void>;
 
-  deleteOneById(id: UserAccountEmailAddressUpdateRequestId): Promise<void>;
+  deleteOneById(
+    this: UserAccountEmailAddressUpdateRequestRepository,
+    id: UserAccountEmailAddressUpdateRequestId,
+  ): Promise<void>;
 }
 //#endregion
 
 //#region UserAccountService
 export interface UserAccountServiceDependencies {
   readonly sendEmailVerificationChallenge: PreApplied<
-    typeof send,
+    PreAppliedSend,
     EmailVerificationServiceDependencies
   >;
   readonly answerEmailVerificationChallenge: PreApplied<
-    typeof answer,
+    PreAppliedAnswer,
     EmailVerificationServiceDependencies
   >;
   readonly cancelEmailVerificationChallenge: PreApplied<
-    typeof cancel,
+    PreAppliedCancel,
     EmailVerificationServiceDependencies
   >;
   readonly verifyAccessToken: PreApplied<
-    typeof verifyAccessToken,
+    PreAppliedVerifyAccessToken,
     AccessControlServiceDependencies
   >;
   readonly userAccountRepository: UserAccountRepository;

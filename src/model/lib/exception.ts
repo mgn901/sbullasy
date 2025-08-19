@@ -45,7 +45,7 @@ export class Exception<TExceptionName extends ExceptionName> extends Error {
     readonly message?: string;
     readonly exceptionName: TExceptionName;
   }): Exception<TExceptionName> {
-    return Exception.create(params);
+    return new Exception(params);
   }
 
   //#region constructors

@@ -1,15 +1,15 @@
+import type { PreApplied } from '@mgn901/mgn901-utils-ts/pre-apply';
+import type { Filters, FromRepository, OrderBy } from '@mgn901/mgn901-utils-ts/repository-utils';
 import type {
   AccessControlServiceDependencies,
-  verifyAccessToken,
-  verifyGroupMember,
+  PreAppliedVerifyAccessToken,
+  PreAppliedVerifyGroupMember,
 } from '../../lib/access-control.ts';
 import type {
   ClientContextMap,
   ContextRepository,
   LogInUserClientContextMap,
 } from '../../lib/context.ts';
-import type { Filters, FromRepository, OrderBy } from '../../lib/repository.ts';
-import type { PreApplied } from '../../lib/type-utils.ts';
 import type { CertifiedUserProfile } from '../user/certified-user-profile.ts';
 import type { Member } from './member.ts';
 import type { GroupId } from './values.ts';
@@ -40,11 +40,11 @@ export interface MemberProfileRepository {
 
 export interface MemberProfileServiceDependencies {
   readonly verifyAccessToken: PreApplied<
-    typeof verifyAccessToken,
+    PreAppliedVerifyAccessToken,
     AccessControlServiceDependencies
   >;
   readonly verifyGroupMember: PreApplied<
-    typeof verifyGroupMember,
+    PreAppliedVerifyGroupMember,
     AccessControlServiceDependencies
   >;
   readonly memberProfileRepository: MemberProfileRepository;
