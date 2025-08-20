@@ -3,11 +3,11 @@ import { type GroupMemberRepository, type Member, MemberReducers } from '../enti
 import type { PermissionRepository, PermissionType } from '../entity/group/permission.ts';
 import type { GroupId } from '../entity/group/values.ts';
 import type { ItemTypeName } from '../entity/item/item-type.ts';
-import {
-  type AccessToken,
-  AccessTokenReducers,
-  type AccessTokenRepository,
-  type AccessTokenSecret,
+import type {
+  AccessToken,
+  AccessTokenRenewedEventRepository,
+  AccessTokenRepository,
+  AccessTokenSecret,
 } from '../entity/user/access-token.ts';
 import {
   type CertifiedUserProfile,
@@ -15,12 +15,16 @@ import {
   type CertifiedUserProfileRepository,
 } from '../entity/user/certified-user-profile.ts';
 import type { MembershipRepository } from '../entity/user/membership.ts';
+import type { SessionRepository, SessionRevokedEventRepository } from '../entity/user/session.ts';
 import type { UserAccount, UserAccountRepository } from '../entity/user/user-account.ts';
 import type { UserId } from '../entity/user/values.ts';
 import { Exception } from './exception.ts';
 
 export interface AccessControlServiceDependencies {
   readonly accessTokenRepository: AccessTokenRepository;
+  readonly accessTokenRenewedEventRepository: AccessTokenRenewedEventRepository;
+  readonly sessionRepository: SessionRepository;
+  readonly sessionTokenRevokedEventRepository: SessionRevokedEventRepository;
   readonly userAccountRepository: UserAccountRepository;
   readonly certifiedUserProfileRepository: CertifiedUserProfileRepository;
   readonly groupMemberRepository: GroupMemberRepository;
@@ -33,22 +37,32 @@ export const verifyAccessToken = async (
   params: { readonly accessTokenSecret: AccessTokenSecret } & AccessControlServiceDependencies,
 ): Promise<{
   readonly myUserAccount: FromRepository<UserAccount>;
-  readonly myAccessToken: FromRepository<AccessToken> & { readonly status: 'valid' };
+  readonly myAccessToken: FromRepository<AccessToken>;
 }> => {
   const myAccessToken = await params.accessTokenRepository.getOneBySecret(params.accessTokenSecret);
-  if (myAccessToken === undefined || !AccessTokenReducers.isValid(myAccessToken)) {
+  const { isAccessTokenRenewed, session, myUserAccount } = myAccessToken?.id
+    ? {
+        isAccessTokenRenewed:
+          (await params.accessTokenRenewedEventRepository.getOneById(myAccessToken.id)) ?? false,
+        session: await params.sessionRepository.getOneById(myAccessToken?.sessionId),
+        myUserAccount: await params.userAccountRepository.getOneById(myAccessToken?.logInUserId),
+      }
+    : { isAccessTokenRenewed: false, session: undefined, myUserAccount: undefined };
+  const isSessionRevoked = session?.id
+    ? ((await params.sessionTokenRevokedEventRepository.getOneById(session.id)) ?? false)
+    : false;
+  if (
+    myAccessToken === undefined ||
+    myAccessToken.expiredAt < new Date() ||
+    session === undefined ||
+    isAccessTokenRenewed ||
+    isSessionRevoked ||
+    myUserAccount === undefined
+  ) {
     throw Exception.create({ exceptionName: 'accessControl.notAuthorized' });
   }
 
-  const myUserAccount = await params.userAccountRepository.getOneById(myAccessToken.logInUserId);
-  if (myUserAccount === undefined) {
-    throw Exception.create({ exceptionName: 'accessControl.notAuthorized' });
-  }
-
-  const myAccessTokenUpdated = AccessTokenReducers.toLastUsedAtUpdated(myAccessToken);
-  await params.accessTokenRepository.updateOne(myAccessTokenUpdated);
-
-  return { myUserAccount, myAccessToken: myAccessTokenUpdated };
+  return { myUserAccount, myAccessToken };
 };
 
 export type PreAppliedVerifyAccessToken = (

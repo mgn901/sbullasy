@@ -12,6 +12,7 @@ type ExceptionName =
   | 'authentication.notExists'
   | 'authentication.verificationCodeIncorrect'
   | 'authentication.tooManyRequests'
+  | 'session.notExists'
   | 'group.notExists'
   | 'group.deletingInstanceAdmin'
   | 'groupInvitation.notExists'

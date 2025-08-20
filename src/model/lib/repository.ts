@@ -26,10 +26,16 @@ export type UpdateOne<T> = (this: unknown, value: T) => Promise<void>;
 
 export type DeleteOneBy<TId> = (this: unknown, id: TId) => Promise<void>;
 
+export type DeleteMany<T> = (
+  this: unknown,
+  params: { readonly filters?: Filters<T> },
+) => Promise<void>;
+
 export type Repository<T, TId, TKeyOfId extends keyof T> = {
   readonly getOneById: GetOneBy<T, TId, TKeyOfId>;
   readonly getMany: GetMany<T>;
   readonly count: Count<T>;
   readonly createOne: CreateOne<T>;
   readonly deleteOneById: GetOneBy<T, TId, TKeyOfId>;
+  readonly deleteMany: DeleteMany<T>;
 };

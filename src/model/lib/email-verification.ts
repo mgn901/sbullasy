@@ -8,13 +8,13 @@ import type { CreateOne, DeleteOneBy, GetOneBy } from './repository.ts';
 import { renderTemplate } from './template.ts';
 
 //#region Email
-const emailTypeSymbol = Symbol('email.type');
+const emailIdSymbol = Symbol('email.id');
 
-export type EmailId = NominalPrimitive<Id, typeof emailTypeSymbol>;
+export type EmailId = NominalPrimitive<Id, typeof emailIdSymbol>;
 
-export type Email = ReturnType<typeof createEmail>;
+export type Email = ReturnType<typeof newEmailFrom>;
 
-export const createEmail = <
+export const newEmailFrom = <
   P extends { to: readonly EmailAddress[]; subject: string; body: string },
 >(
   params: Readonly<P>,
@@ -36,26 +36,26 @@ export type EmailQueue = { readonly enqueue: Enqueue<[email: Email]>; readonly c
 //#endregion
 
 //#region EmailVerificationChallenge
-export const emailVerificationChallengeTypeSymbol = Symbol('emailVerificationChallengeBase.type');
+export const emailVerificationChallengeIdSymbol = Symbol('emailVerificationChallengeBase.id');
 export const emailVerificationChallengeCorrectVerificationCodeSymbol = Symbol(
   'emailVerificationChallengeBase.correctVerificationCode',
 );
 export type EmailVerificationChallengeId = NominalPrimitive<
   Id,
-  typeof emailVerificationChallengeTypeSymbol
+  typeof emailVerificationChallengeIdSymbol
 >;
 export type EmailVerificationChallengeVerificationCode = NominalPrimitive<
   ShortSecret,
-  typeof emailVerificationChallengeTypeSymbol
+  typeof emailVerificationChallengeIdSymbol
 >;
 
-export type EmailVerificationChallenge = ReturnType<typeof createEmailVerificationChallenge>;
+export type EmailVerificationChallenge = ReturnType<typeof newEmailVerificationChallengeFrom>;
 
-export const createEmailVerificationChallenge = <P extends { emailAddress: EmailAddress }>(
+export const newEmailVerificationChallengeFrom = <P extends { emailAddress: EmailAddress }>(
   params: Readonly<P>,
 ) =>
   ({
-    [emailVerificationChallengeTypeSymbol]: emailVerificationChallengeTypeSymbol,
+    type: 'emailVerificationChallenge',
     id: generateId() as EmailVerificationChallengeId,
     emailAddress: params.emailAddress,
     [emailVerificationChallengeCorrectVerificationCodeSymbol]:
@@ -69,18 +69,14 @@ export type EmailVerificationChallengeRepository = {
 };
 //#endregion
 
-export const emailVerificationChallengeEventDataTypeSymbol = Symbol(
-  'emailVerificationChallengeEvent.type',
-);
-
 //#region EmailVerificationChallengeSentEventData
 export type EmailVerificationChallengeSentEventData = ReturnType<
-  typeof createEmailVerificationChallengeSentEventData
+  typeof newEmailVerificationChallengeSentEventDataFrom
 >;
 
-export const createEmailVerificationChallengeSentEventData = <
+export const newEmailVerificationChallengeSentEventDataFrom = <
   P extends {
-    id: EmailVerificationChallengeId;
+    emailVerificationChallengeId: EmailVerificationChallengeId;
     sentAt: Date;
     expiredAt: Date;
     associatedExecutionId: ExecutionId;
@@ -89,9 +85,8 @@ export const createEmailVerificationChallengeSentEventData = <
   params: Readonly<P>,
 ) =>
   ({
-    [emailVerificationChallengeEventDataTypeSymbol]: emailVerificationChallengeEventDataTypeSymbol,
     type: 'emailVerificationChallenge.sent',
-    id: params.id,
+    emailVerificationChallengeId: params.emailVerificationChallengeId,
     sentAt: params.sentAt,
     expiredAt: params.expiredAt,
     associatedExecutionId: params.associatedExecutionId,
@@ -101,7 +96,7 @@ export type EmailVerificationChallengeSentEventDataRepository = {
   readonly getOneById: GetOneBy<
     EmailVerificationChallengeSentEventData,
     EmailVerificationChallengeId,
-    'id'
+    'emailVerificationChallengeId'
   >;
   readonly createOne: CreateOne<EmailVerificationChallengeSentEventData>;
   readonly deleteOneById: DeleteOneBy<EmailVerificationChallengeId>;
@@ -110,18 +105,17 @@ export type EmailVerificationChallengeSentEventDataRepository = {
 
 //#region EmailVerificationChallengeCompletedEventData
 export type EmailVerificationChallengeCompletedEventData = ReturnType<
-  typeof createEmailVerificationChallengeCompletedEventData
+  typeof newEmailVerificationChallengeCompletedEventDataFrom
 >;
 
-export const createEmailVerificationChallengeCompletedEventData = <
-  P extends { id: EmailVerificationChallengeId; completedAt: Date },
+export const newEmailVerificationChallengeCompletedEventDataFrom = <
+  P extends { emailVerificationChallengeId: EmailVerificationChallengeId; completedAt: Date },
 >(
   params: Readonly<P>,
 ) =>
   ({
-    [emailVerificationChallengeEventDataTypeSymbol]: emailVerificationChallengeEventDataTypeSymbol,
     type: 'emailVerificationChallenge.completed',
-    id: params.id,
+    emailVerificationChallengeId: params.emailVerificationChallengeId,
     completedAt: params.completedAt,
   }) as const;
 
@@ -129,7 +123,7 @@ export type EmailVerificationChallengeCompletedEventDataRepository = {
   readonly getOneById: GetOneBy<
     EmailVerificationChallengeCompletedEventData,
     EmailVerificationChallengeId,
-    'id'
+    'emailVerificationChallengeId'
   >;
   readonly createOne: CreateOne<EmailVerificationChallengeCompletedEventData>;
   readonly deleteOneById: DeleteOneBy<EmailVerificationChallengeId>;
@@ -138,18 +132,17 @@ export type EmailVerificationChallengeCompletedEventDataRepository = {
 
 //#region EmailVerificationChallengeCanceledEventData
 export type EmailVerificationChallengeCanceledEventData = ReturnType<
-  typeof createEmailVerificationChallengeCanceledEventData
+  typeof newEmailVerificationChallengeCanceledEventDataFrom
 >;
 
-export const createEmailVerificationChallengeCanceledEventData = <
-  P extends { id: EmailVerificationChallengeId; canceledAt: Date },
+export const newEmailVerificationChallengeCanceledEventDataFrom = <
+  P extends { emailVerificationChallengeId: EmailVerificationChallengeId; canceledAt: Date },
 >(
   params: Readonly<P>,
 ) =>
   ({
-    [emailVerificationChallengeEventDataTypeSymbol]: emailVerificationChallengeEventDataTypeSymbol,
     type: 'emailVerificationChallenge.canceled',
-    id: params.id,
+    emailVerificationChallengeId: params.emailVerificationChallengeId,
     canceledAt: params.canceledAt,
   }) as const;
 
@@ -157,7 +150,7 @@ export type EmailVerificationChallengeCanceledEventDataRepository = {
   readonly getOneById: GetOneBy<
     EmailVerificationChallengeCanceledEventData,
     EmailVerificationChallengeId,
-    'id'
+    'emailVerificationChallengeId'
   >;
   readonly createOne: CreateOne<EmailVerificationChallengeCanceledEventData>;
   readonly deleteOneById: DeleteOneBy<EmailVerificationChallengeId>;
@@ -191,7 +184,7 @@ export const sendEmailVerificationChallenge = async (
   readonly sentAt: Date;
   readonly expiredAt: Date;
 }> => {
-  const challenge = createEmailVerificationChallenge({
+  const challenge = newEmailVerificationChallengeFrom({
     emailAddress: params.emailAddress,
   });
   await params.emailVerificationChallengeRepository.createOne(challenge);
@@ -210,15 +203,15 @@ export const sendEmailVerificationChallenge = async (
     template: params.emailBodyTemplate,
     values: valuesForTemplatePlaceholdersModified,
   });
-  const email = createEmail({ to: [params.emailAddress], subject: emailSubject, body: emailBody });
+  const email = newEmailFrom({ to: [params.emailAddress], subject: emailSubject, body: emailBody });
 
   const { executionId: associatedExecutionId, executedAt: sentAt } =
     await params.emailQueue.enqueue(email);
 
   const expiredAt = new Date(sentAt.getTime() + params.expiredAfterMs);
   await params.emailVerificationChallengeSentEventDataRepository.createOne(
-    createEmailVerificationChallengeSentEventData({
-      id: challenge.id,
+    newEmailVerificationChallengeSentEventDataFrom({
+      emailVerificationChallengeId: challenge.id,
       sentAt,
       expiredAt,
       associatedExecutionId,
@@ -271,7 +264,10 @@ export const answerEmailVerificationChallenge = async (
   }
 
   await params.emailVerificationChallengeCompletedEventDataRepository.createOne(
-    createEmailVerificationChallengeCompletedEventData({ id: challenge.id, completedAt: now }),
+    newEmailVerificationChallengeCompletedEventDataFrom({
+      emailVerificationChallengeId: challenge.id,
+      completedAt: now,
+    }),
   );
 
   return { isCorrect: true };
@@ -309,7 +305,10 @@ export const cancelEmailVerificationChallenge = async (
   await params.emailQueue.cancel(sentEventData.associatedExecutionId);
 
   await params.emailVerificationChallengeCanceledEventDataRepository.createOne(
-    createEmailVerificationChallengeCanceledEventData({ id: challenge.id, canceledAt: new Date() }),
+    newEmailVerificationChallengeCanceledEventDataFrom({
+      emailVerificationChallengeId: challenge.id,
+      canceledAt: new Date(),
+    }),
   );
 };
 

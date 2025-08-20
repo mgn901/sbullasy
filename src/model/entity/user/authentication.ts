@@ -1,5 +1,4 @@
 import type { NominalPrimitive } from '@mgn901/mgn901-utils-ts/nominal-primitive.type';
-import type { FromRepository } from '@mgn901/mgn901-utils-ts/repository-utils';
 import {
   calculateNextExecutionDate,
   type TimeWindowRateLimitationRule,
@@ -25,11 +24,12 @@ import type { Repository } from '../../lib/repository.ts';
 import type { EmailAddress } from '../../values.ts';
 import {
   type AccessTokenConfigurationMap,
-  AccessTokenReducers,
   type AccessTokenRepository,
   type AccessTokenSecret,
   accessTokenSecretSymbol,
+  newSessionAccessTokenFrom,
 } from './access-token.ts';
+import { newSessionFrom, type Session, type SessionId, type SessionRepository } from './session.ts';
 import {
   type UserAccount,
   UserAccountReducers,
@@ -42,9 +42,9 @@ export interface AuthenticationConfigurationMap extends ContextMap {
   readonly 'authentication.registration.emailSubjectTemplate': I18nMap;
   readonly 'authentication.registration.emailBodyTemplate': I18nMap;
   readonly 'authentication.registration.expiredAfterMs': number;
-  readonly 'authentication.logIn.expiredAfterMs': number;
-  readonly 'authentication.logIn.emailSubject': I18nMap;
+  readonly 'authentication.logIn.emailSubjectTemplate': I18nMap;
   readonly 'authentication.logIn.emailBodyTemplate': I18nMap;
+  readonly 'authentication.logIn.expiredAfterMs': number;
 }
 
 const authenticationDefaultConfigurationMap = {
@@ -60,7 +60,7 @@ Verification code: \${emailVerification.verificationCode}
 
 [!] Don't share your verification code with anyone.
 
-* If you already have your \${system.displayName} user account, the email address you entered on the \${system.displayName} logIn screen may be incorrect. Use the email address you entered when you previously created your account.
+* If you already have your \${system.displayName} user account, the email address you entered on the \${system.displayName} log in screen may be incorrect. Use the email address you entered when you previously created your account.
 * This email is automatically sent from the \${system.displayName} server. You cannot reply to this email.
 * In the case that this email is unexpected, please discard this email.
 `,
@@ -77,13 +77,13 @@ Verification code: \${emailVerification.verificationCode}
 `,
   },
   'authentication.registration.expiredAfterMs': 5 * 60 * 1000,
-  'authentication.logIn.emailSubject': {
-    en: '[${system.displayName}] Confirm and enter the verification code to complete the logIn',
+  'authentication.logIn.emailSubjectTemplate': {
+    en: '[${system.displayName}] Confirm and enter the verification code to complete the log in',
     ja: '【${system.displayName}】確認コードを確認・入力してログインを完了してください',
   },
   'authentication.logIn.emailBodyTemplate': {
     en: `You are about to log in to the \${system.displayName} app.
-Please enter the following verification code into the \${system.displayName} app to complete the logIn.
+Please enter the following verification code into the \${system.displayName} app to complete the log in.
 
 Verification code: \${emailVerification.verificationCode}
 
@@ -108,28 +108,23 @@ Verification code: \${emailVerification.verificationCode}
 //#endregion
 
 //#region UserAuthenticationAttempt
-export const authenticationAttemptTypeSymbol = Symbol('authenticationAttempt.type');
-export const userAccountRegistrationAttemptTypeSymbol = Symbol(
-  'userAccountRegistrationAttempt.type',
-);
-export const logInAttemptTypeSymbol = Symbol('logInAttempt.type');
-
-export type AuthenticationAttemptId = NominalPrimitive<Id, typeof authenticationAttemptTypeSymbol>;
+export const authenticationAttemptIdSymbol = Symbol('authenticationAttempt.id');
+export type AuthenticationAttemptId = NominalPrimitive<Id, typeof authenticationAttemptIdSymbol>;
 
 /**
- * 認証（ユーザアカウント作成、ログイン）の試行を表す。
+ * 1回の認証（ユーザアカウント作成、ログイン）の試行を表す。
  *
- * Eメールアドレス確認を用いた認証試行では、ユーザアカウントの作成やログインを行うために、クライアントは、その認証試行に関連付けて複数回サービスを呼び出す必要がある。
- * この型のオブジェクトは、認証試行が開始される際にその試行ごとに作成される。
- * 認証の完了や中止の際は、ユーザ認証の試行を指す識別子には、ユーザIDではなく、認証ごとに作成される認証試行のIDを用いる。
+ * - Eメールアドレス確認を用いた認証試行では、ユーザアカウントの作成やログインを行うために、クライアントは、その認証試行に関連付けて複数回サービスを呼び出す必要がある。
+ * - 認証試行オブジェクトは、認証試行が開始される際にその試行ごとに作成される。
+ * - 認証試行は{@linkcode AuthenticationAttemptCompletedEvent}で完了したり、{@linkcode AuthenticationAttemptCanceledEvent}で中止したりすることができる。
  */
 export type AuthenticationAttempt = UserAccountRegistrationAttempt | LogInAttempt;
 
 export type UserAccountRegistrationAttempt = ReturnType<
-  typeof createUserAccountRegistrationAttempt
+  typeof newUserAccountRegistrationAttemptFrom
 >;
 
-export const createUserAccountRegistrationAttempt = <
+export const newUserAccountRegistrationAttemptFrom = <
   P extends {
     emailAddress: EmailAddress;
     ipAddress: string;
@@ -140,8 +135,7 @@ export const createUserAccountRegistrationAttempt = <
   params: Readonly<P>,
 ) =>
   ({
-    [authenticationAttemptTypeSymbol]: authenticationAttemptTypeSymbol,
-    [userAccountRegistrationAttemptTypeSymbol]: userAccountRegistrationAttemptTypeSymbol,
+    type: 'userAccountRegistrationAttempt',
     id: generateId() as AuthenticationAttemptId,
     emailAddress: params.emailAddress,
     ipAddress: params.ipAddress,
@@ -150,41 +144,29 @@ export const createUserAccountRegistrationAttempt = <
     associatedEmailVerificationChallengeId: params.associatedEmailVerificationChallengeId,
   }) as const;
 
-export type LogInAttempt = ReturnType<typeof createLogInAttempt>;
+export type LogInAttempt = ReturnType<typeof newLogInAttemptFrom>;
 
-export const createLogInAttempt = <
+export const newLogInAttemptFrom = <
   P extends {
     emailAddress: EmailAddress;
-    ipAddress: string;
-    userAgent: string;
     logInUserId: UserId;
+    ipAddress: string;
+    userAgent: string;
     associatedEmailVerificationChallengeId: EmailVerificationChallengeId;
   },
 >(
   params: Readonly<P>,
 ) =>
   ({
-    [authenticationAttemptTypeSymbol]: authenticationAttemptTypeSymbol,
-    [logInAttemptTypeSymbol]: logInAttemptTypeSymbol,
+    type: 'logInAttempt',
     id: generateId() as AuthenticationAttemptId,
     emailAddress: params.emailAddress,
+    logInUserId: params.logInUserId,
     ipAddress: params.ipAddress,
     userAgent: params.userAgent,
-    logInUserId: params.logInUserId,
     attemptedAt: new Date(),
     associatedEmailVerificationChallengeId: params.associatedEmailVerificationChallengeId,
   }) as const;
-
-export const isUserAccountRegistrationAttempt = <S extends AuthenticationAttempt>(
-  self: S,
-): self is S & UserAccountRegistrationAttempt =>
-  userAccountRegistrationAttemptTypeSymbol in self &&
-  self[userAccountRegistrationAttemptTypeSymbol] === userAccountRegistrationAttemptTypeSymbol;
-
-export const isLogInAttempt = <S extends AuthenticationAttempt>(
-  self: S,
-): self is S & LogInAttempt =>
-  logInAttemptTypeSymbol in self && self[logInAttemptTypeSymbol] === logInAttemptTypeSymbol;
 
 export type AuthenticationAttemptRepository = Repository<
   AuthenticationAttempt,
@@ -193,55 +175,56 @@ export type AuthenticationAttemptRepository = Repository<
 >;
 //#endregion
 
-export const authenticationAttemptEventDataTypeSymbol = Symbol(
-  'authenticationAttemptEventData.type',
-);
-
-//#region AuthenticationAttemptCompletedEventData
-export type AuthenticationAttemptCompletedEventData = ReturnType<
-  typeof createAuthenticationAttemptCompletedEventData
+//#region AuthenticationAttemptCompletedEvent
+export type AuthenticationAttemptCompletedEvent = ReturnType<
+  typeof newAuthenticationAttemptCompletedEventFrom
 >;
 
-export const createAuthenticationAttemptCompletedEventData = <
-  P extends { id: AuthenticationAttemptId; completedAt: Date },
+export const newAuthenticationAttemptCompletedEventFrom = <
+  P extends {
+    authenticationAttemptId: AuthenticationAttemptId;
+    logInUserId: UserId;
+    sessionId: SessionId;
+    completedAt: Date;
+  },
 >(
   params: Readonly<P>,
 ) =>
   ({
-    [authenticationAttemptEventDataTypeSymbol]: authenticationAttemptEventDataTypeSymbol,
     type: 'authenticationAttempt.completed',
-    id: params.id,
+    authenticationAttemptId: params.authenticationAttemptId,
+    logInUserId: params.logInUserId,
+    sessionId: params.sessionId,
     completedAt: params.completedAt,
   }) as const;
 
-export type AuthenticationAttemptCompletedEventDataRepository = Repository<
-  AuthenticationAttemptCompletedEventData,
+export type AuthenticationAttemptCompletedEventRepository = Repository<
+  AuthenticationAttemptCompletedEvent,
   AuthenticationAttemptId,
-  'id'
+  'authenticationAttemptId'
 >;
 //#endregion
 
-//#region AuthenticationAttemptCanceledEventData
-export type AuthenticationAttemptCanceledEventData = ReturnType<
-  typeof createAuthenticationAttemptCanceledEventData
+//#region AuthenticationAttemptCanceledEvent
+export type AuthenticationAttemptCanceledEvent = ReturnType<
+  typeof newAuthenticationAttemptCanceledEventFrom
 >;
 
-export const createAuthenticationAttemptCanceledEventData = <
-  P extends { id: AuthenticationAttemptId; canceledAt: Date },
+export const newAuthenticationAttemptCanceledEventFrom = <
+  P extends { authenticationAttemptId: AuthenticationAttemptId; canceledAt: Date },
 >(
   params: Readonly<P>,
 ) =>
   ({
-    [authenticationAttemptEventDataTypeSymbol]: authenticationAttemptEventDataTypeSymbol,
     type: 'authenticationAttempt.canceled',
-    id: params.id,
+    authenticationAttemptId: params.authenticationAttemptId,
     canceledAt: params.canceledAt,
   }) as const;
 
-export type AuthenticationAttemptCanceledEventDataRepository = Repository<
-  AuthenticationAttemptCanceledEventData,
+export type AuthenticationAttemptCanceledEventRepository = Repository<
+  AuthenticationAttemptCanceledEvent,
   AuthenticationAttemptId,
-  'id'
+  'authenticationAttemptId'
 >;
 //#endregion
 
@@ -251,9 +234,10 @@ export type UserAuthenticationServiceDependencies = {
   readonly answerEmailVerificationChallenge: AnswerEmailVerificationChallenge;
   readonly cancelEmailVerificationChallenge: CancelEmailVerificationChallenge;
   readonly authenticationAttemptRepository: AuthenticationAttemptRepository;
-  readonly authenticationAttemptCompletedEventDataRepository: AuthenticationAttemptCompletedEventDataRepository;
-  readonly authenticationAttemptCanceledEventDataRepository: AuthenticationAttemptCanceledEventDataRepository;
+  readonly authenticationAttemptCompletedEventRepository: AuthenticationAttemptCompletedEventRepository;
+  readonly authenticationAttemptCanceledEventRepository: AuthenticationAttemptCanceledEventRepository;
   readonly userAccountRepository: UserAccountRepository;
+  readonly sessionRepository: SessionRepository;
   readonly accessTokenRepository: AccessTokenRepository;
   readonly contextRepository: ContextRepository<
     AuthenticationConfigurationMap & AccessTokenConfigurationMap & SystemConfigurationMap
@@ -263,8 +247,9 @@ export type UserAuthenticationServiceDependencies = {
 
 /**
  * Eメールアドレスを指定して、Eメールアドレス確認を用いた認証試行（ユーザアカウントの作成またはログイン。{@linkcode AuthenticationAttempt}）を開始する。
- * - 指定されたEメールアドレスに対応するユーザアカウントが存在する場合は、{@linkcode AccessTokenLogInRequested}を作成して、ログインの試行を開始する。
- * - 指定されたEメールアドレスに対応するユーザアカウントが存在しない場合は、{@linkcode UserAccountRegistrationRequested}を作成して、ユーザアカウント作成の試行を開始する。
+ * - 指定されたEメールアドレスに対応するユーザアカウントが存在する場合は、{@linkcode LogInAttempt}を作成して、ログインの試行を開始する。
+ * - 指定されたEメールアドレスに対応するユーザアカウントが存在しない場合は、{@linkcode UserAccountRegistrationAttempt}を作成して、ユーザアカウント作成の試行を開始する。
+ * - 指定されたEメールアドレスにEメールアドレス確認のための確認コードを送信する。
  * @returns 開始された認証試行のID、Eメールアドレス確認の送信日時、期限の日時を返す。
  * @throws 指定されたEメールアドレスに対する一定時間中の認証試行回数が制限を超えた場合は{@linkcode Exception}（`authentication.tooManyRequests`）を投げる。
  */
@@ -328,8 +313,9 @@ export type RequestLogInOrRegistrationWithEmailVerification = (
 
 /**
  * Eメールアドレス確認の確認コードが正しいのかを確認して、Eメールアドレス確認を用いた認証試行（ユーザアカウントの作成またはログイン）を完了する。
- * @returns アクセストークン（{@linkcode AccessToken}）のシークレットとアクセストークンの有効期限を返す。
- * @throws 認証試行が見つからない場合は{@linkcode Exception}（`authenitcation.notExists`）を投げる。
+ * - Eメールアドレス確認の確認コードが正しい場合は、新しいセッション（{@linkcode Session}）とアクセストークン（{@linkcode SessionAccessToken}）を作成する。
+ * @returns アクセストークンのシークレットとアクセストークンの有効期限を返す。
+ * @throws 認証試行が見つからない場合、完了済みの場合、中止済みの場合は{@linkcode Exception}（`authenitcation.notExists`）を投げる。
  * @throws Eメールアドレス確認の確認コードが正しくない場合は{@linkcode Exception}（`authenitcation.verificationCodeIncorrect`）を投げる。
  */
 export const completeLogInOrRegistrationWithEmailVerification = async (
@@ -343,15 +329,15 @@ export const completeLogInOrRegistrationWithEmailVerification = async (
 }> => {
   const attempt = await params.authenticationAttemptRepository.getOneById(params.id);
   const isCompleted =
-    (await params.authenticationAttemptCompletedEventDataRepository.getOneById(params.id)) ?? false;
+    (await params.authenticationAttemptCompletedEventRepository.getOneById(params.id)) ?? false;
   const isCanceled =
-    (await params.authenticationAttemptCanceledEventDataRepository.getOneById(params.id)) ?? false;
+    (await params.authenticationAttemptCanceledEventRepository.getOneById(params.id)) ?? false;
 
   if (attempt === undefined || isCompleted || isCanceled) {
     throw Exception.create({ exceptionName: 'authentication.notExists' });
   }
 
-  if (isLogInAttempt(attempt)) {
+  if (attempt.type === 'logInAttempt') {
     return completeLogInWithEmailVerification({ ...params, attempt });
   }
 
@@ -367,16 +353,16 @@ export type CompleteLogInOrRegistrationWithEmailVerification = (
 
 /**
  * Eメールアドレス確認を用いたユーザアカウントの作成またはログインを中止する。
- * @throws 認証試行が見つからない場合は{@linkcode Exception}（`authenitcation.notExists`）を投げる。
+ * @throws 認証試行が見つからない場合、完了済みの場合、中止済みの場合は{@linkcode Exception}（`authenitcation.notExists`）を投げる。
  */
 export const cancelLogInOrRegistrationWithEmailVerification = async (
   params: { readonly id: AuthenticationAttemptId } & UserAuthenticationServiceDependencies,
 ): Promise<void> => {
   const attempt = await params.authenticationAttemptRepository.getOneById(params.id);
   const isCompleted =
-    (await params.authenticationAttemptCompletedEventDataRepository.getOneById(params.id)) ?? false;
+    (await params.authenticationAttemptCompletedEventRepository.getOneById(params.id)) ?? false;
   const isCanceled =
-    (await params.authenticationAttemptCanceledEventDataRepository.getOneById(params.id)) ?? false;
+    (await params.authenticationAttemptCanceledEventRepository.getOneById(params.id)) ?? false;
 
   if (attempt === undefined || isCompleted || isCanceled) {
     throw Exception.create({ exceptionName: 'authentication.notExists' });
@@ -386,8 +372,11 @@ export const cancelLogInOrRegistrationWithEmailVerification = async (
     id: attempt.associatedEmailVerificationChallengeId,
   });
 
-  await params.authenticationAttemptCanceledEventDataRepository.createOne(
-    createAuthenticationAttemptCanceledEventData({ id: params.id, canceledAt: new Date() }),
+  await params.authenticationAttemptCanceledEventRepository.createOne(
+    newAuthenticationAttemptCanceledEventFrom({
+      authenticationAttemptId: params.id,
+      canceledAt: new Date(),
+    }),
   );
 };
 
@@ -426,7 +415,7 @@ const requestLogInWithEmailVerification = async (
     emailAddress: params.userAccount.emailAddress,
     emailSubjectTemplate: localize({
       acceptedLanguages,
-      i18nMap: params.contextRepository.get('authentication.logIn.emailSubject'),
+      i18nMap: params.contextRepository.get('authentication.logIn.emailSubjectTemplate'),
     }),
     emailBodyTemplate: localize({
       acceptedLanguages,
@@ -441,11 +430,11 @@ const requestLogInWithEmailVerification = async (
     },
   });
 
-  const attempt = createLogInAttempt({
+  const attempt = newLogInAttemptFrom({
     emailAddress: params.userAccount.emailAddress,
+    logInUserId: params.userAccount.id,
     ipAddress: params.ipAddress,
     userAgent: params.userAgent,
-    logInUserId: params.userAccount.id,
     associatedEmailVerificationChallengeId,
   });
   await params.authenticationAttemptRepository.createOne(attempt);
@@ -458,7 +447,7 @@ const requestLogInWithEmailVerification = async (
  */
 const completeLogInWithEmailVerification = async (
   params: {
-    readonly attempt: FromRepository<AuthenticationAttempt> & LogInAttempt;
+    readonly attempt: LogInAttempt;
     readonly enteredVerificationCode: EmailVerificationChallengeVerificationCode;
   } & UserAuthenticationServiceDependencies,
 ): Promise<{
@@ -473,17 +462,25 @@ const completeLogInWithEmailVerification = async (
     throw Exception.create({ exceptionName: 'authentication.verificationCodeIncorrect' });
   }
 
-  const accessToken = AccessTokenReducers.create({
-    ipAddress: params.attempt.ipAddress,
-    userAgent: params.attempt.userAgent,
+  const session = newSessionFrom({
     logInUserId: params.attempt.logInUserId,
+    logInIpAddress: params.attempt.ipAddress,
+    logInUserAgent: params.attempt.userAgent,
+  });
+  await params.sessionRepository.createOne(session);
+
+  const accessToken = newSessionAccessTokenFrom({
+    logInUserId: params.attempt.logInUserId,
+    sessionId: session.id,
     expiredAfterMs: params.contextRepository.get('accessToken.expiredAfterMs'),
   });
   await params.accessTokenRepository.createOne(accessToken);
 
-  await params.authenticationAttemptCompletedEventDataRepository.createOne(
-    createAuthenticationAttemptCompletedEventData({
-      id: params.attempt.id,
+  await params.authenticationAttemptCompletedEventRepository.createOne(
+    newAuthenticationAttemptCompletedEventFrom({
+      authenticationAttemptId: params.attempt.id,
+      logInUserId: params.attempt.logInUserId,
+      sessionId: session.id,
       completedAt: new Date(),
     }),
   );
@@ -534,7 +531,7 @@ const requestRegistrationWithEmailVerification = async (
     },
   });
 
-  const attempt = createUserAccountRegistrationAttempt({
+  const attempt = newUserAccountRegistrationAttemptFrom({
     emailAddress: params.emailAddress,
     ipAddress: params.ipAddress,
     userAgent: params.userAgent,
@@ -548,7 +545,7 @@ const requestRegistrationWithEmailVerification = async (
 /** Eメールアドレス確認の確認コードが正しいのかを確認して、Eメールアドレス確認を用いたユーザアカウントの作成を完了する。 */
 const completeRegistrationWithEmailVerification = async (
   params: {
-    readonly attempt: FromRepository<AuthenticationAttempt> & UserAccountRegistrationAttempt;
+    readonly attempt: UserAccountRegistrationAttempt;
     readonly enteredVerificationCode: EmailVerificationChallengeVerificationCode;
   } & UserAuthenticationServiceDependencies,
 ): Promise<{
@@ -566,17 +563,25 @@ const completeRegistrationWithEmailVerification = async (
   const userAccount = UserAccountReducers.create({ emailAddress: params.attempt.emailAddress });
   await params.userAccountRepository.createOne(userAccount);
 
-  const accessToken = AccessTokenReducers.create({
-    ipAddress: params.attempt.ipAddress,
-    userAgent: params.attempt.userAgent,
+  const session = newSessionFrom({
     logInUserId: userAccount.id,
+    logInIpAddress: params.attempt.ipAddress,
+    logInUserAgent: params.attempt.userAgent,
+  });
+  await params.sessionRepository.createOne(session);
+
+  const accessToken = newSessionAccessTokenFrom({
+    logInUserId: userAccount.id,
+    sessionId: session.id,
     expiredAfterMs: params.contextRepository.get('accessToken.expiredAfterMs'),
   });
   await params.accessTokenRepository.createOne(accessToken);
 
-  await params.authenticationAttemptCompletedEventDataRepository.createOne(
-    createAuthenticationAttemptCompletedEventData({
-      id: params.attempt.id,
+  await params.authenticationAttemptCompletedEventRepository.createOne(
+    newAuthenticationAttemptCompletedEventFrom({
+      authenticationAttemptId: params.attempt.id,
+      logInUserId: userAccount.id,
+      sessionId: session.id,
       completedAt: new Date(),
     }),
   );
