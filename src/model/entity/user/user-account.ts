@@ -15,12 +15,12 @@ import type {
   SystemConfigurationMap,
 } from '../../lib/context.ts';
 import type {
+  AnswerEmailVerificationChallenge,
+  CancelEmailVerificationChallenge,
   EmailVerificationChallengeId,
   EmailVerificationChallengeVerificationCode,
   EmailVerificationServiceDependencies,
-  PreAppliedAnswer,
-  PreAppliedCancel,
-  PreAppliedSend,
+  SendEmailVerificationChallenge,
 } from '../../lib/email-verification.ts';
 import { Exception } from '../../lib/exception.ts';
 import { localize } from '../../lib/i18n.ts';
@@ -250,15 +250,15 @@ export interface UserAccountEmailAddressUpdateRequestRepository {
 //#region UserAccountService
 export interface UserAccountServiceDependencies {
   readonly sendEmailVerificationChallenge: PreApplied<
-    PreAppliedSend,
+    SendEmailVerificationChallenge,
     EmailVerificationServiceDependencies
   >;
   readonly answerEmailVerificationChallenge: PreApplied<
-    PreAppliedAnswer,
+    AnswerEmailVerificationChallenge,
     EmailVerificationServiceDependencies
   >;
   readonly cancelEmailVerificationChallenge: PreApplied<
-    PreAppliedCancel,
+    CancelEmailVerificationChallenge,
     EmailVerificationServiceDependencies
   >;
   readonly verifyAccessToken: PreApplied<

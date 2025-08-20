@@ -1,37 +1,32 @@
 import type { Cancel, Enqueue, ExecutionId } from '@mgn901/mgn901-utils-ts/execution-queue';
 import type { NominalPrimitive } from '@mgn901/mgn901-utils-ts/nominal-primitive.type';
-import type { Filters, FromRepository } from '@mgn901/mgn901-utils-ts/repository-utils';
 import type { EmailAddress } from '../values.ts';
 import { Exception } from './exception.ts';
 import { generateId, type Id } from './random-values/id.ts';
 import { generateShortSecret, type ShortSecret } from './random-values/short-secret.ts';
+import type { CreateOne, DeleteOneBy, GetOneBy } from './repository.ts';
 import { renderTemplate } from './template.ts';
 
-//#region Email and EmailClient
+//#region Email
 const emailTypeSymbol = Symbol('email.type');
 
-/** Eメールを表す。 */
-export interface Email {
-  readonly id: NominalPrimitive<Id, typeof emailTypeSymbol>;
-  readonly to: readonly EmailAddress[];
-  readonly subject: string;
-  readonly body: string;
-}
+export type EmailId = NominalPrimitive<Id, typeof emailTypeSymbol>;
 
-/** {@linkcode Email}の状態を変更するための関数を提供する。 */
-export const EmailReducers = {
-  /** 新しいEメールを作成して返す。 */
-  create: (params: Pick<Email, 'to' | 'subject' | 'body'>): Email => ({
-    id: generateId() as Email['id'],
+export type Email = ReturnType<typeof createEmail>;
+
+export const createEmail = <
+  P extends { to: readonly EmailAddress[]; subject: string; body: string },
+>(
+  params: Readonly<P>,
+) =>
+  ({
+    id: generateId() as EmailId,
     to: params.to,
     subject: params.subject,
     body: params.body,
-  }),
-};
+  }) as const;
 
-/** Eメールクライアント。 */
 export type EmailClient = {
-  /** 指定されたEメールを送信する。 */
   send(this: unknown, email: Email): Promise<void>;
 };
 //#endregion
@@ -40,178 +35,150 @@ export type EmailClient = {
 export type EmailQueue = { readonly enqueue: Enqueue<[email: Email]>; readonly cancel: Cancel };
 //#endregion
 
-//#region EmailVerificationChallenge and EmailVerificationChallengeRepository
-const emailVerificationChallengeTypeSymbol = Symbol('emailVerificationChallengeBase.type');
-
-const correctVerificationCodeSymbol = Symbol(
+//#region EmailVerificationChallenge
+export const emailVerificationChallengeTypeSymbol = Symbol('emailVerificationChallengeBase.type');
+export const emailVerificationChallengeCorrectVerificationCodeSymbol = Symbol(
   'emailVerificationChallengeBase.correctVerificationCode',
 );
-
-export const emailVerificationChallengeSymbol = {
-  type: emailVerificationChallengeTypeSymbol,
-  correctVerificationCode: correctVerificationCodeSymbol,
-} as const;
-
 export type EmailVerificationChallengeId = NominalPrimitive<
   Id,
   typeof emailVerificationChallengeTypeSymbol
 >;
-
 export type EmailVerificationChallengeVerificationCode = NominalPrimitive<
   ShortSecret,
   typeof emailVerificationChallengeTypeSymbol
 >;
 
-/** Eメールアドレス確認を表す。 */
-export type EmailVerificationChallenge =
-  | EmailVerificationChallengePrepared
-  | EmailVerificationChallengeSent;
+export type EmailVerificationChallenge = ReturnType<typeof createEmailVerificationChallenge>;
 
-type EmailVerificationChallengeBase = {
-  readonly [emailVerificationChallengeTypeSymbol]: typeof emailVerificationChallengeTypeSymbol;
-  readonly id: EmailVerificationChallengeId;
-  readonly emailAddress: EmailAddress;
-  readonly [correctVerificationCodeSymbol]: EmailVerificationChallengeVerificationCode;
-  readonly status: 'prepared' | 'sent' | 'completed' | 'canceled';
+export const createEmailVerificationChallenge = <P extends { emailAddress: EmailAddress }>(
+  params: Readonly<P>,
+) =>
+  ({
+    [emailVerificationChallengeTypeSymbol]: emailVerificationChallengeTypeSymbol,
+    id: generateId() as EmailVerificationChallengeId,
+    emailAddress: params.emailAddress,
+    [emailVerificationChallengeCorrectVerificationCodeSymbol]:
+      generateShortSecret() as EmailVerificationChallengeVerificationCode,
+  }) as const;
+
+export type EmailVerificationChallengeRepository = {
+  readonly getOneById: GetOneBy<EmailVerificationChallenge, EmailVerificationChallengeId, 'id'>;
+  readonly createOne: CreateOne<EmailVerificationChallenge>;
+  readonly deleteOneById: DeleteOneBy<EmailVerificationChallengeId>;
 };
+//#endregion
 
-/** 送信準備が完了して、まだ送信はされていないEメールアドレス確認を表す。 */
-export type EmailVerificationChallengePrepared = EmailVerificationChallengeBase & {
-  readonly status: 'prepared';
-};
+export const emailVerificationChallengeEventDataTypeSymbol = Symbol(
+  'emailVerificationChallengeEvent.type',
+);
 
-/** 送信後のEメールアドレス確認を表す。 */
-export type EmailVerificationChallengeSent = EmailVerificationChallengeBase & {
-  readonly status: 'sent' | 'completed' | 'canceled';
-  readonly sentAt: Date;
-  readonly expiredAt: Date;
-  readonly associatedExecutionId: ExecutionId;
-};
+//#region EmailVerificationChallengeSentEventData
+export type EmailVerificationChallengeSentEventData = ReturnType<
+  typeof createEmailVerificationChallengeSentEventData
+>;
 
-/** {@linkcode EmailVerificationChallenge}の状態を変更するための関数を提供する。 */
-export const EmailVerificationChallengeReducers = {
-  /** 新しいEメールアドレス確認を作成する。 */
-  create: <P extends { readonly emailAddress: TEmailAddress }, TEmailAddress extends EmailAddress>(
-    params: P,
-  ): EmailVerificationChallengePrepared & Pick<P, 'emailAddress'> =>
-    ({
-      [emailVerificationChallengeTypeSymbol]: emailVerificationChallengeTypeSymbol,
-      id: generateId() as EmailVerificationChallengeId,
-      [correctVerificationCodeSymbol]:
-        generateShortSecret() as EmailVerificationChallengeVerificationCode,
-      emailAddress: params.emailAddress,
-      status: 'prepared',
-    }) as const,
-
-  /** 関連する{@linkcode EmailQueueExecutionId}と確認期限を設定して{@linkcode EmailVerificationChallengeSent}にしたものを返す。 */
-  toSent: <
-    S extends EmailVerificationChallengePrepared & { readonly status: 'prepared' },
-    P extends {
-      readonly associatedExecutionId: TAssociatedExecutionId;
-      readonly sentAt: TSentAt;
-      /** 確認コードの回答期限を指定する。 */
-      readonly expiredAt: TNewExpiredAt;
-    },
-    TAssociatedExecutionId extends ExecutionId,
-    TSentAt extends Date,
-    TNewExpiredAt extends Date,
-  >(
-    self: S,
-    params: P,
-  ): Omit<S, 'status'> &
-    EmailVerificationChallengeSent & { readonly status: 'sent' } & Pick<
-      P,
-      'sentAt' | 'expiredAt' | 'associatedExecutionId'
-    > =>
-    ({
-      ...self,
-      status: 'sent',
-      associatedExecutionId: params.associatedExecutionId,
-      sentAt: params.sentAt,
-      expiredAt: params.expiredAt,
-    }) as const,
-
-  /**
-   * 指定されたEメールアドレス確認に回答して、その結果を返す。
-   * - 確認コードが間違っている場合は不正解になる。
-   * - 確認コードが正しい場合は正解になり、Eメールアドレス確認が完了になる。
-   * @returns 確認コードが正しいかどうかと、確認の結果更新されたこのオブジェクトのコピーを返す。
-   */
-  answer: <S extends EmailVerificationChallengeSent & { readonly status: 'sent' }>(
-    self: S,
-    params: { readonly enteredVerificationCode: EmailVerificationChallengeVerificationCode },
-  ):
-    | { readonly isCorrect: false; readonly updatedEmailVerificationChallenge: S }
-    | {
-        readonly isCorrect: true;
-        readonly updatedEmailVerificationChallenge: S & { readonly status: 'completed' };
-      } => {
-    if (params.enteredVerificationCode !== self[correctVerificationCodeSymbol]) {
-      return { isCorrect: false, updatedEmailVerificationChallenge: self } as const;
-    }
-
-    return {
-      isCorrect: true,
-      updatedEmailVerificationChallenge: { ...self, status: 'completed' } as const,
-    } as const;
+export const createEmailVerificationChallengeSentEventData = <
+  P extends {
+    id: EmailVerificationChallengeId;
+    sentAt: Date;
+    expiredAt: Date;
+    associatedExecutionId: ExecutionId;
   },
+>(
+  params: Readonly<P>,
+) =>
+  ({
+    [emailVerificationChallengeEventDataTypeSymbol]: emailVerificationChallengeEventDataTypeSymbol,
+    type: 'emailVerificationChallenge.sent',
+    id: params.id,
+    sentAt: params.sentAt,
+    expiredAt: params.expiredAt,
+    associatedExecutionId: params.associatedExecutionId,
+  }) as const;
 
-  /** 指定されたEメールアドレス確認を中止にしたものを返す。 */
-  toCanceled: <S extends EmailVerificationChallengeSent & { readonly status: 'sent' }>(
-    self: S,
-  ): S & { readonly status: 'canceled' } => ({ ...self, status: 'canceled' }) as const,
-
-  isSent: <S extends EmailVerificationChallenge>(
-    self: S,
-  ): self is S & EmailVerificationChallengeSent => self.status !== 'prepared',
-
-  isNotTerminated: <S extends EmailVerificationChallenge>(
-    self: S,
-  ): self is S & { readonly status: Exclude<S['status'], 'completed' | 'canceled'> } =>
-    self.status !== 'completed' && self.status !== 'canceled',
+export type EmailVerificationChallengeSentEventDataRepository = {
+  readonly getOneById: GetOneBy<
+    EmailVerificationChallengeSentEventData,
+    EmailVerificationChallengeId,
+    'id'
+  >;
+  readonly createOne: CreateOne<EmailVerificationChallengeSentEventData>;
+  readonly deleteOneById: DeleteOneBy<EmailVerificationChallengeId>;
 };
+//#endregion
 
-/** {@linkcode EmailVerificationChallenge}を永続化するリポジトリ。 */
-export interface EmailVerificationChallengeRepository {
-  getOneById<TId extends EmailVerificationChallengeId>(
-    this: EmailVerificationChallengeRepository,
-    id: TId,
-  ): Promise<FromRepository<EmailVerificationChallenge & { readonly id: TId }> | undefined>;
+//#region EmailVerificationChallengeCompletedEventData
+export type EmailVerificationChallengeCompletedEventData = ReturnType<
+  typeof createEmailVerificationChallengeCompletedEventData
+>;
 
-  count(
-    this: EmailVerificationChallengeRepository,
-    params: { readonly filters?: Filters<EmailVerificationChallenge> },
-  ): Promise<number>;
+export const createEmailVerificationChallengeCompletedEventData = <
+  P extends { id: EmailVerificationChallengeId; completedAt: Date },
+>(
+  params: Readonly<P>,
+) =>
+  ({
+    [emailVerificationChallengeEventDataTypeSymbol]: emailVerificationChallengeEventDataTypeSymbol,
+    type: 'emailVerificationChallenge.completed',
+    id: params.id,
+    completedAt: params.completedAt,
+  }) as const;
 
-  createOne(
-    this: EmailVerificationChallengeRepository,
-    emailVerificationChallenge: EmailVerificationChallenge,
-  ): Promise<void>;
+export type EmailVerificationChallengeCompletedEventDataRepository = {
+  readonly getOneById: GetOneBy<
+    EmailVerificationChallengeCompletedEventData,
+    EmailVerificationChallengeId,
+    'id'
+  >;
+  readonly createOne: CreateOne<EmailVerificationChallengeCompletedEventData>;
+  readonly deleteOneById: DeleteOneBy<EmailVerificationChallengeId>;
+};
+//#endregion
 
-  updateOne(
-    this: EmailVerificationChallengeRepository,
-    emailVerificationChallenge: EmailVerificationChallenge,
-  ): Promise<void>;
+//#region EmailVerificationChallengeCanceledEventData
+export type EmailVerificationChallengeCanceledEventData = ReturnType<
+  typeof createEmailVerificationChallengeCanceledEventData
+>;
 
-  deleteOneById(
-    this: EmailVerificationChallengeRepository,
-    id: EmailVerificationChallengeId,
-  ): Promise<void>;
-}
+export const createEmailVerificationChallengeCanceledEventData = <
+  P extends { id: EmailVerificationChallengeId; canceledAt: Date },
+>(
+  params: Readonly<P>,
+) =>
+  ({
+    [emailVerificationChallengeEventDataTypeSymbol]: emailVerificationChallengeEventDataTypeSymbol,
+    type: 'emailVerificationChallenge.canceled',
+    id: params.id,
+    canceledAt: params.canceledAt,
+  }) as const;
+
+export type EmailVerificationChallengeCanceledEventDataRepository = {
+  readonly getOneById: GetOneBy<
+    EmailVerificationChallengeCanceledEventData,
+    EmailVerificationChallengeId,
+    'id'
+  >;
+  readonly createOne: CreateOne<EmailVerificationChallengeCanceledEventData>;
+  readonly deleteOneById: DeleteOneBy<EmailVerificationChallengeId>;
+};
 //#endregion
 
 //#region EmailVerificationService
-export interface EmailVerificationServiceDependencies {
+export type EmailVerificationServiceDependencies = {
   readonly emailQueue: EmailQueue;
   readonly emailVerificationChallengeRepository: EmailVerificationChallengeRepository;
-}
+  readonly emailVerificationChallengeSentEventDataRepository: EmailVerificationChallengeSentEventDataRepository;
+  readonly emailVerificationChallengeCompletedEventDataRepository: EmailVerificationChallengeCompletedEventDataRepository;
+  readonly emailVerificationChallengeCanceledEventDataRepository: EmailVerificationChallengeCanceledEventDataRepository;
+};
 
 /**
  * Eメールアドレス確認を送信する。
  * Eメールアドレス確認を作成し、その確認コードが含まれるEメールを送信する。
  * @returns Eメールアドレス確認のID、送信日時、確認期限を返す。
  */
-export const send = async (
+export const sendEmailVerificationChallenge = async (
   params: {
     readonly emailAddress: EmailAddress;
     readonly emailSubjectTemplate: string;
@@ -224,14 +191,16 @@ export const send = async (
   readonly sentAt: Date;
   readonly expiredAt: Date;
 }> => {
-  const challenge = EmailVerificationChallengeReducers.create({
+  const challenge = createEmailVerificationChallenge({
     emailAddress: params.emailAddress,
   });
+  await params.emailVerificationChallengeRepository.createOne(challenge);
 
   const valuesForTemplatePlaceholdersModified = {
     ...params.valuesForTemplatePlaceholders,
     'emailVerification.emailAddress': params.emailAddress,
-    'emailVerification.verificationCode': challenge[correctVerificationCodeSymbol],
+    'emailVerification.verificationCode':
+      challenge[emailVerificationChallengeCorrectVerificationCodeSymbol],
   };
   const emailSubject = renderTemplate({
     template: params.emailSubjectTemplate,
@@ -241,85 +210,113 @@ export const send = async (
     template: params.emailBodyTemplate,
     values: valuesForTemplatePlaceholdersModified,
   });
+  const email = createEmail({ to: [params.emailAddress], subject: emailSubject, body: emailBody });
 
-  const execution = await params.emailQueue.enqueue(
-    EmailReducers.create({ to: [params.emailAddress], subject: emailSubject, body: emailBody }),
+  const { executionId: associatedExecutionId, executedAt: sentAt } =
+    await params.emailQueue.enqueue(email);
+
+  const expiredAt = new Date(sentAt.getTime() + params.expiredAfterMs);
+  await params.emailVerificationChallengeSentEventDataRepository.createOne(
+    createEmailVerificationChallengeSentEventData({
+      id: challenge.id,
+      sentAt,
+      expiredAt,
+      associatedExecutionId,
+    }),
   );
 
-  const sentAt = execution.executedAt;
-  const expiredAt = new Date(sentAt.getTime() + params.expiredAfterMs);
-
-  const challengeSent = EmailVerificationChallengeReducers.toSent(challenge, {
-    associatedExecutionId: execution.executionId,
-    sentAt,
-    expiredAt,
-  });
-
-  await params.emailVerificationChallengeRepository.createOne(challengeSent);
-
-  return { id: challengeSent.id, sentAt, expiredAt };
+  return { id: challenge.id, sentAt, expiredAt };
 };
 
-export type PreAppliedSend = (
-  params: Omit<Parameters<typeof send>[0], keyof EmailVerificationServiceDependencies>,
-) => ReturnType<typeof send>;
+export type SendEmailVerificationChallenge = (
+  params: Omit<
+    Parameters<typeof sendEmailVerificationChallenge>[0],
+    keyof EmailVerificationServiceDependencies
+  >,
+) => ReturnType<typeof sendEmailVerificationChallenge>;
 
 /**
  * Eメールアドレス確認に回答する。
- * @returns 確認コードが正しいかどうかを返す。
+ * @returns 確認コードが正しいかどうかを返す。認証の期限を超過している場合も`{ isCorrect: false }`を返す。
+ * @throws 指定されたIDのEメールアドレス確認が存在しない場合は{@linkcode Exception}（`emailVerification.notExists`）を投げる。
  */
-export const answer = async (
+export const answerEmailVerificationChallenge = async (
   params: {
     readonly id: EmailVerificationChallengeId;
     readonly enteredVerificationCode: EmailVerificationChallengeVerificationCode;
   } & EmailVerificationServiceDependencies,
 ): Promise<{ readonly isCorrect: boolean }> => {
   const challenge = await params.emailVerificationChallengeRepository.getOneById(params.id);
+  const sentEventData = await params.emailVerificationChallengeSentEventDataRepository.getOneById(
+    params.id,
+  );
+  const isCompleted =
+    (await params.emailVerificationChallengeCompletedEventDataRepository.getOneById(params.id)) ??
+    false;
+  const isCanceled =
+    (await params.emailVerificationChallengeCanceledEventDataRepository.getOneById(params.id)) ??
+    false;
+  const now = new Date();
 
-  if (
-    challenge === undefined ||
-    !EmailVerificationChallengeReducers.isSent(challenge) ||
-    !EmailVerificationChallengeReducers.isNotTerminated(challenge)
-  ) {
+  if (challenge === undefined || sentEventData === undefined || isCompleted || isCanceled) {
     throw Exception.create({ exceptionName: 'emailVerification.notExists' });
   }
 
-  const result = EmailVerificationChallengeReducers.answer(challenge, {
-    enteredVerificationCode: params.enteredVerificationCode,
-  });
-  await params.emailVerificationChallengeRepository.updateOne(
-    result.updatedEmailVerificationChallenge,
+  if (
+    params.enteredVerificationCode !==
+      challenge[emailVerificationChallengeCorrectVerificationCodeSymbol] ||
+    sentEventData.expiredAt < now
+  ) {
+    return { isCorrect: false };
+  }
+
+  await params.emailVerificationChallengeCompletedEventDataRepository.createOne(
+    createEmailVerificationChallengeCompletedEventData({ id: challenge.id, completedAt: now }),
   );
 
-  return { isCorrect: result.isCorrect };
+  return { isCorrect: true };
 };
 
-export type PreAppliedAnswer = (
-  params: Omit<Parameters<typeof answer>[0], keyof EmailVerificationServiceDependencies>,
-) => ReturnType<typeof answer>;
+export type AnswerEmailVerificationChallenge = (
+  params: Omit<
+    Parameters<typeof answerEmailVerificationChallenge>[0],
+    keyof EmailVerificationServiceDependencies
+  >,
+) => ReturnType<typeof answerEmailVerificationChallenge>;
 
 /**
  * Eメールアドレス確認を中止する。
+ * @throws 指定されたIDのEメールアドレス確認が存在しない場合は{@linkcode Exception}（`emailVerification.notExists`）を投げる。
  */
-export const cancel = async (
+export const cancelEmailVerificationChallenge = async (
   params: { readonly id: EmailVerificationChallengeId } & EmailVerificationServiceDependencies,
 ): Promise<void> => {
   const challenge = await params.emailVerificationChallengeRepository.getOneById(params.id);
-  if (
-    challenge === undefined ||
-    !EmailVerificationChallengeReducers.isSent(challenge) ||
-    !EmailVerificationChallengeReducers.isNotTerminated(challenge)
-  ) {
+  const sentEventData = await params.emailVerificationChallengeSentEventDataRepository.getOneById(
+    params.id,
+  );
+  const isCompleted =
+    (await params.emailVerificationChallengeCompletedEventDataRepository.getOneById(params.id)) ??
+    false;
+  const isCanceled =
+    (await params.emailVerificationChallengeCanceledEventDataRepository.getOneById(params.id)) ??
+    false;
+
+  if (challenge === undefined || sentEventData === undefined || isCompleted || isCanceled) {
     throw Exception.create({ exceptionName: 'emailVerification.notExists' });
   }
 
-  await params.emailQueue.cancel(challenge.associatedExecutionId);
+  await params.emailQueue.cancel(sentEventData.associatedExecutionId);
 
-  const challengeCanceled = EmailVerificationChallengeReducers.toCanceled(challenge);
-  await params.emailVerificationChallengeRepository.updateOne(challengeCanceled);
+  await params.emailVerificationChallengeCanceledEventDataRepository.createOne(
+    createEmailVerificationChallengeCanceledEventData({ id: challenge.id, canceledAt: new Date() }),
+  );
 };
-//#endregion
 
-export type PreAppliedCancel = (
-  params: Omit<Parameters<typeof cancel>[0], keyof EmailVerificationServiceDependencies>,
-) => ReturnType<typeof cancel>;
+export type CancelEmailVerificationChallenge = (
+  params: Omit<
+    Parameters<typeof cancelEmailVerificationChallenge>[0],
+    keyof EmailVerificationServiceDependencies
+  >,
+) => ReturnType<typeof cancelEmailVerificationChallenge>;
+//#endregion

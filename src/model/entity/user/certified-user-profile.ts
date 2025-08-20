@@ -15,11 +15,11 @@ import type {
   SystemConfigurationMap,
 } from '../../lib/context.ts';
 import type {
+  AnswerEmailVerificationChallenge,
   EmailVerificationChallengeId,
   EmailVerificationChallengeVerificationCode,
   EmailVerificationServiceDependencies,
-  PreAppliedAnswer,
-  PreAppliedSend,
+  SendEmailVerificationChallenge,
 } from '../../lib/email-verification.ts';
 import { Exception } from '../../lib/exception.ts';
 import { localize } from '../../lib/i18n.ts';
@@ -275,11 +275,11 @@ export interface CertifiedUserProfileServiceDependencies {
     AccessControlServiceDependencies
   >;
   readonly sendEmailVerificationChallenge: PreApplied<
-    PreAppliedSend,
+    SendEmailVerificationChallenge,
     EmailVerificationServiceDependencies
   >;
   readonly answerEmailVerificationChallenge: PreApplied<
-    PreAppliedAnswer,
+    AnswerEmailVerificationChallenge,
     EmailVerificationServiceDependencies
   >;
   readonly certifiedUserProfileRepository: CertifiedUserProfileRepository;
