@@ -60,6 +60,7 @@ export const newEmailVerificationChallengeFrom = <P extends { emailAddress: Emai
     emailAddress: params.emailAddress,
     [emailVerificationChallengeCorrectVerificationCodeSymbol]:
       generateShortSecret() as EmailVerificationChallengeVerificationCode,
+    createdAt: new Date(),
   }) as const;
 
 export type EmailVerificationChallengeRepository = {
@@ -109,14 +110,14 @@ export type EmailVerificationChallengeCompletedEventData = ReturnType<
 >;
 
 export const newEmailVerificationChallengeCompletedEventDataFrom = <
-  P extends { emailVerificationChallengeId: EmailVerificationChallengeId; completedAt: Date },
+  P extends { emailVerificationChallengeId: EmailVerificationChallengeId },
 >(
   params: Readonly<P>,
 ) =>
   ({
     type: 'emailVerificationChallenge.completed',
     emailVerificationChallengeId: params.emailVerificationChallengeId,
-    completedAt: params.completedAt,
+    completedAt: new Date(),
   }) as const;
 
 export type EmailVerificationChallengeCompletedEventDataRepository = {
@@ -136,14 +137,14 @@ export type EmailVerificationChallengeCanceledEventData = ReturnType<
 >;
 
 export const newEmailVerificationChallengeCanceledEventDataFrom = <
-  P extends { emailVerificationChallengeId: EmailVerificationChallengeId; canceledAt: Date },
+  P extends { emailVerificationChallengeId: EmailVerificationChallengeId },
 >(
   params: Readonly<P>,
 ) =>
   ({
     type: 'emailVerificationChallenge.canceled',
     emailVerificationChallengeId: params.emailVerificationChallengeId,
-    canceledAt: params.canceledAt,
+    canceledAt: new Date(),
   }) as const;
 
 export type EmailVerificationChallengeCanceledEventDataRepository = {
@@ -266,7 +267,6 @@ export const answerEmailVerificationChallenge = async (
   await params.emailVerificationChallengeCompletedEventDataRepository.createOne(
     newEmailVerificationChallengeCompletedEventDataFrom({
       emailVerificationChallengeId: challenge.id,
-      completedAt: now,
     }),
   );
 
@@ -307,7 +307,6 @@ export const cancelEmailVerificationChallenge = async (
   await params.emailVerificationChallengeCanceledEventDataRepository.createOne(
     newEmailVerificationChallengeCanceledEventDataFrom({
       emailVerificationChallengeId: challenge.id,
-      canceledAt: new Date(),
     }),
   );
 };

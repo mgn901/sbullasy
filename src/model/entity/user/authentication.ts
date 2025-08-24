@@ -185,7 +185,6 @@ export const newAuthenticationAttemptCompletedEventFrom = <
     authenticationAttemptId: AuthenticationAttemptId;
     logInUserId: UserId;
     sessionId: SessionId;
-    completedAt: Date;
   },
 >(
   params: Readonly<P>,
@@ -195,7 +194,7 @@ export const newAuthenticationAttemptCompletedEventFrom = <
     authenticationAttemptId: params.authenticationAttemptId,
     logInUserId: params.logInUserId,
     sessionId: params.sessionId,
-    completedAt: params.completedAt,
+    completedAt: new Date(),
   }) as const;
 
 export type AuthenticationAttemptCompletedEventRepository = Repository<
@@ -211,14 +210,14 @@ export type AuthenticationAttemptCanceledEvent = ReturnType<
 >;
 
 export const newAuthenticationAttemptCanceledEventFrom = <
-  P extends { authenticationAttemptId: AuthenticationAttemptId; canceledAt: Date },
+  P extends { authenticationAttemptId: AuthenticationAttemptId },
 >(
   params: Readonly<P>,
 ) =>
   ({
     type: 'authenticationAttempt.canceled',
     authenticationAttemptId: params.authenticationAttemptId,
-    canceledAt: params.canceledAt,
+    canceledAt: new Date(),
   }) as const;
 
 export type AuthenticationAttemptCanceledEventRepository = Repository<
@@ -481,7 +480,6 @@ const completeLogInWithEmailVerification = async (
       authenticationAttemptId: params.attempt.id,
       logInUserId: params.attempt.logInUserId,
       sessionId: session.id,
-      completedAt: new Date(),
     }),
   );
 
@@ -582,7 +580,6 @@ const completeRegistrationWithEmailVerification = async (
       authenticationAttemptId: params.attempt.id,
       logInUserId: userAccount.id,
       sessionId: session.id,
-      completedAt: new Date(),
     }),
   );
 
