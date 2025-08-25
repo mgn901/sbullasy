@@ -9,14 +9,14 @@ import type {
   AccessTokenRepository,
   AccessTokenSecret,
 } from '../entity/user/access-token.ts';
-import {
-  type CertifiedUserProfile,
-  CertifiedUserProfileReducers,
-  type CertifiedUserProfileRepository,
-} from '../entity/user/certified-user-profile.ts';
 import type { MembershipRepository } from '../entity/user/membership.ts';
 import type { SessionRepository, SessionRevokedEventRepository } from '../entity/user/session.ts';
 import type { UserAccount, UserAccountRepository } from '../entity/user/user-account.ts';
+import type {
+  UserCertification,
+  UserCertificationRepository,
+  UserCertificationRevokedEventRepository,
+} from '../entity/user/user-certification.ts';
 import type { UserId } from '../entity/user/values.ts';
 import { Exception } from './exception.ts';
 
@@ -26,7 +26,8 @@ export interface AccessControlServiceDependencies {
   readonly sessionRepository: SessionRepository;
   readonly sessionTokenRevokedEventRepository: SessionRevokedEventRepository;
   readonly userAccountRepository: UserAccountRepository;
-  readonly certifiedUserProfileRepository: CertifiedUserProfileRepository;
+  readonly userCertificationRepository: UserCertificationRepository;
+  readonly userCertificationRevokedEventRepository: UserCertificationRevokedEventRepository;
   readonly groupMemberRepository: GroupMemberRepository;
   readonly membershipRepository: MembershipRepository;
   readonly permissionRepository: PermissionRepository;
@@ -69,26 +70,35 @@ export type PreAppliedVerifyAccessToken = (
   params: Omit<Parameters<typeof verifyAccessToken>[0], keyof AccessControlServiceDependencies>,
 ) => ReturnType<typeof verifyAccessToken>;
 
-/** 指定されたユーザが有効な認証済みユーザプロフィールを持っているかどうかを検証し、指定されたユーザに対応する認証済みユーザプロフィールを返す。 */
+/** 指定されたユーザが有効な証明書を持っているかどうかを検証し、指定されたユーザに対応する証明書を返す。 */
 export const verifyCertifiedUser = async <TUserId extends UserId>(
   params: { readonly userId: TUserId } & AccessControlServiceDependencies,
 ): Promise<{
-  readonly certifiedUserProfile: FromRepository<CertifiedUserProfile> & {
+  readonly userCertification: FromRepository<UserCertification> & {
     readonly certifiedUserId: TUserId;
-    readonly status: 'valid';
   };
 }> => {
-  const certifiedUserProfile = await params.certifiedUserProfileRepository.getOneByCertifiedUserId(
-    params.userId,
-  );
-  if (
-    certifiedUserProfile === undefined ||
-    !CertifiedUserProfileReducers.isValid(certifiedUserProfile)
-  ) {
+  const [newestNonexpiredCertification] = await params.userCertificationRepository.getMany({
+    filters: { certifiedUserId: params.userId, expiredAt: ['gt', new Date()] },
+    orderBy: { certifiedAt: 'desc' },
+    limit: 1,
+  });
+  if (newestNonexpiredCertification === undefined) {
+    throw Exception.create({ exceptionName: 'accessControl.notCertified' });
+  }
+  const isRevoked =
+    (await params.userCertificationRevokedEventRepository.getOneById(
+      newestNonexpiredCertification.id,
+    )) ?? false;
+  if (newestNonexpiredCertification === undefined || isRevoked) {
     throw Exception.create({ exceptionName: 'accessControl.notCertified' });
   }
 
-  return { certifiedUserProfile };
+  return {
+    userCertification: newestNonexpiredCertification as FromRepository<UserCertification> & {
+      readonly certifiedUserId: TUserId;
+    },
+  };
 };
 
 export type PreAppliedVerifyCertifiedUser = <TUserId extends UserId>(

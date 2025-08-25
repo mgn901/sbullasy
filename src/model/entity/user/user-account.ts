@@ -28,12 +28,12 @@ import { generateId, type Id } from '../../lib/random-values/id.ts';
 import type { EmailAddress } from '../../values.ts';
 import type { BookmarkRepository } from '../bookmark/bookmark.ts';
 import type { AccessTokenRepository } from './access-token.ts';
-import type { CertifiedUserProfileRepository } from './certified-user-profile.ts';
 import type { MembershipRepository } from './membership.ts';
 import {
   type RequestWithEmailVerificationChallenge,
   RequestWithEmailVerificationChallengeReducers,
 } from './request-with-email-verification-challenge.ts';
+import type { UserProfileRepository } from './user-profile.ts';
 import type { UserId } from './values.ts';
 
 //#region UserAccountConfigurationMap
@@ -269,7 +269,7 @@ export interface UserAccountServiceDependencies {
   readonly userAccountEmailAddressUpdateRequestReposiory: UserAccountEmailAddressUpdateRequestRepository;
   readonly accessTokenRepository: AccessTokenRepository;
   readonly bookmarkRepository: BookmarkRepository;
-  readonly certifiedUserProfileRepository: CertifiedUserProfileRepository;
+  readonly certifiedUserProfileRepository: UserProfileRepository;
   readonly membershipRepository: MembershipRepository;
   readonly contextRepository: ContextRepository<
     UserAccountConfigurationMap & SystemConfigurationMap

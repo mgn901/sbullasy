@@ -10,7 +10,7 @@ import type {
   ContextRepository,
   LogInUserClientContextMap,
 } from '../../lib/context.ts';
-import type { CertifiedUserProfile } from '../user/certified-user-profile.ts';
+import type { UserProfile } from '../user/user-profile.ts';
 import type { Member } from './member.ts';
 import type { GroupId } from './values.ts';
 
@@ -18,7 +18,7 @@ export const memberProfileTypeSymbol = Symbol('memberProfile.type');
 
 export type MemberProfile = {
   readonly [memberProfileTypeSymbol]: typeof memberProfileTypeSymbol;
-} & Pick<CertifiedUserProfile, 'name' | 'displayName'> &
+} & Pick<UserProfile, 'name' | 'displayName'> &
   Pick<Member, 'userId' | 'joinedAt' | 'roleInGroup'>;
 
 export interface MemberProfileRepository {

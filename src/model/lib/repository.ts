@@ -39,3 +39,7 @@ export type Repository<T, TId, TKeyOfId extends keyof T> = {
   readonly deleteOneById: GetOneBy<T, TId, TKeyOfId>;
   readonly deleteMany: DeleteMany<T>;
 };
+
+export type MutableRepository<T, TId, TKeyOfId extends keyof T> = Repository<T, TId, TKeyOfId> & {
+  readonly updateOne: UpdateOne<T>;
+};
