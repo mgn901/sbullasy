@@ -5,12 +5,10 @@ import type { GroupId } from '../entity/group/values.ts';
 import type { ItemTypeName } from '../entity/item/item-type.ts';
 import type {
   AccessToken,
-  AccessTokenRenewedEventRepository,
   AccessTokenRepository,
   AccessTokenSecret,
 } from '../entity/user/access-token.ts';
 import type { MembershipRepository } from '../entity/user/membership.ts';
-import type { SessionRepository, SessionRevokedEventRepository } from '../entity/user/session.ts';
 import type { UserAccount, UserAccountRepository } from '../entity/user/user-account.ts';
 import type {
   UserCertification,
@@ -22,9 +20,6 @@ import { Exception } from './exception.ts';
 
 export interface AccessControlServiceDependencies {
   readonly accessTokenRepository: AccessTokenRepository;
-  readonly accessTokenRenewedEventRepository: AccessTokenRenewedEventRepository;
-  readonly sessionRepository: SessionRepository;
-  readonly sessionTokenRevokedEventRepository: SessionRevokedEventRepository;
   readonly userAccountRepository: UserAccountRepository;
   readonly userCertificationRepository: UserCertificationRepository;
   readonly userCertificationRevokedEventRepository: UserCertificationRevokedEventRepository;
@@ -41,27 +36,19 @@ export const verifyAccessToken = async (
   readonly myAccessToken: FromRepository<AccessToken>;
 }> => {
   const myAccessToken = await params.accessTokenRepository.getOneBySecret(params.accessTokenSecret);
-  const { isAccessTokenRenewed, session, myUserAccount } = myAccessToken?.id
-    ? {
-        isAccessTokenRenewed:
-          (await params.accessTokenRenewedEventRepository.getOneById(myAccessToken.id)) ?? false,
-        session: await params.sessionRepository.getOneById(myAccessToken?.sessionId),
-        myUserAccount: await params.userAccountRepository.getOneById(myAccessToken?.logInUserId),
-      }
-    : { isAccessTokenRenewed: false, session: undefined, myUserAccount: undefined };
-  const isSessionRevoked = session?.id
-    ? ((await params.sessionTokenRevokedEventRepository.getOneById(session.id)) ?? false)
-    : false;
+  const myUserAccount = myAccessToken?.id
+    ? await params.userAccountRepository.getOneById(myAccessToken.logInUserId)
+    : undefined;
   if (
     myAccessToken === undefined ||
     myAccessToken.expiredAt < new Date() ||
-    session === undefined ||
-    isAccessTokenRenewed ||
-    isSessionRevoked ||
     myUserAccount === undefined
   ) {
     throw Exception.create({ exceptionName: 'accessControl.notAuthorized' });
   }
+
+  const updatedAccessToken = { ...myAccessToken, lastUsedAt: new Date() };
+  await params.accessTokenRepository.updateOne(updatedAccessToken);
 
   return { myUserAccount, myAccessToken };
 };

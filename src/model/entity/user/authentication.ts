@@ -24,12 +24,12 @@ import type { Repository } from '../../lib/repository.ts';
 import type { EmailAddress } from '../../values.ts';
 import {
   type AccessTokenConfigurationMap,
+  type AccessTokenId,
   type AccessTokenRepository,
   type AccessTokenSecret,
   accessTokenSecretSymbol,
   newSessionAccessTokenFrom,
 } from './access-token.ts';
-import { newSessionFrom, type Session, type SessionId, type SessionRepository } from './session.ts';
 import {
   type UserAccount,
   UserAccountReducers,
@@ -184,7 +184,7 @@ export const newAuthenticationAttemptCompletedEventFrom = <
   P extends {
     authenticationAttemptId: AuthenticationAttemptId;
     logInUserId: UserId;
-    sessionId: SessionId;
+    accessTokenId: AccessTokenId;
   },
 >(
   params: Readonly<P>,
@@ -193,7 +193,7 @@ export const newAuthenticationAttemptCompletedEventFrom = <
     type: 'authenticationAttempt.completed',
     authenticationAttemptId: params.authenticationAttemptId,
     logInUserId: params.logInUserId,
-    sessionId: params.sessionId,
+    accessTokenId: params.accessTokenId,
     completedAt: new Date(),
   }) as const;
 
@@ -236,7 +236,6 @@ export type UserAuthenticationServiceDependencies = {
   readonly authenticationAttemptCompletedEventRepository: AuthenticationAttemptCompletedEventRepository;
   readonly authenticationAttemptCanceledEventRepository: AuthenticationAttemptCanceledEventRepository;
   readonly userAccountRepository: UserAccountRepository;
-  readonly sessionRepository: SessionRepository;
   readonly accessTokenRepository: AccessTokenRepository;
   readonly contextRepository: ContextRepository<
     AuthenticationConfigurationMap & AccessTokenConfigurationMap & SystemConfigurationMap
@@ -312,7 +311,7 @@ export type RequestLogInOrRegistrationWithEmailVerification = (
 
 /**
  * Eメールアドレス確認の確認コードが正しいのかを確認して、Eメールアドレス確認を用いた認証試行（ユーザアカウントの作成またはログイン）を完了する。
- * - Eメールアドレス確認の確認コードが正しい場合は、新しいセッション（{@linkcode Session}）とアクセストークン（{@linkcode SessionAccessToken}）を作成する。
+ * - Eメールアドレス確認の確認コードが正しい場合は、新しいアクセストークン（{@linkcode SessionAccessToken}）を作成する。
  * @returns アクセストークンのシークレットとアクセストークンの有効期限を返す。
  * @throws 認証試行が見つからない場合、完了済みの場合、中止済みの場合は{@linkcode Exception}（`authenitcation.notExists`）を投げる。
  * @throws Eメールアドレス確認の確認コードが正しくない場合は{@linkcode Exception}（`authenitcation.verificationCodeIncorrect`）を投げる。
@@ -461,16 +460,10 @@ const completeLogInWithEmailVerification = async (
     throw Exception.create({ exceptionName: 'authentication.verificationCodeIncorrect' });
   }
 
-  const session = newSessionFrom({
+  const accessToken = newSessionAccessTokenFrom({
     logInUserId: params.attempt.logInUserId,
     logInIpAddress: params.attempt.ipAddress,
     logInUserAgent: params.attempt.userAgent,
-  });
-  await params.sessionRepository.createOne(session);
-
-  const accessToken = newSessionAccessTokenFrom({
-    logInUserId: params.attempt.logInUserId,
-    sessionId: session.id,
     expiredAfterMs: params.contextRepository.get('accessToken.expiredAfterMs'),
   });
   await params.accessTokenRepository.createOne(accessToken);
@@ -479,7 +472,7 @@ const completeLogInWithEmailVerification = async (
     newAuthenticationAttemptCompletedEventFrom({
       authenticationAttemptId: params.attempt.id,
       logInUserId: params.attempt.logInUserId,
-      sessionId: session.id,
+      accessTokenId: accessToken.id,
     }),
   );
 
@@ -561,16 +554,10 @@ const completeRegistrationWithEmailVerification = async (
   const userAccount = UserAccountReducers.create({ emailAddress: params.attempt.emailAddress });
   await params.userAccountRepository.createOne(userAccount);
 
-  const session = newSessionFrom({
+  const accessToken = newSessionAccessTokenFrom({
     logInUserId: userAccount.id,
     logInIpAddress: params.attempt.ipAddress,
     logInUserAgent: params.attempt.userAgent,
-  });
-  await params.sessionRepository.createOne(session);
-
-  const accessToken = newSessionAccessTokenFrom({
-    logInUserId: userAccount.id,
-    sessionId: session.id,
     expiredAfterMs: params.contextRepository.get('accessToken.expiredAfterMs'),
   });
   await params.accessTokenRepository.createOne(accessToken);
@@ -579,7 +566,7 @@ const completeRegistrationWithEmailVerification = async (
     newAuthenticationAttemptCompletedEventFrom({
       authenticationAttemptId: params.attempt.id,
       logInUserId: userAccount.id,
-      sessionId: session.id,
+      accessTokenId: accessToken.id,
     }),
   );
 
