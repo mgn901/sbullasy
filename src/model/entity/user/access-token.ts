@@ -201,7 +201,7 @@ export const renewSessionAccessToken = async (
  * - 有効なアクセストークンが必要である。
  * @throws アクセストークンが見つからない場合、アクセストークンが有効でない場合、アクセストークンが自分自身以外のユーザのものである場合は、{@linkcode Exception}（`accessToken.notExists`）を投げる。
  */
-export const revokeMySessionAccessToken = async (
+export const revokeMyAccessToken = async (
   params: { readonly id: AccessTokenId } & AccessTokenServiceDependencies,
 ): Promise<void> => {
   const { myUserAccount } = await params.verifyAccessToken({

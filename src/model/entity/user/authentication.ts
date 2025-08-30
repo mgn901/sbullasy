@@ -31,8 +31,8 @@ import {
   newSessionAccessTokenFrom,
 } from './access-token.ts';
 import {
+  newUserAccountFrom,
   type UserAccount,
-  UserAccountReducers,
   type UserAccountRepository,
 } from './user-account.ts';
 import type { UserId } from './values.ts';
@@ -551,7 +551,7 @@ const completeRegistrationWithEmailVerification = async (
     throw Exception.create({ exceptionName: 'authentication.verificationCodeIncorrect' });
   }
 
-  const userAccount = UserAccountReducers.create({ emailAddress: params.attempt.emailAddress });
+  const userAccount = newUserAccountFrom({ emailAddress: params.attempt.emailAddress });
   await params.userAccountRepository.createOne(userAccount);
 
   const accessToken = newSessionAccessTokenFrom({

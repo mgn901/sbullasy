@@ -1,11 +1,5 @@
 import type { NominalPrimitive } from '@mgn901/mgn901-utils-ts/nominal-primitive.type';
-import type { PreApplied } from '@mgn901/mgn901-utils-ts/pre-apply';
-import type { Filters, FromRepository, OrderBy } from '@mgn901/mgn901-utils-ts/repository-utils';
-import type { PickEssential } from '@mgn901/mgn901-utils-ts/utils.type';
-import type {
-  AccessControlServiceDependencies,
-  PreAppliedVerifyAccessToken,
-} from '../../lib/access-control.ts';
+import type { PreAppliedVerifyAccessToken } from '../../lib/access-control.ts';
 import type {
   ClientContextMap,
   ContextMap,
@@ -19,20 +13,16 @@ import type {
   CancelEmailVerificationChallenge,
   EmailVerificationChallengeId,
   EmailVerificationChallengeVerificationCode,
-  EmailVerificationServiceDependencies,
   SendEmailVerificationChallenge,
 } from '../../lib/email-verification.ts';
 import { Exception } from '../../lib/exception.ts';
 import { localize } from '../../lib/i18n.ts';
 import { generateId, type Id } from '../../lib/random-values/id.ts';
+import type { GetOneBy, MutableRepository, Repository } from '../../lib/repository.ts';
 import type { EmailAddress } from '../../values.ts';
 import type { BookmarkRepository } from '../bookmark/bookmark.ts';
 import type { AccessTokenRepository } from './access-token.ts';
 import type { MembershipRepository } from './membership.ts';
-import {
-  type RequestWithEmailVerificationChallenge,
-  RequestWithEmailVerificationChallengeReducers,
-} from './request-with-email-verification-challenge.ts';
 import type { UserProfileRepository } from './user-profile.ts';
 import type { UserId } from './values.ts';
 
@@ -46,7 +36,7 @@ export interface UserAccountConfigurationMap extends ContextMap {
 const userAccountDefaultConfigurationMap = {
   'userAccount.emailAddressUpdate.emailSubjectTemplate': {
     en: '[${system.displayName}] Confirm and enter the verification code to complete the email address change',
-    ja: '【${system.displayName}】確認コードを確認・入力してメールアドレスの更新を完了してください',
+    ja: '【${system.displayName}】確認コードを確認・入力してEメールアドレスの更新を完了してください',
   },
   'userAccount.emailAddressUpdate.emailBodyTemplate': {
     en: `You are about to changing the email address registered to the \${system.displayName} app.
@@ -74,208 +64,152 @@ Verification code: \${emailVerification.verificationCode}
 } as const satisfies UserAccountConfigurationMap;
 //#endregion
 
-//#region UserAccount and UserAccountRepository
-export const userAccountTypeSymbol = Symbol('userAccount.type');
+//#region UserAccount
 
 /**
- * ユーザアカウントを表す。
+ * アプリケーションを利用するユーザと紐付けられるユーザアカウントを表す。
+ * - ユーザアカウントはIDとEメールアドレスによって一意に識別される。
+ * - Eメールアドレスは、Eメールアドレス確認による認証に用いられる。また、認証を済ませたユーザはEメールアドレスを変更することもできる。
  */
-export type UserAccount = {
-  readonly [userAccountTypeSymbol]: typeof userAccountTypeSymbol;
-  readonly id: UserId;
-  readonly emailAddress: EmailAddress;
-  readonly registeredAt: Date;
+export type UserAccount = ReturnType<typeof newUserAccountFrom>;
+
+export const newUserAccountFrom = <P extends { emailAddress: EmailAddress }>(params: Readonly<P>) =>
+  ({
+    type: 'userAccount',
+    id: generateId() as UserId,
+    emailAddress: params.emailAddress,
+    registeredAt: new Date(),
+  }) as const;
+
+export type UserAccountRepository = MutableRepository<UserAccount, UserId, 'id'> & {
+  readonly getOneByEmailAddress: GetOneBy<UserAccount, EmailAddress, 'emailAddress'>;
 };
-
-/**
- * {@linkcode UserAccount}の状態を変更するための関数を提供する。
- */
-export const UserAccountReducers = {
-  /**
-   * 新しい{@linkcode UserAccount}を作成して返す。
-   */
-  create: <P extends { readonly emailAddress: TEmailAddress }, TEmailAddress extends EmailAddress>(
-    params: P,
-  ): UserAccount & Pick<P, 'emailAddress'> =>
-    ({
-      [userAccountTypeSymbol]: userAccountTypeSymbol,
-      id: generateId() as UserId,
-      emailAddress: params.emailAddress,
-      registeredAt: new Date(),
-    }) as const,
-
-  /**
-   * 指定されたユーザアカウントのEメールアドレスを、指定されたEメールアドレスに更新したものを返す。
-   * @param self Eメールアドレスを更新するユーザアカウントを指定する。
-   */
-  toEmailAddressUpdated: <
-    S extends UserAccount,
-    P extends { readonly newEmailAddress: TEmailAddress },
-    TEmailAddress extends EmailAddress,
-  >(
-    self: S,
-    params: P,
-  ): S & { readonly emailAddress: TEmailAddress } =>
-    ({ ...self, emailAddress: params.newEmailAddress }) as const,
-} as const;
-
-/**
- * {@linkcode UserAccount}を永続化するリポジトリ。
- */
-export interface UserAccountRepository {
-  getOneById<TId extends UserId>(
-    this: UserAccountRepository,
-    id: TId,
-  ): Promise<FromRepository<UserAccount & { readonly id: TId }> | undefined>;
-
-  getOneByEmailAddress<TEmailAddress extends EmailAddress>(
-    this: UserAccountRepository,
-    emailAddress: TEmailAddress,
-  ): Promise<FromRepository<UserAccount & { readonly emailAddress: TEmailAddress }> | undefined>;
-
-  getMany(
-    this: UserAccountRepository,
-    params: {
-      readonly filters?: Filters<UserAccount>;
-      readonly orderBy: OrderBy<UserAccount>;
-      readonly offset?: number | undefined;
-      readonly limit?: number | undefined;
-    },
-  ): Promise<readonly FromRepository<UserAccount>[] | readonly []>;
-
-  count(
-    this: UserAccountRepository,
-    params: { readonly filters?: Filters<UserAccount> },
-  ): Promise<number>;
-
-  createOne(this: UserAccountRepository, userAccount: UserAccount): Promise<void>;
-
-  updateOne(this: UserAccountRepository, userAccount: FromRepository<UserAccount>): Promise<void>;
-
-  deleteOneById(this: UserAccountRepository, id: UserId): Promise<void>;
-}
 //#endregion
 
-//#region UserAccountEmailAddressUpdateRequest and UserAccountEmailAddressUpdateRequestRepository
-export const userAccountEmailAddressUpdateRequestTypeSymbol = Symbol(
-  'userAccountEmailAddressUpdateRequest.type',
+//#region UserAccountEmailAddressUpdateRequest
+export const userAccountEmailAddressUpdateRequestIdSymbol = Symbol(
+  'userAccountEmailAddressUpdateRequest.id',
 );
-
 export type UserAccountEmailAddressUpdateRequestId = NominalPrimitive<
   Id,
-  typeof userAccountEmailAddressUpdateRequestTypeSymbol
+  typeof userAccountEmailAddressUpdateRequestIdSymbol
 >;
 
 /**
  * ユーザアカウントのEメールアドレスの更新のリクエストを表す。
  */
-export type UserAccountEmailAddressUpdateRequest = {
-  readonly [userAccountEmailAddressUpdateRequestTypeSymbol]: typeof userAccountEmailAddressUpdateRequestTypeSymbol;
-  readonly id: UserAccountEmailAddressUpdateRequestId;
-  readonly userId: UserId;
-  readonly newEmailAddress: EmailAddress;
-} & RequestWithEmailVerificationChallenge;
+export type UserAccountEmailAddressUpdateRequest = ReturnType<
+  typeof newUserAccountEmailAddressUpdateRequestFrom
+>;
 
-/**
- * {@linkcode UserAccountEmailAddressUpdateRequest}の状態を変更するための関数を提供する。
- */
-export const UserAccountEmailAddressUpdateRequestReducers = {
-  ...RequestWithEmailVerificationChallengeReducers,
+export const newUserAccountEmailAddressUpdateRequestFrom = <
+  P extends {
+    userId: UserId;
+    originalEmailAddress: EmailAddress;
+    newEmailAddress: EmailAddress;
+    associatedEmailVerificationChallengeId: EmailVerificationChallengeId;
+  },
+>(
+  params: Readonly<P>,
+) =>
+  ({
+    type: 'userAccountEmailAddressUpdateRequest',
+    id: generateId() as UserAccountEmailAddressUpdateRequestId,
+    userId: params.userId,
+    originalEmailAddress: params.originalEmailAddress,
+    newEmailAddress: params.newEmailAddress,
+    requestedAt: new Date(),
+    associatedEmailVerificationChallengeId: params.associatedEmailVerificationChallengeId,
+  }) as const;
 
-  /**
-   * 新しい{@linkcode UserAccountEmailAddressUpdateRequest}を作成して返す。
-   */
-  create: <
-    P extends {
-      readonly userId: TUserId;
-      readonly newEmailAddress: TNewEmailAddress;
-      readonly associatedEmailVerificationChallengeId: TAssociatedEmailVerificationChallengeId;
-    },
-    TUserId extends UserId,
-    TNewEmailAddress extends EmailAddress,
-    TAssociatedEmailVerificationChallengeId extends EmailVerificationChallengeId,
-  >(
-    params: PickEssential<P, keyof UserAccountEmailAddressUpdateRequest>,
-  ): UserAccountEmailAddressUpdateRequest & { readonly status: 'requested' } & Pick<
-      P,
-      'userId' | 'newEmailAddress' | 'associatedEmailVerificationChallengeId'
-    > =>
-    ({
-      [userAccountEmailAddressUpdateRequestTypeSymbol]:
-        userAccountEmailAddressUpdateRequestTypeSymbol,
-      id: generateId() as UserAccountEmailAddressUpdateRequestId,
-      userId: params.userId,
-      newEmailAddress: params.newEmailAddress,
-      status: 'requested',
-      requestedAt: new Date(),
-      associatedEmailVerificationChallengeId: params.associatedEmailVerificationChallengeId,
-    }) as const,
-} as const;
+export type UserAccountEmailAddressUpdateRequestRepository = Repository<
+  UserAccountEmailAddressUpdateRequest,
+  UserAccountEmailAddressUpdateRequestId,
+  'id'
+>;
+//#endregion
 
-export interface UserAccountEmailAddressUpdateRequestRepository {
-  getOneById<TId extends UserAccountEmailAddressUpdateRequestId>(
-    this: UserAccountEmailAddressUpdateRequestRepository,
-    id: TId,
-  ): Promise<
-    FromRepository<UserAccountEmailAddressUpdateRequest & { readonly id: TId }> | undefined
-  >;
+//#region UserAccountEmailAddressUpdateRequestCompletedEvent
+export type UserAccountEmailAddressUpdateRequestCompletedEvent = ReturnType<
+  typeof newUserAccountEmailAddressUpdateRequestCompletedEventFrom
+>;
 
-  getMany(
-    this: UserAccountEmailAddressUpdateRequestRepository,
-    params: {
-      readonly filters?: Filters<UserAccountEmailAddressUpdateRequest>;
-      readonly orderBy: OrderBy<UserAccountEmailAddressUpdateRequest>;
-      readonly offset?: number | undefined;
-      readonly limit?: number | undefined;
-    },
-  ): Promise<readonly FromRepository<UserAccountEmailAddressUpdateRequest>[] | readonly []>;
+export const newUserAccountEmailAddressUpdateRequestCompletedEventFrom = <
+  P extends { userAccountEmailAddressUpdateRequestId: UserAccountEmailAddressUpdateRequestId },
+>(
+  params: Readonly<P>,
+) =>
+  ({
+    type: 'userAccountEmailAddressUpdateRequest.completed',
+    userAccountEmailAddressUpdateRequestId: params.userAccountEmailAddressUpdateRequestId,
+    completedAt: new Date(),
+  }) as const;
 
-  createOne(
-    this: UserAccountEmailAddressUpdateRequestRepository,
-    userAccountEmailAddressUpdateRequest: UserAccountEmailAddressUpdateRequest,
-  ): Promise<void>;
+export type UserAccountEmailAddressUpdateRequestCompletedEventRepository = Repository<
+  UserAccountEmailAddressUpdateRequestCompletedEvent,
+  UserAccountEmailAddressUpdateRequestId,
+  'userAccountEmailAddressUpdateRequestId'
+>;
+//#endregion
 
-  updateOne(
-    this: UserAccountEmailAddressUpdateRequestRepository,
-    userAccountEmailAddressUpdateRequest: FromRepository<UserAccountEmailAddressUpdateRequest>,
-  ): Promise<void>;
+//#region UserAccountEmailAddressUpdateRequestCanceledEvent
+export type UserAccountEmailAddressUpdateRequestCanceledEvent = ReturnType<
+  typeof newUserAccountEmailAddressUpdateRequestCanceledEventFrom
+>;
 
-  deleteOneById(
-    this: UserAccountEmailAddressUpdateRequestRepository,
-    id: UserAccountEmailAddressUpdateRequestId,
-  ): Promise<void>;
-}
+export const newUserAccountEmailAddressUpdateRequestCanceledEventFrom = <
+  P extends { userAccountEmailAddressUpdateRequestId: UserAccountEmailAddressUpdateRequestId },
+>(
+  params: Readonly<P>,
+) =>
+  ({
+    type: 'userAccountEmailAddressUpdateRequest.canceled',
+    userAccountEmailAddressUpdateRequestId: params.userAccountEmailAddressUpdateRequestId,
+    canceledAt: new Date(),
+  }) as const;
+
+export type UserAccountEmailAddressUpdateRequestCanceledEventRepository = Repository<
+  UserAccountEmailAddressUpdateRequestCanceledEvent,
+  UserAccountEmailAddressUpdateRequestId,
+  'userAccountEmailAddressUpdateRequestId'
+>;
+//#endregion
+
+//#region DeletedUserAccount
+export type DeletedUserAccount = ReturnType<typeof newDeletedUserAccountFrom>;
+
+export const newDeletedUserAccountFrom = <P extends UserAccount>(params: Readonly<P>) =>
+  ({
+    type: 'userAccount.deleted',
+    userId: params.id,
+    emailAddress: params.emailAddress,
+    registeredAt: params.registeredAt,
+    deletedAt: new Date(),
+  }) as const;
+
+export type DeletedUserAccountRepository = Repository<DeletedUserAccount, UserId, 'userId'>;
 //#endregion
 
 //#region UserAccountService
-export interface UserAccountServiceDependencies {
-  readonly sendEmailVerificationChallenge: PreApplied<
-    SendEmailVerificationChallenge,
-    EmailVerificationServiceDependencies
-  >;
-  readonly answerEmailVerificationChallenge: PreApplied<
-    AnswerEmailVerificationChallenge,
-    EmailVerificationServiceDependencies
-  >;
-  readonly cancelEmailVerificationChallenge: PreApplied<
-    CancelEmailVerificationChallenge,
-    EmailVerificationServiceDependencies
-  >;
-  readonly verifyAccessToken: PreApplied<
-    PreAppliedVerifyAccessToken,
-    AccessControlServiceDependencies
-  >;
+export type UserAccountServiceDependencies = {
+  readonly sendEmailVerificationChallenge: SendEmailVerificationChallenge;
+  readonly answerEmailVerificationChallenge: AnswerEmailVerificationChallenge;
+  readonly cancelEmailVerificationChallenge: CancelEmailVerificationChallenge;
+  readonly verifyAccessToken: PreAppliedVerifyAccessToken;
   readonly userAccountRepository: UserAccountRepository;
   readonly userAccountEmailAddressUpdateRequestReposiory: UserAccountEmailAddressUpdateRequestRepository;
+  readonly userAccountEmailAddressUpdateRequestCompletedEventReposiory: UserAccountEmailAddressUpdateRequestCompletedEventRepository;
+  readonly userAccountEmailAddressUpdateRequestCanceledEventReposiory: UserAccountEmailAddressUpdateRequestCanceledEventRepository;
+  readonly deletedUserAccountRepository: DeletedUserAccountRepository;
   readonly accessTokenRepository: AccessTokenRepository;
   readonly bookmarkRepository: BookmarkRepository;
-  readonly certifiedUserProfileRepository: UserProfileRepository;
+  readonly userProfileRepository: UserProfileRepository;
   readonly membershipRepository: MembershipRepository;
   readonly contextRepository: ContextRepository<
     UserAccountConfigurationMap & SystemConfigurationMap
   >;
   readonly clientContextRepository: ContextRepository<ClientContextMap & LogInUserClientContextMap>;
-}
+};
 
 /**
  * 自分自身の{@link UserAccount}を取得する。
@@ -294,8 +228,8 @@ export const getMyUserAccount = async (
 
 /**
  * Eメールアドレスの更新を開始する。
- *
- * 更新後のEメールアドレスにEメールアドレス確認の確認コードを送信する。
+ * - 有効なアクセストークンが必要である。
+ * - 更新後のEメールアドレスにEメールアドレス確認の確認コードを送信する。
  */
 export const requestEmailAddressUpdate = async (
   params: { readonly newEmailAddress: EmailAddress } & UserAccountServiceDependencies,
@@ -333,8 +267,9 @@ export const requestEmailAddressUpdate = async (
     expiredAfterMs: params.contextRepository.get('userAccount.emailAddressUpdate.expiredAfterMs'),
   });
 
-  const userAccountEmailAddressUpdateRequest = UserAccountEmailAddressUpdateRequestReducers.create({
+  const userAccountEmailAddressUpdateRequest = newUserAccountEmailAddressUpdateRequestFrom({
     userId: myUserAccount.id,
+    originalEmailAddress: myUserAccount.emailAddress,
     newEmailAddress: params.newEmailAddress,
     associatedEmailVerificationChallengeId,
   });
@@ -347,6 +282,7 @@ export const requestEmailAddressUpdate = async (
 
 /**
  * Eメールアドレス確認の確認コードが正しいのかを確認して、Eメールアドレスの更新を完了する。
+ * - 有効なアクセストークンが必要である。
  * @throws Eメールアドレスの更新のリクエストが存在しない場合、完了または中止になっている場合、別のユーザのものである場合は、{@linkcode Exception}（`userAccountEmailAddressUpdate.notExists`）を投げる。
  * @throws 確認コードが正しくない場合は{@linkcode Exception}（`userAccountEmailAddressUpdate.verificationCodeIncorrect`）を投げる。
  */
@@ -359,13 +295,21 @@ export const completeEmailAddressUpdate = async (
   const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
+
   const userAccountEmailAddressUpdateRequest =
     await params.userAccountEmailAddressUpdateRequestReposiory.getOneById(params.id);
+  const isCompleted =
+    (await params.userAccountEmailAddressUpdateRequestCompletedEventReposiory.getOneById(
+      params.id,
+    )) ?? false;
+  const isCanceled =
+    (await params.userAccountEmailAddressUpdateRequestCanceledEventReposiory.getOneById(
+      params.id,
+    )) ?? false;
   if (
     userAccountEmailAddressUpdateRequest === undefined ||
-    !UserAccountEmailAddressUpdateRequestReducers.isNotTerminated(
-      userAccountEmailAddressUpdateRequest,
-    ) ||
+    isCompleted ||
+    isCanceled ||
     userAccountEmailAddressUpdateRequest.userId !== myUserAccount.id
   ) {
     throw Exception.create({ exceptionName: 'userAccountEmailAddressUpdate.notExists' });
@@ -381,20 +325,20 @@ export const completeEmailAddressUpdate = async (
     });
   }
 
-  const userAccountEmailAddressUpdated = UserAccountReducers.toEmailAddressUpdated(myUserAccount, {
-    newEmailAddress: userAccountEmailAddressUpdateRequest.newEmailAddress,
+  await params.userAccountRepository.updateOne({
+    ...myUserAccount,
+    emailAddress: userAccountEmailAddressUpdateRequest.newEmailAddress,
   });
-  await params.userAccountRepository.updateOne(userAccountEmailAddressUpdated);
-
-  const userAccountEmailAddressUpdateRequestCompleted =
-    UserAccountEmailAddressUpdateRequestReducers.toCompleted(userAccountEmailAddressUpdateRequest);
-  await params.userAccountEmailAddressUpdateRequestReposiory.updateOne(
-    userAccountEmailAddressUpdateRequestCompleted,
+  await params.userAccountEmailAddressUpdateRequestCompletedEventReposiory.createOne(
+    newUserAccountEmailAddressUpdateRequestCompletedEventFrom({
+      userAccountEmailAddressUpdateRequestId: userAccountEmailAddressUpdateRequest.id,
+    }),
   );
 };
 
 /**
  * Eメールアドレスの更新を中止する。
+ * - 有効なアクセストークンが必要である。
  * @throws Eメールアドレスの更新のリクエストが存在しない場合、完了または中止になっている場合、別のユーザのものである場合は、{@linkcode Exception}（`userAccountEmailAddressUpdate.notExists`）を投げる。
  */
 export const cancelEmailAddressUpdate = async (
@@ -403,13 +347,21 @@ export const cancelEmailAddressUpdate = async (
   const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
+
   const userAccountEmailAddressUpdateRequest =
     await params.userAccountEmailAddressUpdateRequestReposiory.getOneById(params.id);
+  const isCompleted =
+    (await params.userAccountEmailAddressUpdateRequestCompletedEventReposiory.getOneById(
+      params.id,
+    )) ?? false;
+  const isCanceled =
+    (await params.userAccountEmailAddressUpdateRequestCanceledEventReposiory.getOneById(
+      params.id,
+    )) ?? false;
   if (
     userAccountEmailAddressUpdateRequest === undefined ||
-    !UserAccountEmailAddressUpdateRequestReducers.isNotTerminated(
-      userAccountEmailAddressUpdateRequest,
-    ) ||
+    isCompleted ||
+    isCanceled ||
     userAccountEmailAddressUpdateRequest.userId !== myUserAccount.id
   ) {
     throw Exception.create({ exceptionName: 'userAccountEmailAddressUpdate.notExists' });
@@ -419,16 +371,17 @@ export const cancelEmailAddressUpdate = async (
     id: userAccountEmailAddressUpdateRequest.associatedEmailVerificationChallengeId,
   });
 
-  const userAccountEmailAddressUpdateRequestCanceled =
-    UserAccountEmailAddressUpdateRequestReducers.toCanceled(userAccountEmailAddressUpdateRequest);
-  await params.userAccountEmailAddressUpdateRequestReposiory.updateOne(
-    userAccountEmailAddressUpdateRequestCanceled,
+  await params.userAccountEmailAddressUpdateRequestCanceledEventReposiory.createOne(
+    newUserAccountEmailAddressUpdateRequestCanceledEventFrom({
+      userAccountEmailAddressUpdateRequestId: userAccountEmailAddressUpdateRequest.id,
+    }),
   );
 };
 
 /**
  * 自分自身のユーザアカウントを削除する。
- * - 自分のブックマークも削除する。
+ * - 有効なアクセストークンが必要である。
+ * - 自分のプロフィール、ブックマークも削除する。
  * @throws グループに1つ以上所属している場合は、{@linkcode Exception}（`userCertification.notLeftAllGroupsYet`）を投げる。
  */
 export const deleteMyUserAccount = async (
@@ -445,9 +398,9 @@ export const deleteMyUserAccount = async (
     throw Exception.create({ exceptionName: 'userCertification.notLeftAllGroupsYet' });
   }
 
-  await params.certifiedUserProfileRepository.deleteOneById(myUserAccount.id);
+  await params.userProfileRepository.deleteOneById(myUserAccount.id);
   await params.bookmarkRepository.deleteMany({ filters: { bookmarkedBy: myUserAccount.id } });
-  await params.accessTokenRepository.deleteMany({ filters: { logInUserId: myUserAccount.id } });
+  await params.deletedUserAccountRepository.createOne(newDeletedUserAccountFrom(myUserAccount));
   await params.userAccountRepository.deleteOneById(myUserAccount.id);
 };
 //#endregion
