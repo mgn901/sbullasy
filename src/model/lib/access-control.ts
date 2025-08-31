@@ -13,7 +13,6 @@ import type { UserAccount, UserAccountRepository } from '../entity/user/user-acc
 import type {
   UserCertification,
   UserCertificationRepository,
-  UserCertificationRevokedEventRepository,
 } from '../entity/user/user-certification.ts';
 import type { UserId } from '../entity/user/values.ts';
 import { Exception } from './exception.ts';
@@ -22,7 +21,6 @@ export interface AccessControlServiceDependencies {
   readonly accessTokenRepository: AccessTokenRepository;
   readonly userAccountRepository: UserAccountRepository;
   readonly userCertificationRepository: UserCertificationRepository;
-  readonly userCertificationRevokedEventRepository: UserCertificationRevokedEventRepository;
   readonly groupMemberRepository: GroupMemberRepository;
   readonly membershipRepository: MembershipRepository;
   readonly permissionRepository: PermissionRepository;
@@ -71,13 +69,6 @@ export const verifyCertifiedUser = async <TUserId extends UserId>(
     limit: 1,
   });
   if (newestNonexpiredCertification === undefined) {
-    throw Exception.create({ exceptionName: 'accessControl.notCertified' });
-  }
-  const isRevoked =
-    (await params.userCertificationRevokedEventRepository.getOneById(
-      newestNonexpiredCertification.id,
-    )) ?? false;
-  if (newestNonexpiredCertification === undefined || isRevoked) {
     throw Exception.create({ exceptionName: 'accessControl.notCertified' });
   }
 

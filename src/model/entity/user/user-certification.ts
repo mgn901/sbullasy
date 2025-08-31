@@ -100,24 +100,22 @@ export const newUserCertificationFrom = <P extends { certifiedUserId: UserId; ex
 export type UserCertificationRepository = Repository<UserCertification, UserCertificationId, 'id'>;
 //#endregion
 
-//#region UserCertificationRevokedEvent
-export type UserCertificationRevokedEvent = ReturnType<typeof newUserCertificationRevokedEventFrom>;
+//#region RevokedUserCertification
+export type RevokedUserCertification = ReturnType<typeof newRevokedUserCertificationFrom>;
 
-export const newUserCertificationRevokedEventFrom = <
-  P extends { userCertificationId: UserCertificationId },
->(
-  params: Readonly<P>,
-) =>
+export const newRevokedUserCertificationFrom = <P extends UserCertification>(params: Readonly<P>) =>
   ({
-    type: 'userCertification.revoked',
-    userCertificationId: params.userCertificationId,
+    type: 'revokedUserCertification',
+    id: params.id,
+    certifiedUserId: params.certifiedUserId,
+    certifiedAt: params.certifiedAt,
     revokedAt: new Date(),
   }) as const;
 
-export type UserCertificationRevokedEventRepository = Repository<
-  UserCertificationRevokedEvent,
+export type RevokedUserCertificationRepository = Repository<
+  RevokedUserCertification,
   UserCertificationId,
-  'userCertificationId'
+  'id'
 >;
 //#endregion
 
@@ -215,7 +213,7 @@ export interface CertifiedUserProfileServiceDependencies {
   readonly answerEmailVerificationChallenge: AnswerEmailVerificationChallenge;
   readonly cancelEmailVerificationChallenge: CancelEmailVerificationChallenge;
   readonly userCertificationRepository: UserCertificationRepository;
-  readonly userCertificationRevokedEventRepository: UserCertificationRevokedEventRepository;
+  readonly revokedUserCertificationRepository: RevokedUserCertificationRepository;
   readonly userCertificationRequestRepository: UserCertificationRequestRepository;
   readonly userCertificationRequestCompletedEventRepository: UserCertificationRequestCompletedEventRepository;
   readonly userCertificationRequestCanceledEventRepository: UserCertificationRequestCanceledEventRepository;
@@ -227,8 +225,8 @@ export interface CertifiedUserProfileServiceDependencies {
 
 /**
  * 認証済みユーザプロフィールの作成を開始する。
- *
- * 入力されたEメールアドレスにEメールアドレス確認の確認コードを送信する。
+ * - アクセストークンが必要である。
+ * - 入力されたEメールアドレスにEメールアドレス確認の確認コードを送信する。
  * @throws 認証済みユーザプロフィールが作成済みで、有効期限より一定期間以上前の場合は、{@linkcode Exception}（`userCertification.alreadyCertified`）を投げる。
  * @throws 入力されたEメールアドレスが認証済みユーザの要件を満たさない場合は、{@linkcode Exception}（`userCertification.emailAddressRejected`）を投げる。
  */
@@ -244,15 +242,15 @@ export const requestUserCertification = async (
   const { myUserAccount } = await params.verifyAccessToken({
     accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
   });
-  const currentValidCertification = await getCurrentValidUserCertification({
-    ...params,
-    userId: myUserAccount.id,
-    now,
+  const [newestNonexpiredCertification] = await params.userCertificationRepository.getMany({
+    filters: { expiredAt: ['gt', now], certifiedUserId: myUserAccount.id },
+    orderBy: { certifiedAt: 'desc' },
+    limit: 1,
   });
   if (
-    currentValidCertification !== undefined &&
+    newestNonexpiredCertification !== undefined &&
     now.getTime() <
-      currentValidCertification.expiredAt.getTime() -
+      newestNonexpiredCertification.expiredAt.getTime() -
         params.contextRepository.get('userCertificationRequest.recertificatableBeforeMs')
   ) {
     throw Exception.create({ exceptionName: 'userCertification.alreadyCertified' });
@@ -303,6 +301,7 @@ export const requestUserCertification = async (
 
 /**
  * Eメールアドレス確認の確認コードが正しいのかを確認して、認証済みユーザプロフィールの作成を完了する。
+ * - アクセストークンが必要である。
  * @throws 認証済みユーザプロフィールの作成のリクエストが存在しない場合、完了または中止になっている場合、別のユーザのものである場合は、{@linkcode Exception}（`userCertification.notExists`）を投げる。
  * @throws 確認コードが正しくない場合は{@linkcode Exception}（`userCertification.verificationCodeIncorrect`）を投げる。
  */
@@ -339,15 +338,17 @@ export const completeUserCertification = async (
     });
   }
 
-  const currentValidCertification = await getCurrentValidUserCertification({
-    ...params,
-    userId: myUserAccount.id,
-    now: new Date(),
+  const now = new Date();
+  const [newestNonexpiredCertification] = await params.userCertificationRepository.getMany({
+    filters: { expiredAt: ['gt', now], certifiedUserId: myUserAccount.id },
+    orderBy: { certifiedAt: 'desc' },
+    limit: 1,
   });
-  if (currentValidCertification !== undefined) {
-    await params.userCertificationRevokedEventRepository.createOne(
-      newUserCertificationRevokedEventFrom({ userCertificationId: currentValidCertification.id }),
+  if (newestNonexpiredCertification !== undefined) {
+    await params.revokedUserCertificationRepository.createOne(
+      newRevokedUserCertificationFrom(newestNonexpiredCertification),
     );
+    await params.userCertificationRepository.deleteOneById(newestNonexpiredCertification.id);
   }
   const newUserCertification = newUserCertificationFrom({
     certifiedUserId: myUserAccount.id,
@@ -364,6 +365,7 @@ export const completeUserCertification = async (
 
 /**
  * 認証済みユーザプロフィールの作成を中止する。
+ * - アクセストークンが必要である。
  * @throws 認証済みユーザプロフィールの作成のリクエストが存在しない場合、完了または中止になっている場合、別のユーザのものである場合は、{@linkcode Exception}（`userCertification.notExists`）を投げる。
  */
 export const cancelUserCertification = async (
@@ -393,25 +395,4 @@ export const cancelUserCertification = async (
   await params.userCertificationRequestCanceledEventRepository.createOne(
     newUserCertificationRequestCanceledEventFrom({ userCertificationRequestId: request.id }),
   );
-};
-
-const getCurrentValidUserCertification = async (params: {
-  readonly userId: UserId;
-  readonly userCertificationRepository: UserCertificationRepository;
-  readonly userCertificationRevokedEventRepository: UserCertificationRevokedEventRepository;
-  readonly now: Date;
-}) => {
-  const [newestNonexpiredCertification] = await params.userCertificationRepository.getMany({
-    filters: { certifiedUserId: params.userId, expiredAt: ['gt', params.now] },
-    orderBy: { certifiedAt: 'desc' },
-    limit: 1,
-  });
-  if (newestNonexpiredCertification === undefined) {
-    return undefined;
-  }
-  const isRevoked =
-    (await params.userCertificationRevokedEventRepository.getOneById(
-      newestNonexpiredCertification.id,
-    )) ?? false;
-  return isRevoked ? undefined : newestNonexpiredCertification;
 };
