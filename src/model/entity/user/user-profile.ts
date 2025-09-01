@@ -9,7 +9,7 @@ import type {
   SendEmailVerificationChallenge,
 } from '../../lib/email-verification.ts';
 import { Exception } from '../../lib/exception.ts';
-import type { MutableRepository } from '../../lib/repository.ts';
+import type { DeleteOneBy, GetOneBy, MutableRepository } from '../../lib/repository.ts';
 import type { DisplayName, Name } from '../../values.ts';
 import type { UserId } from './values.ts';
 
@@ -33,7 +33,10 @@ export const newUserProfileFrom = <
     updatedAt: new Date(),
   }) as const;
 
-export type UserProfileRepository = MutableRepository<UserProfile, UserId, 'userId'>;
+export type UserProfileRepository = MutableRepository<UserProfile> & {
+  readonly getOneById: GetOneBy<UserProfile, UserId, 'userId'>;
+  readonly deleteOneById: DeleteOneBy<UserId>;
+};
 //#endregion
 
 //#region UserProfileService

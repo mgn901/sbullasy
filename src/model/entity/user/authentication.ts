@@ -20,7 +20,7 @@ import type {
 import { Exception } from '../../lib/exception.ts';
 import { localize } from '../../lib/i18n.ts';
 import { generateId, type Id } from '../../lib/random-values/id.ts';
-import type { Repository } from '../../lib/repository.ts';
+import type { DeleteOneBy, GetOneBy, Repository } from '../../lib/repository.ts';
 import type { EmailAddress } from '../../values.ts';
 import {
   type AccessTokenConfigurationMap,
@@ -168,11 +168,10 @@ export const newLogInAttemptFrom = <
     associatedEmailVerificationChallengeId: params.associatedEmailVerificationChallengeId,
   }) as const;
 
-export type AuthenticationAttemptRepository = Repository<
-  AuthenticationAttempt,
-  AuthenticationAttemptId,
-  'id'
->;
+export type AuthenticationAttemptRepository = Repository<AuthenticationAttempt> & {
+  readonly getOneById: GetOneBy<AuthenticationAttempt, AuthenticationAttemptId, 'id'>;
+  readonly deleteOneById: DeleteOneBy<AuthenticationAttemptId>;
+};
 //#endregion
 
 //#region AuthenticationAttemptCompletedEvent
@@ -197,11 +196,15 @@ export const newAuthenticationAttemptCompletedEventFrom = <
     completedAt: new Date(),
   }) as const;
 
-export type AuthenticationAttemptCompletedEventRepository = Repository<
-  AuthenticationAttemptCompletedEvent,
-  AuthenticationAttemptId,
-  'authenticationAttemptId'
->;
+export type AuthenticationAttemptCompletedEventRepository =
+  Repository<AuthenticationAttemptCompletedEvent> & {
+    readonly getOneById: GetOneBy<
+      AuthenticationAttemptCompletedEvent,
+      AuthenticationAttemptId,
+      'authenticationAttemptId'
+    >;
+    readonly deleteOneById: DeleteOneBy<AuthenticationAttemptId>;
+  };
 //#endregion
 
 //#region AuthenticationAttemptCanceledEvent
@@ -220,11 +223,15 @@ export const newAuthenticationAttemptCanceledEventFrom = <
     canceledAt: new Date(),
   }) as const;
 
-export type AuthenticationAttemptCanceledEventRepository = Repository<
-  AuthenticationAttemptCanceledEvent,
-  AuthenticationAttemptId,
-  'authenticationAttemptId'
->;
+export type AuthenticationAttemptCanceledEventRepository =
+  Repository<AuthenticationAttemptCanceledEvent> & {
+    readonly getOneById: GetOneBy<
+      AuthenticationAttemptCanceledEvent,
+      AuthenticationAttemptId,
+      'authenticationAttemptId'
+    >;
+    readonly deleteOneById: DeleteOneBy<AuthenticationAttemptId>;
+  };
 //#endregion
 
 //#region UserAuthenticationService

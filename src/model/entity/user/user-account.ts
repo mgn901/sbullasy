@@ -18,7 +18,7 @@ import type {
 import { Exception } from '../../lib/exception.ts';
 import { localize } from '../../lib/i18n.ts';
 import { generateId, type Id } from '../../lib/random-values/id.ts';
-import type { GetOneBy, MutableRepository, Repository } from '../../lib/repository.ts';
+import type { DeleteOneBy, GetOneBy, MutableRepository, Repository } from '../../lib/repository.ts';
 import type { EmailAddress } from '../../values.ts';
 import type { BookmarkRepository } from '../bookmark/bookmark.ts';
 import type { AccessTokenRepository } from './access-token.ts';
@@ -81,7 +81,9 @@ export const newUserAccountFrom = <P extends { emailAddress: EmailAddress }>(par
     registeredAt: new Date(),
   }) as const;
 
-export type UserAccountRepository = MutableRepository<UserAccount, UserId, 'id'> & {
+export type UserAccountRepository = MutableRepository<UserAccount> & {
+  readonly getOneById: GetOneBy<UserAccount, UserId, 'id'>;
+  readonly deleteOneById: DeleteOneBy<UserId>;
   readonly getOneByEmailAddress: GetOneBy<UserAccount, EmailAddress, 'emailAddress'>;
 };
 //#endregion
@@ -122,11 +124,15 @@ export const newUserAccountEmailAddressUpdateRequestFrom = <
     associatedEmailVerificationChallengeId: params.associatedEmailVerificationChallengeId,
   }) as const;
 
-export type UserAccountEmailAddressUpdateRequestRepository = Repository<
-  UserAccountEmailAddressUpdateRequest,
-  UserAccountEmailAddressUpdateRequestId,
-  'id'
->;
+export type UserAccountEmailAddressUpdateRequestRepository =
+  Repository<UserAccountEmailAddressUpdateRequest> & {
+    readonly getOneById: GetOneBy<
+      UserAccountEmailAddressUpdateRequest,
+      UserAccountEmailAddressUpdateRequestId,
+      'id'
+    >;
+    readonly deleteOneById: DeleteOneBy<UserAccountEmailAddressUpdateRequestId>;
+  };
 //#endregion
 
 //#region UserAccountEmailAddressUpdateRequestCompletedEvent
@@ -145,11 +151,15 @@ export const newUserAccountEmailAddressUpdateRequestCompletedEventFrom = <
     completedAt: new Date(),
   }) as const;
 
-export type UserAccountEmailAddressUpdateRequestCompletedEventRepository = Repository<
-  UserAccountEmailAddressUpdateRequestCompletedEvent,
-  UserAccountEmailAddressUpdateRequestId,
-  'userAccountEmailAddressUpdateRequestId'
->;
+export type UserAccountEmailAddressUpdateRequestCompletedEventRepository =
+  Repository<UserAccountEmailAddressUpdateRequestCompletedEvent> & {
+    readonly getOneById: GetOneBy<
+      UserAccountEmailAddressUpdateRequestCompletedEvent,
+      UserAccountEmailAddressUpdateRequestId,
+      'userAccountEmailAddressUpdateRequestId'
+    >;
+    readonly deleteOneById: DeleteOneBy<UserAccountEmailAddressUpdateRequestId>;
+  };
 //#endregion
 
 //#region UserAccountEmailAddressUpdateRequestCanceledEvent
@@ -168,11 +178,15 @@ export const newUserAccountEmailAddressUpdateRequestCanceledEventFrom = <
     canceledAt: new Date(),
   }) as const;
 
-export type UserAccountEmailAddressUpdateRequestCanceledEventRepository = Repository<
-  UserAccountEmailAddressUpdateRequestCanceledEvent,
-  UserAccountEmailAddressUpdateRequestId,
-  'userAccountEmailAddressUpdateRequestId'
->;
+export type UserAccountEmailAddressUpdateRequestCanceledEventRepository =
+  Repository<UserAccountEmailAddressUpdateRequestCanceledEvent> & {
+    readonly getOneById: GetOneBy<
+      UserAccountEmailAddressUpdateRequestCanceledEvent,
+      UserAccountEmailAddressUpdateRequestId,
+      'userAccountEmailAddressUpdateRequestId'
+    >;
+    readonly deleteOneById: DeleteOneBy<UserAccountEmailAddressUpdateRequestId>;
+  };
 //#endregion
 
 //#region DeletedUserAccount
@@ -187,7 +201,10 @@ export const newDeletedUserAccountFrom = <P extends UserAccount>(params: Readonl
     deletedAt: new Date(),
   }) as const;
 
-export type DeletedUserAccountRepository = Repository<DeletedUserAccount, UserId, 'userId'>;
+export type DeletedUserAccountRepository = Repository<DeletedUserAccount> & {
+  readonly getOneById: GetOneBy<DeletedUserAccount, UserId, 'userId'>;
+  readonly deleteOneById: DeleteOneBy<UserId>;
+};
 //#endregion
 
 //#region UserAccountService

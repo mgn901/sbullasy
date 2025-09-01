@@ -31,15 +31,16 @@ export type DeleteMany<T> = (
   params: { readonly filters?: Filters<T> },
 ) => Promise<void>;
 
-export type Repository<T, TId, TKeyOfId extends keyof T> = {
-  readonly getOneById: GetOneBy<T, TId, TKeyOfId>;
+export type ReadonlyRepository<T> = {
   readonly getMany: GetMany<T>;
   readonly count: Count<T>;
+};
+
+export type Repository<T> = ReadonlyRepository<T> & {
   readonly createOne: CreateOne<T>;
-  readonly deleteOneById: GetOneBy<T, TId, TKeyOfId>;
   readonly deleteMany: DeleteMany<T>;
 };
 
-export type MutableRepository<T, TId, TKeyOfId extends keyof T> = Repository<T, TId, TKeyOfId> & {
+export type MutableRepository<T> = Repository<T> & {
   readonly updateOne: UpdateOne<T>;
 };

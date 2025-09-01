@@ -9,7 +9,7 @@ import type {
 import { Exception } from '../../lib/exception.ts';
 import { generateId, type Id } from '../../lib/random-values/id.ts';
 import { generateLongSecret, type LongSecret } from '../../lib/random-values/long-secret.ts';
-import type { GetOneBy, MutableRepository, Repository } from '../../lib/repository.ts';
+import type { DeleteOneBy, GetOneBy, MutableRepository, Repository } from '../../lib/repository.ts';
 import type { UserId } from './values.ts';
 
 //#region AccessTokenConfigurationMap
@@ -67,7 +67,9 @@ export const newSessionAccessTokenFrom = <
   } as const;
 };
 
-export type AccessTokenRepository = MutableRepository<AccessToken, AccessTokenId, 'id'> & {
+export type AccessTokenRepository = MutableRepository<AccessToken> & {
+  readonly getOneById: GetOneBy<AccessToken, AccessTokenId, 'id'>;
+  readonly deleteOneById: DeleteOneBy<AccessTokenId>;
   readonly getOneBySecret: GetOneBy<AccessToken, AccessTokenSecret, typeof accessTokenSecretSymbol>;
 };
 //#endregion
@@ -93,11 +95,7 @@ export const newSessionAccessTokenRenewedEventFrom = <P extends { accessTokenId:
     renewedAt: new Date(),
   }) as const;
 
-export type AccessTokenRenewedEventRepository = Repository<
-  SessionAccessTokenRenewedEvent,
-  AccessTokenId,
-  'accessTokenId'
->;
+export type AccessTokenRenewedEventRepository = Repository<SessionAccessTokenRenewedEvent>;
 //#endregion
 
 //#region RevokedSessionAccessToken
@@ -117,11 +115,10 @@ export const newRevokedSessionAccessTokenFrom = <P extends { accessToken: Access
     revokedAt: new Date(),
   }) as const;
 
-export type RevokedSessionAccessTokenRepository = Repository<
-  RevokedSessionAccessToken,
-  AccessTokenId,
-  'id'
->;
+export type RevokedSessionAccessTokenRepository = Repository<RevokedSessionAccessToken> & {
+  readonly getOneById: GetOneBy<RevokedSessionAccessToken, AccessTokenId, 'id'>;
+  readonly deleteOneById: DeleteOneBy<AccessTokenId>;
+};
 //#endregion
 
 export type AccessTokenServiceDependencies = {

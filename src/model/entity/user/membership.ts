@@ -1,9 +1,5 @@
-import type { PreApplied } from '@mgn901/mgn901-utils-ts/pre-apply';
 import type { Filters, FromRepository, OrderBy } from '@mgn901/mgn901-utils-ts/repository-utils';
-import type {
-  AccessControlServiceDependencies,
-  PreAppliedVerifyAccessToken,
-} from '../../lib/access-control.ts';
+import type { PreAppliedVerifyAccessToken } from '../../lib/access-control.ts';
 import type {
   ClientContextMap,
   ContextRepository,
@@ -40,10 +36,7 @@ export interface MembershipRepository {
 }
 
 export interface MembershipServiceDependencies {
-  readonly verifyAccessToken: PreApplied<
-    PreAppliedVerifyAccessToken,
-    AccessControlServiceDependencies
-  >;
+  readonly verifyAccessToken: PreAppliedVerifyAccessToken;
   readonly membershipRepository: MembershipRepository;
   readonly clientContextRepository: ContextRepository<ClientContextMap & LogInUserClientContextMap>;
 }

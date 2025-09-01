@@ -21,7 +21,7 @@ import type {
 import { Exception } from '../../lib/exception.ts';
 import { localize } from '../../lib/i18n.ts';
 import { generateId, type Id } from '../../lib/random-values/id.ts';
-import type { Repository } from '../../lib/repository.ts';
+import type { DeleteOneBy, GetOneBy, Repository } from '../../lib/repository.ts';
 import type { EmailAddress } from '../../values.ts';
 import type { UserId } from './values.ts';
 
@@ -97,7 +97,10 @@ export const newUserCertificationFrom = <P extends { certifiedUserId: UserId; ex
     expiredAt: params.expiredAt,
   }) as const;
 
-export type UserCertificationRepository = Repository<UserCertification, UserCertificationId, 'id'>;
+export type UserCertificationRepository = Repository<UserCertification> & {
+  readonly getOneById: GetOneBy<UserCertification, UserCertificationId, 'id'>;
+  readonly deleteOneById: DeleteOneBy<UserCertificationId>;
+};
 //#endregion
 
 //#region RevokedUserCertification
@@ -112,11 +115,10 @@ export const newRevokedUserCertificationFrom = <P extends UserCertification>(par
     revokedAt: new Date(),
   }) as const;
 
-export type RevokedUserCertificationRepository = Repository<
-  RevokedUserCertification,
-  UserCertificationId,
-  'id'
->;
+export type RevokedUserCertificationRepository = Repository<RevokedUserCertification> & {
+  readonly getOneById: GetOneBy<RevokedUserCertification, UserCertificationId, 'id'>;
+  readonly deleteOneById: DeleteOneBy<UserCertificationId>;
+};
 //#endregion
 
 //#region UserCertificationRequest
@@ -149,11 +151,10 @@ export const newUserCertificationRequestFrom = <
     associatedEmailVerificationChallengeId: params.associatedEmailVerificationChallengeId,
   }) as const;
 
-export type UserCertificationRequestRepository = Repository<
-  UserCertificationRequest,
-  UserCertificationRequestId,
-  'id'
->;
+export type UserCertificationRequestRepository = Repository<UserCertificationRequest> & {
+  readonly getOneById: GetOneBy<UserCertificationRequest, UserCertificationRequestId, 'id'>;
+  readonly deleteOneById: DeleteOneBy<UserCertificationRequestId>;
+};
 //#endregion
 
 //#region UserCertificationRequestCompletedEvent
@@ -176,11 +177,15 @@ export const newUserCertificationRequestCompletedEventFrom = <
     completedAt: new Date(),
   }) as const;
 
-export type UserCertificationRequestCompletedEventRepository = Repository<
-  UserCertificationRequestCompletedEvent,
-  UserCertificationRequestId,
-  'userCertificationRequestId'
->;
+export type UserCertificationRequestCompletedEventRepository =
+  Repository<UserCertificationRequestCompletedEvent> & {
+    readonly getOneById: GetOneBy<
+      UserCertificationRequestCompletedEvent,
+      UserCertificationRequestId,
+      'userCertificationRequestId'
+    >;
+    readonly deleteOneById: DeleteOneBy<UserCertificationRequestId>;
+  };
 //#endregion
 
 //#region UserCertificationRequestCanceledEvent
@@ -199,11 +204,15 @@ export const newUserCertificationRequestCanceledEventFrom = <
     canceledAt: new Date(),
   }) as const;
 
-export type UserCertificationRequestCanceledEventRepository = Repository<
-  UserCertificationRequestCanceledEvent,
-  UserCertificationRequestId,
-  'userCertificationRequestId'
->;
+export type UserCertificationRequestCanceledEventRepository =
+  Repository<UserCertificationRequestCanceledEvent> & {
+    readonly getOneById: GetOneBy<
+      UserCertificationRequestCanceledEvent,
+      UserCertificationRequestId,
+      'userCertificationRequestId'
+    >;
+    readonly deleteOneById: DeleteOneBy<UserCertificationRequestId>;
+  };
 //#endregion
 
 export interface CertifiedUserProfileServiceDependencies {
