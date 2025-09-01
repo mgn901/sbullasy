@@ -30,12 +30,12 @@ import {
   accessTokenSecretSymbol,
   newSessionAccessTokenFrom,
 } from './access-token.ts';
+import type { UserId } from './user-account.ts';
 import {
   newUserAccountFrom,
   type UserAccount,
   type UserAccountRepository,
 } from './user-account.ts';
-import type { UserId } from './values.ts';
 
 //#region AuthenticationConfigurationMap
 export interface AuthenticationConfigurationMap extends ContextMap {

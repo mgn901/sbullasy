@@ -10,7 +10,7 @@ import { Exception } from '../../lib/exception.ts';
 import { generateId, type Id } from '../../lib/random-values/id.ts';
 import { generateLongSecret, type LongSecret } from '../../lib/random-values/long-secret.ts';
 import type { DeleteOneBy, GetOneBy, MutableRepository, Repository } from '../../lib/repository.ts';
-import type { UserId } from './values.ts';
+import type { UserId } from './user-account.ts';
 
 //#region AccessTokenConfigurationMap
 export interface AccessTokenConfigurationMap extends ContextMap {

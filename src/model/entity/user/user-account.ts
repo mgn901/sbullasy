@@ -20,11 +20,6 @@ import { localize } from '../../lib/i18n.ts';
 import { generateId, type Id } from '../../lib/random-values/id.ts';
 import type { DeleteOneBy, GetOneBy, MutableRepository, Repository } from '../../lib/repository.ts';
 import type { EmailAddress } from '../../values.ts';
-import type { BookmarkRepository } from '../bookmark/bookmark.ts';
-import type { AccessTokenRepository } from './access-token.ts';
-import type { MembershipRepository } from './membership.ts';
-import type { UserProfileRepository } from './user-profile.ts';
-import type { UserId } from './values.ts';
 
 //#region UserAccountConfigurationMap
 export interface UserAccountConfigurationMap extends ContextMap {
@@ -65,6 +60,8 @@ Verification code: \${emailVerification.verificationCode}
 //#endregion
 
 //#region UserAccount
+export const userIdSymbol = Symbol('user.id');
+export type UserId = NominalPrimitive<Id, typeof userIdSymbol>;
 
 /**
  * アプリケーションを利用するユーザと紐付けられるユーザアカウントを表す。
@@ -189,24 +186,6 @@ export type UserAccountEmailAddressUpdateRequestCanceledEventRepository =
   };
 //#endregion
 
-//#region DeletedUserAccount
-export type DeletedUserAccount = ReturnType<typeof newDeletedUserAccountFrom>;
-
-export const newDeletedUserAccountFrom = <P extends UserAccount>(params: Readonly<P>) =>
-  ({
-    type: 'userAccount.deleted',
-    userId: params.id,
-    emailAddress: params.emailAddress,
-    registeredAt: params.registeredAt,
-    deletedAt: new Date(),
-  }) as const;
-
-export type DeletedUserAccountRepository = Repository<DeletedUserAccount> & {
-  readonly getOneById: GetOneBy<DeletedUserAccount, UserId, 'userId'>;
-  readonly deleteOneById: DeleteOneBy<UserId>;
-};
-//#endregion
-
 //#region UserAccountService
 export type UserAccountServiceDependencies = {
   readonly sendEmailVerificationChallenge: SendEmailVerificationChallenge;
@@ -217,11 +196,6 @@ export type UserAccountServiceDependencies = {
   readonly userAccountEmailAddressUpdateRequestReposiory: UserAccountEmailAddressUpdateRequestRepository;
   readonly userAccountEmailAddressUpdateRequestCompletedEventReposiory: UserAccountEmailAddressUpdateRequestCompletedEventRepository;
   readonly userAccountEmailAddressUpdateRequestCanceledEventReposiory: UserAccountEmailAddressUpdateRequestCanceledEventRepository;
-  readonly deletedUserAccountRepository: DeletedUserAccountRepository;
-  readonly accessTokenRepository: AccessTokenRepository;
-  readonly bookmarkRepository: BookmarkRepository;
-  readonly userProfileRepository: UserProfileRepository;
-  readonly membershipRepository: MembershipRepository;
   readonly contextRepository: ContextRepository<
     UserAccountConfigurationMap & SystemConfigurationMap
   >;
@@ -248,7 +222,7 @@ export const getMyUserAccount = async (
  * - 有効なアクセストークンが必要である。
  * - 更新後のEメールアドレスにEメールアドレス確認の確認コードを送信する。
  */
-export const requestEmailAddressUpdate = async (
+export const requestMyUserAccountEmailAddressUpdate = async (
   params: { readonly newEmailAddress: EmailAddress } & UserAccountServiceDependencies,
 ): Promise<{
   readonly id: UserAccountEmailAddressUpdateRequestId;
@@ -303,7 +277,7 @@ export const requestEmailAddressUpdate = async (
  * @throws Eメールアドレスの更新のリクエストが存在しない場合、完了または中止になっている場合、別のユーザのものである場合は、{@linkcode Exception}（`userAccountEmailAddressUpdate.notExists`）を投げる。
  * @throws 確認コードが正しくない場合は{@linkcode Exception}（`userAccountEmailAddressUpdate.verificationCodeIncorrect`）を投げる。
  */
-export const completeEmailAddressUpdate = async (
+export const completeMyUserAccountEmailAddressUpdate = async (
   params: {
     readonly id: UserAccountEmailAddressUpdateRequestId;
     readonly enteredVerificationCode: EmailVerificationChallengeVerificationCode;
@@ -358,7 +332,7 @@ export const completeEmailAddressUpdate = async (
  * - 有効なアクセストークンが必要である。
  * @throws Eメールアドレスの更新のリクエストが存在しない場合、完了または中止になっている場合、別のユーザのものである場合は、{@linkcode Exception}（`userAccountEmailAddressUpdate.notExists`）を投げる。
  */
-export const cancelEmailAddressUpdate = async (
+export const cancelMyUserAccountEmailAddressUpdate = async (
   params: { readonly id: UserAccountEmailAddressUpdateRequestId } & UserAccountServiceDependencies,
 ) => {
   const { myUserAccount } = await params.verifyAccessToken({
@@ -393,31 +367,5 @@ export const cancelEmailAddressUpdate = async (
       userAccountEmailAddressUpdateRequestId: userAccountEmailAddressUpdateRequest.id,
     }),
   );
-};
-
-/**
- * 自分自身のユーザアカウントを削除する。
- * - 有効なアクセストークンが必要である。
- * - 自分のプロフィール、ブックマークも削除する。
- * @throws グループに1つ以上所属している場合は、{@linkcode Exception}（`userCertification.notLeftAllGroupsYet`）を投げる。
- */
-export const deleteMyUserAccount = async (
-  params: UserAccountServiceDependencies,
-): Promise<void> => {
-  const { myUserAccount } = await params.verifyAccessToken({
-    accessTokenSecret: params.clientContextRepository.get('client.accessTokenSecret'),
-  });
-
-  const membershipCount = await params.membershipRepository.count({
-    filters: { userId: myUserAccount.id },
-  });
-  if (membershipCount > 0) {
-    throw Exception.create({ exceptionName: 'userCertification.notLeftAllGroupsYet' });
-  }
-
-  await params.userProfileRepository.deleteOneById(myUserAccount.id);
-  await params.bookmarkRepository.deleteMany({ filters: { bookmarkedBy: myUserAccount.id } });
-  await params.deletedUserAccountRepository.createOne(newDeletedUserAccountFrom(myUserAccount));
-  await params.userAccountRepository.deleteOneById(myUserAccount.id);
 };
 //#endregion

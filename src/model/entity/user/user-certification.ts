@@ -23,7 +23,7 @@ import { localize } from '../../lib/i18n.ts';
 import { generateId, type Id } from '../../lib/random-values/id.ts';
 import type { DeleteOneBy, GetOneBy, Repository } from '../../lib/repository.ts';
 import type { EmailAddress } from '../../values.ts';
-import type { UserId } from './values.ts';
+import type { UserId } from './user-account.ts';
 
 //#region CertifiedUserProfileConfigurationMap
 export interface UserCertificationConfigurationMap extends ContextMap {

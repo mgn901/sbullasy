@@ -9,12 +9,11 @@ import type {
   AccessTokenSecret,
 } from '../entity/user/access-token.ts';
 import type { MembershipRepository } from '../entity/user/membership.ts';
-import type { UserAccount, UserAccountRepository } from '../entity/user/user-account.ts';
+import type { UserAccount, UserAccountRepository, UserId } from '../entity/user/user-account.ts';
 import type {
   UserCertification,
   UserCertificationRepository,
 } from '../entity/user/user-certification.ts';
-import type { UserId } from '../entity/user/values.ts';
 import { Exception } from './exception.ts';
 
 export interface AccessControlServiceDependencies {

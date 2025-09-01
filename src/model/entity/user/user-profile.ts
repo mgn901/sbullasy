@@ -11,7 +11,7 @@ import type {
 import { Exception } from '../../lib/exception.ts';
 import type { DeleteOneBy, GetOneBy, MutableRepository } from '../../lib/repository.ts';
 import type { DisplayName, Name } from '../../values.ts';
-import type { UserId } from './values.ts';
+import type { UserId } from './user-account.ts';
 
 //#region UserProfile
 

@@ -11,7 +11,7 @@ import type {
 } from '../../lib/context.ts';
 import type { Item, ItemId, WithDetailedLinks } from '../item/item.ts';
 import type { ItemTypeName } from '../item/item-type.ts';
-import type { UserId } from '../user/values.ts';
+import type { UserId } from '../user/user-account.ts';
 
 //#region Bookmark and BookmarkRepository
 export const bookmarkTypeSymbol = Symbol('bookmark.type');

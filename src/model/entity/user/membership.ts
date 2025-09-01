@@ -8,7 +8,7 @@ import type {
 import type { GroupProfile } from '../group/group.ts';
 import type { Member } from '../group/member.ts';
 import type { GroupId } from '../group/values.ts';
-import type { UserId } from './values.ts';
+import type { UserId } from './user-account.ts';
 
 const membershipTypeSymbol = Symbol('membership.type');
 

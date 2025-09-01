@@ -15,7 +15,7 @@ import type {
 } from '../../lib/context.ts';
 import { Exception } from '../../lib/exception.ts';
 import { generateShortSecret, type ShortSecret } from '../../lib/random-values/short-secret.ts';
-import type { UserId } from '../user/values.ts';
+import type { UserId } from '../user/user-account.ts';
 import type { GroupRepository } from './group.ts';
 import type { GroupId } from './values.ts';
 
