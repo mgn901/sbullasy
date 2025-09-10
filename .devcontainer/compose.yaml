@@ -8,8 +8,6 @@ services:
       - HTTP_HOST=0.0.0.0
       - HTTP_PORT=8080
       - PRISMAREPOSITORY_DB_URL=postgresql://user:password@localhost:5432/db?schema=public
-    volumes:
-      - devcontainer_data:/workspaces
     network_mode: service:postgres
   postgres:
     image: postgres:alpine
@@ -23,4 +21,3 @@ services:
 
 volumes:
   postgres_data:
-  devcontainer_data:

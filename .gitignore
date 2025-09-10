@@ -134,3 +134,4 @@ src/server/prisma-client
 development
 production
 .DS_Store
+.pnpm-store/

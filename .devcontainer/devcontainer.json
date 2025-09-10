@@ -7,6 +7,14 @@
   "dockerComposeFile": "compose.yaml",
   "service": "devcontainer",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "mounts": [
+    {
+      "type": "bind",
+      "source": "${localWorkspaceFolder}",
+      "target": "/workspaces/${localWorkspaceFolderBasename}"
+    }
+  ],
+  "overrideCommand": true,
 
   // Features to add to the dev container. More info: https://containers.dev/features.
   // "features": {},
@@ -29,8 +37,8 @@
         "bradlc.vscode-tailwindcss"
       ]
     }
-  },
+  }
 
   // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-  "remoteUser": "root"
+  // "remoteUser": "root"
 }
